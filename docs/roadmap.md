@@ -16,7 +16,8 @@ The goal is an employee management application spanning the employee lifecycle.
 
 ## Employee lifecycle
 
-- Profile editing, search pagination, employment history and document metadata.
+- Implemented in source: profile viewing and editing (October 21, 2026); execution validation pending.
+- Next: search pagination, employment history and document metadata.
 - Onboarding and offboarding workflows with assigned tasks.
 - Employee self-service and manager views.
 
@@ -31,3 +32,12 @@ The goal is an employee management application spanning the employee lifecycle.
 - Frontend component and end-to-end tests, accessibility verification.
 - Deployment environments, backups, monitoring and recovery procedures.
 - Payroll integrations only after requirements and access policies are defined.
+
+## Completed increments
+
+### October 21, 2026 — Employee profiles
+- Open an employee from the directory and retrieve their profile from the backend.
+- Edit all current profile fields and update the directory and summary counts after saving.
+- Preserve drafts after errors, confirm discarding edits, and prevent duplicate save submissions.
+- Added backend test source for profile persistence, invalid updates, duplicate-email rollback, unchanged email and deleted employees.
+- Validation: static source review only. No dependency downloads, builds, compilation, tests or application startup were performed for this increment.

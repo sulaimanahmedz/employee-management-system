@@ -37,7 +37,7 @@ frontend/
   src/
     features/employees/   # Employee types and API calls
     lib/                 # Shared HTTP client
-    App.tsx              # Directory, search, summary and add form
+    App.tsx              # Directory, search, summary and profile navigation
     styles.css           # Responsive application styling
 backend/
   src/main/java/com/ems/
@@ -54,7 +54,7 @@ docs/
 
 ## Initial functionality
 
-The UI lists, searches and adds employees, displays directory totals, and handles loading, empty, validation and connection-error states. The REST API additionally supports employee retrieval, update and deletion. The database enforces unique, case-normalized email addresses. No demo employee or credentials are inserted.
+The UI lists, searches and adds employees, displays directory totals, and handles loading, empty, validation and connection-error states. Select an employee name to load their full profile, then use **Edit profile** to update their name, work email, department, job title or status. Saving refreshes both the profile and directory totals. Cancel or Back to directory asks before discarding edited fields; failed saves retain the draft for correction. The REST API also supports deletion. The database enforces unique, case-normalized email addresses. No demo employee or credentials are inserted.
 
 | Method | Endpoint | Behavior |
 | --- | --- | --- |
@@ -100,8 +100,12 @@ mvn verify
 java -jar target/employee-management-api-0.1.0-SNAPSHOT.jar
 ```
 
-Backend tests cover the employee lifecycle, invalid input, duplicate emails and health. GitHub Actions provides these checks through manual dispatch only. Commits and pull requests do not trigger builds; dependency downloads and application validation are reserved for the weekly maintenance task.
+Backend test source covers the employee lifecycle, full profile updates, invalid input, duplicate-email rollback, retaining an employee's own email, missing profiles and health. GitHub Actions provides these checks through manual dispatch only. Commits and pull requests do not trigger builds; dependency downloads and application validation are reserved for the weekly maintenance task.
 
 ## Next development
 
 See [architecture](docs/architecture.md) and [roadmap](docs/roadmap.md). This initial codebase is for local development: authentication and authorization are not implemented yet. Add access controls, migrations and a production database before hosting employee data publicly.
+
+## Profile feature validation
+
+Profile viewing/editing was added on October 21, 2026. Only static source review was performed for this change; compilation, automated tests and browser execution remain pending the weekly maintenance check. See [profile acceptance checks](docs/profile-validation.md). Existing GET/PUT endpoints are reused without a schema or dependency change.

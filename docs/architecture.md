@@ -23,4 +23,4 @@ Request validation uses Jakarta Validation. Errors follow Spring problem details
 - Scale: introduce paginated directory queries before loading large employee datasets.
 - Operations: add schema migrations, structured observability and deployment configuration.
 
-There is no authentication, payroll, leave approval, attendance tracking, audit history, or production hosting in this base. The UI exposes list/create; the API also exposes get/update/delete for future screens.
+There is no authentication, payroll, leave approval, attendance tracking, audit history, or production hosting in this base. The UI exposes list/create and a dedicated view/edit profile screen using the existing GET/PUT endpoints; deletion is currently API-only. Profile data is fetched when opened. A successful update replaces that employee in the directory state, so summaries reflect changed status and department. Failed saves retain the draft. Requests abandoned while loading a profile are cancelled and ignored. Concurrent edits from different users still follow last-write-wins; optimistic locking is a future improvement.
