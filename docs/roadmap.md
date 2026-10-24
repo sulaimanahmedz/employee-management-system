@@ -73,3 +73,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added tests for scoping, idempotent completion, validation, pagination and deletion cleanup.
 - Validation commands and exact commit SHAs are recorded in the feature PR before merge.
 - Identity-based assignments, templates, reminders and offboarding remain future work.
+
+### October 24, 2026 — Edit onboarding task details
+- Added scoped task-detail updates and profile edit/cancel controls, retaining drafts on failures and completion state on successful edits.
+- Clearing an optional due date is supported; validation and missing/cross-employee records follow existing API conventions.
+- Serialized detail/completion updates with a task-row lock to preserve independent fields.
+- Regression tests and execution results are recorded in the feature PR before merge.

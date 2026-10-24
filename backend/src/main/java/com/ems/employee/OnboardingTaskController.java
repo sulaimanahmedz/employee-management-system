@@ -26,6 +26,9 @@ public class OnboardingTaskController {
         var task = service.create(employeeId, request);
         return ResponseEntity.created(URI.create("/api/v1/employees/" + employeeId + "/onboarding-tasks/" + task.id())).body(task);
     }
+    @PutMapping("/{taskId}")
+    public OnboardingTaskResponse update(@PathVariable Long employeeId, @PathVariable Long taskId,
+            @Valid @RequestBody OnboardingTaskRequest request) { return service.update(employeeId, taskId, request); }
     @PutMapping("/{taskId}/completion")
     public OnboardingTaskResponse complete(@PathVariable Long employeeId, @PathVariable Long taskId,
             @Valid @RequestBody CompletionRequest request) { return service.complete(employeeId, taskId, request.completed()); }

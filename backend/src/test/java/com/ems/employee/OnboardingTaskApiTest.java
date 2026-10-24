@@ -85,4 +85,36 @@ class OnboardingTaskApiTest {
             .content("{\"title\":\"Orientation\",\"owner\":\"HR\"}"))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.dueOn").isEmpty());
     }
+    @Test void editsDetailsWithoutLosingCompletionAndCanClearDueDate() throws Exception {
+        long id = employee("edit@example.com"), task = add(id, "Original");
+        mvc.perform(put(path(id) + "/" + task + "/completion").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"completed\":true}")).andExpect(status().isOk());
+        mvc.perform(put(path(id) + "/" + task).contentType(MediaType.APPLICATION_JSON)
+            .content(json.writeValueAsString(Map.of("title", "  Updated task  ", "owner", "  HR team  "))))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.title").value("Updated task"))
+            .andExpect(jsonPath("$.owner").value("HR team")).andExpect(jsonPath("$.dueOn").isEmpty())
+            .andExpect(jsonPath("$.completed").value(true));
+        mvc.perform(get(path(id) + "/" + task)).andExpect(jsonPath("$.title").value("Updated task"));
+        mvc.perform(put(path(id) + "/" + task + "/completion").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"completed\":false}")).andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("Updated task")).andExpect(jsonPath("$.owner").value("HR team"));
+        mvc.perform(get(path(id))).andExpect(jsonPath("$.totalElements").value(1))
+            .andExpect(jsonPath("$.completedTasks").value(0));
+    }
+    @Test void rejectedEditsLeaveTaskUnchanged() throws Exception {
+        long id = employee("edit-owner@example.com"), other = employee("edit-other@example.com");
+        long task = add(id, "Original");
+        for (String body : new String[] {"{}", json.writeValueAsString(Map.of("title", " ", "owner", "HR")),
+            "{\"title\":\"Changed\",\"owner\":\"HR\",\"dueOn\":\"invalid\"}"}) {
+            mvc.perform(put(path(id) + "/" + task).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+        }
+        String update = "{\"title\":\"Changed\",\"owner\":\"HR\"}";
+        mvc.perform(put(path(other) + "/" + task).contentType(MediaType.APPLICATION_JSON).content(update))
+            .andExpect(status().isNotFound());
+        mvc.perform(put(path(id) + "/999999").contentType(MediaType.APPLICATION_JSON).content(update))
+            .andExpect(status().isNotFound());
+        mvc.perform(get(path(id) + "/" + task)).andExpect(jsonPath("$.title").value("Original"))
+            .andExpect(jsonPath("$.owner").value("IT team")).andExpect(jsonPath("$.dueOn").value("2026-12-01"));
+    }
 }

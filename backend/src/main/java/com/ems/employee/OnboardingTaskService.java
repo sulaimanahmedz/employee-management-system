@@ -37,10 +37,21 @@ public class OnboardingTaskService {
     public OnboardingTaskResponse create(Long employeeId, OnboardingTaskRequest request) {
         return OnboardingTaskResponse.from(tasks.saveAndFlush(new OnboardingTask(employee(employeeId), request)));
     }
+    private OnboardingTask lockedTask(Long employeeId, Long taskId) {
+        return tasks.findForUpdate(taskId, employeeId).orElseThrow(() ->
+            new ResponseStatusException(HttpStatus.NOT_FOUND, "Onboarding task not found"));
+    }
+    @Transactional
+    public OnboardingTaskResponse update(Long employeeId, Long taskId, OnboardingTaskRequest request) {
+        employee(employeeId);
+        var task = lockedTask(employeeId, taskId);
+        task.updateDetails(request);
+        return OnboardingTaskResponse.from(tasks.saveAndFlush(task));
+    }
     @Transactional
     public OnboardingTaskResponse complete(Long employeeId, Long taskId, boolean completed) {
         employee(employeeId);
-        var task = task(employeeId, taskId); task.setCompleted(completed);
+        var task = lockedTask(employeeId, taskId); task.setCompleted(completed);
         return OnboardingTaskResponse.from(tasks.saveAndFlush(task));
     }
     @Transactional

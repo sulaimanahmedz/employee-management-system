@@ -151,3 +151,5 @@ Each profile has a checklist with a required task title (up to 150 characters), 
 - `PUT /api/v1/employees/{id}/onboarding-tasks/{taskId}/completion`: `{ "completed": true }` or `false`; idempotently sets completion. Missing completion is invalid.
 
 Missing employees or tasks (including another employee's task) return 404. Invalid input returns 400. Templates, identity-based assignment, reminders, edit-conflict detection and offboarding workflows remain future work.
+
+Checklist tasks can also be edited using **Edit**: correct the title, owner label or due date and choose **Save task changes**. Cancel asks before discarding changed fields; failed saves retain the draft. Clearing the date removes it. Completion is preserved. `PUT /api/v1/employees/{id}/onboarding-tasks/{taskId}` accepts the same detail fields as creation and returns the saved task. Detail and completion updates lock the task row so they do not overwrite each other's fields; edits to the same details remain last-write-wins.
