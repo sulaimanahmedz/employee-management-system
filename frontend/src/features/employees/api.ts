@@ -15,7 +15,8 @@ export const updateEmployee = (id: number, employee: EmployeeInput) =>
   });
 
 export function searchEmployees(filters: DirectoryFilters, page: number, signal?: AbortSignal) {
-  const params = new URLSearchParams({ q: filters.q, page: String(page), size: String(filters.size) });
+  const params = new URLSearchParams({ q: filters.q, page: String(page), size: String(filters.size),
+    sortBy: filters.sortBy, direction: filters.direction });
   if (filters.status) params.set('status', filters.status);
   return api<EmployeeDirectory>(`/api/v1/employees/directory?${params}`, { signal });
 }

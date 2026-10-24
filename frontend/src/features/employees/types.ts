@@ -21,10 +21,14 @@ export interface EmployeeDirectory {
   departments: number;
 }
 
+export type DirectorySort = 'id' | 'name' | 'department' | 'jobTitle';
+
 export interface DirectoryFilters {
   q: string;
   status: '' | Employee['status'];
   size: number;
+  sortBy: DirectorySort;
+  direction: 'asc' | 'desc';
 }
 
 export interface EmploymentHistoryPage {

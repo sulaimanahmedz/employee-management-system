@@ -24,8 +24,10 @@ public class EmployeeController {
             @RequestParam(defaultValue = "") String q,
             @RequestParam(required = false) EmployeeStatus status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return service.directory(q, status, page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+        return service.directory(q, status, page, size, sortBy, direction);
     }
     @GetMapping("/{id}")
     public EmployeeResponse get(@PathVariable Long id) { return service.get(id); }
