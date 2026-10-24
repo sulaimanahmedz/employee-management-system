@@ -14,6 +14,10 @@ public class EmployeeDocumentController {
     public EmployeeDocumentController(EmployeeDocumentService service) { this.service = service; }
     @GetMapping
     public List<DocumentResponse> list(@PathVariable Long employeeId) { return service.list(employeeId); }
+    @GetMapping("/page")
+    public DocumentResponse.Page page(@PathVariable Long employeeId, @RequestParam(defaultValue = "0") int page) {
+        return service.page(employeeId, page);
+    }
     @PostMapping
     public ResponseEntity<DocumentResponse> create(@PathVariable Long employeeId, @Valid @RequestBody DocumentRequest request) {
         var saved = service.create(employeeId, request);

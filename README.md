@@ -178,3 +178,7 @@ The collection GET accepts optional `status=PENDING|CANCELLED`, `from=YYYY-MM-DD
 ### Edit document metadata
 
 Choose **Edit** beside a document, correct its name, category or expiry date, then **Save metadata changes**. Clearing the date removes the expiry. Cancel asks before discarding changed fields; failed saves retain the draft. Removal is disabled during editing. `PUT /api/v1/employees/{employeeId}/documents/{documentId}` accepts the same validated fields as creation and returns the updated record with its original ID. Missing or cross-employee records return 404. Concurrent detail edits remain last-write-wins; file contents and edit history are not included. Validation results are recorded in the feature PR before merge.
+
+### Document register pages
+
+The profile loads 10 document records at a time, newest first, with Previous/Next controls and a total count. Adding returns to the first page, editing preserves the page, and removal returns from an empty last page. Page navigation is disabled while editing. `GET /api/v1/employees/{id}/documents/page?page=0` returns `items`, `page`, `totalPages` and `totalElements`. Page must be nonnegative and its offset must fit a signed integer; invalid pages return 400 and missing employees return 404. Out-of-range pages return empty items with totals. The original collection GET retains its array response for compatibility. Execution validation is recorded in the feature PR.

@@ -98,4 +98,20 @@ class EmployeeDocumentApiTest {
             .andExpect(jsonPath("$.category").value("CONTRACT"));
         assertEquals(1, documents.count());
     }
+    @Test void paginatesDocumentsWithoutChangingLegacyList() throws Exception {
+        long owner = employee("paging@example.com"), other = employee("paging-other@example.com");
+        for (int i = 0; i < 11; i++) documents.saveAndFlush(new EmployeeDocument(employees.findById(owner).orElseThrow(),
+            new DocumentRequest("Document " + i, EmployeeDocument.Category.OTHER, null)));
+        mvc.perform(get(path(owner) + "/page")).andExpect(status().isOk())
+            .andExpect(jsonPath("$.items.length()").value(10)).andExpect(jsonPath("$.totalElements").value(11))
+            .andExpect(jsonPath("$.totalPages").value(2)).andExpect(jsonPath("$.items[0].name").value("Document 10"));
+        mvc.perform(get(path(owner) + "/page?page=1")).andExpect(jsonPath("$.items.length()").value(1))
+            .andExpect(jsonPath("$.items[0].name").value("Document 0"));
+        mvc.perform(get(path(owner) + "/page?page=99")).andExpect(jsonPath("$.items.length()").value(0));
+        mvc.perform(get(path(other) + "/page")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(owner))).andExpect(jsonPath("$.length()").value(11));
+        for (String page : new String[] {"-1", "2147483647", "invalid"})
+            mvc.perform(get(path(owner) + "/page?page=" + page)).andExpect(status().isBadRequest());
+        mvc.perform(get(path(Long.MAX_VALUE) + "/page")).andExpect(status().isNotFound());
+    }
 }
