@@ -140,3 +140,14 @@ Development now uses `feature/<short-name>` branches. Each completed feature is 
 Profiles show a read-only, paginated employment timeline, newest first. Creating an employee records their initial department, job title and status. Saving a change to any of these fields appends a snapshot in the same transaction; name/email-only or unchanged saves do not add events. Existing employees get a `BASELINE` of their previous details on their next successful save, followed by a `CHANGED` event if applicable. No past dates are invented.
 
 `GET /api/v1/employees/{id}/history?page=0&size=10` returns `items`, `page`, `size`, `totalElements` and `totalPages`. Page must be nonnegative, size 1–100, and offset must fit a signed integer. Entries include `id`, `recordedAt` (UTC instant), `kind` (`CREATED`, `BASELINE`, `CHANGED`), `department`, `jobTitle` and `status`. Missing employees return 404. Entries are snapshots at save time, not effective-dated employment records or a compliance audit log. The UI formats timestamps in the viewer's local timezone. History is deleted with its employee. Actor attribution and retention controls require future identity/audit work.
+
+## Onboarding checklist
+
+Each profile has a checklist with a required task title (up to 150 characters), required owner label (up to 100), and optional ISO due date. Add tasks, mark them complete, reopen them or remove them with confirmation. Completion totals include all pages; lists show 10 tasks per page, newest first. Owner labels are descriptive text, not authenticated assignments, and no notification is sent. Past due dates are allowed. Checklist completion does not change employee status. Tasks are deleted with their employee.
+
+- `GET /api/v1/employees/{id}/onboarding-tasks?page=0`: returns `items`, `page`, `totalPages`, `totalElements`, `completedTasks`. Nonnegative page and signed-integer offset required.
+- `POST` to the collection: `{ "title": "Prepare laptop", "owner": "IT team", "dueOn": "2026-12-01" }`; creates a pending task and returns 201/Location.
+- `GET` or `DELETE /api/v1/employees/{id}/onboarding-tasks/{taskId}`: retrieve/remove an employee-scoped task.
+- `PUT /api/v1/employees/{id}/onboarding-tasks/{taskId}/completion`: `{ "completed": true }` or `false`; idempotently sets completion. Missing completion is invalid.
+
+Missing employees or tasks (including another employee's task) return 404. Invalid input returns 400. Templates, identity-based assignment, reminders, edit-conflict detection and offboarding workflows remain future work.
