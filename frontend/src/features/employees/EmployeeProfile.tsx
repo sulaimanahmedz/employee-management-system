@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import LeaveRequests from './LeaveRequests';
 import OnboardingTasks from './OnboardingTasks';
 import EmploymentHistory from './EmploymentHistory';
 import EmployeeDocuments from './EmployeeDocuments';
@@ -156,6 +157,7 @@ export default function EmployeeProfile({ employeeId, onBack, onSaved }: Props) 
         {dirty && <p className="muted">You have unsaved changes.</p>}
       </form>}
     </div>
+    {!loading && employee && !editing && <LeaveRequests key={employee.id} employeeId={employee.id} />}
     {!loading && employee && !editing && <OnboardingTasks key={employee.id} employeeId={employee.id} />}
     {!loading && employee && !editing && <EmploymentHistory key={employee.id} employeeId={employee.id} />}
     {!loading && employee && !editing && <EmployeeDocuments key={employee.id} employeeId={employee.id} />}

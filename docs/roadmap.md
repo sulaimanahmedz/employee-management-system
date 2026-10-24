@@ -85,3 +85,10 @@ The goal is an employee management application spanning the employee lifecycle.
 - Kept overall checklist progress independent of filters and refreshed page position after mutations.
 - Added regression tests for filtered pagination, cross-employee isolation, global totals and invalid filter values.
 - Validation commands and exact source commit are recorded in the feature PR before merge.
+
+### October 24, 2026 — Leave request register
+- Added employee-scoped annual/personal/unpaid full-day requests, inclusive date validation, pending-overlap prevention and idempotent cancellation.
+- Added paginated profile history, confirmation before cancellation and draft retention after failures.
+- Added API tests for calendar-day semantics, overlap boundaries, cancellation/re-request, scoping, pagination, invalid input and employee deletion.
+- Execution validation commands/results and head/base SHAs are recorded in the feature PR before merge.
+- Next: authenticated approval roles, entitlement balances, organization holiday rules and half-day policies; no policy assumptions or status automation introduced.
