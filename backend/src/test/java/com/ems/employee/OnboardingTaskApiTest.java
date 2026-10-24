@@ -90,7 +90,7 @@ class OnboardingTaskApiTest {
         mvc.perform(put(path(id) + "/" + task + "/completion").contentType(MediaType.APPLICATION_JSON)
             .content("{\"completed\":true}")).andExpect(status().isOk());
         mvc.perform(put(path(id) + "/" + task).contentType(MediaType.APPLICATION_JSON)
-            .content("{\"title\":\"  Updated task  ",\"owner\":\"  HR team  ",\"dueOn\":null}"))
+            .content(json.writeValueAsString(Map.of("title", "  Updated task  ", "owner", "  HR team  "))))
             .andExpect(status().isOk()).andExpect(jsonPath("$.title").value("Updated task"))
             .andExpect(jsonPath("$.owner").value("HR team")).andExpect(jsonPath("$.dueOn").isEmpty())
             .andExpect(jsonPath("$.completed").value(true));
@@ -104,7 +104,7 @@ class OnboardingTaskApiTest {
     @Test void rejectedEditsLeaveTaskUnchanged() throws Exception {
         long id = employee("edit-owner@example.com"), other = employee("edit-other@example.com");
         long task = add(id, "Original");
-        for (String body : new String[] {"{}", "{\"title\":\" ",\"owner\":\"HR\"}",
+        for (String body : new String[] {"{}", json.writeValueAsString(Map.of("title", " ", "owner", "HR")),
             "{\"title\":\"Changed\",\"owner\":\"HR\",\"dueOn\":\"invalid\"}"}) {
             mvc.perform(put(path(id) + "/" + task).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest());
