@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
 type LeaveType = 'ANNUAL' | 'PERSONAL' | 'UNPAID';
 interface LeaveRequest { id: number; type: LeaveType; startOn: string; endOn: string; status: 'PENDING' | 'CANCELLED'; calendarDays: number }
 interface LeavePage { items: LeaveRequest[]; page: number; totalPages: number; totalElements: number }
-const emptyFilter = { status: '', from: '', to: '' };
+const emptyFilter = { status: '', from: '', to: '', type: '' };
 const labels: Record<LeaveType, string> = { ANNUAL: 'Annual', PERSONAL: 'Personal', UNPAID: 'Unpaid' };
 
 export default function LeaveRequests({ employeeId }: { employeeId: number }) {
@@ -68,6 +68,9 @@ export default function LeaveRequests({ employeeId }: { employeeId: number }) {
     <form onSubmit={applyFilters} aria-label="Filter leave requests">
       <fieldset disabled={busy} className="profile-fieldset"><legend>Filter leave requests</legend>
         <div className="form-grid">
+          <label>Filter leave type<select value={filterDraft.type} onChange={event => setFilterDraft({ ...filterDraft, type: event.target.value })}>
+            <option value="">All leave types</option>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select></label>
           <label>Request status<select value={filterDraft.status} onChange={event => setFilterDraft({ ...filterDraft, status: event.target.value })}>
             <option value="">All statuses</option><option value="PENDING">Pending</option><option value="CANCELLED">Cancelled</option>
           </select></label>
@@ -79,7 +82,7 @@ export default function LeaveRequests({ employeeId }: { employeeId: number }) {
         <button type="button" onClick={() => { setFilterDraft(emptyFilter); setFilters(emptyFilter); setPage(0); setNotice(''); }}>Clear leave filters</button>
       </fieldset>
     </form>
-    {(filters.status || filters.from || filters.to) && <p role="status">Showing {filters.status ? filters.status.toLowerCase() : 'all'} requests overlapping {filters.from || 'any start date'} through {filters.to || 'any end date'}. New requests may be outside these filters.</p>}
+    {(filters.status || filters.from || filters.to || filters.type) && <p role="status">Showing {filters.status ? filters.status.toLowerCase() : 'all'} {filters.type ? labels[filters.type as LeaveType].toLowerCase() : 'leave'} requests overlapping {filters.from || 'any start date'} through {filters.to || 'any end date'}. New requests may be outside these filters.</p>}
     {loading ? <p role="status">Loading leave requests…</p> : data && <>
       <p>{data.totalElements} matching leave requests</p>
       {data.items.length === 0 ? <p>No leave requests match the applied filters.</p> : <ul>{data.items.map(request => <li key={request.id}>

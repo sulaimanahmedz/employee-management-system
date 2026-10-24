@@ -33,13 +33,14 @@ public class LeaveRequestService {
         return requests.findByIdAndEmployeeId(requestId, employeeId).orElseThrow(() ->
             new ResponseStatusException(HttpStatus.NOT_FOUND, "Leave request not found"));
     }
-    public LeaveRequestResponse.Page list(Long employeeId, int page, LeaveRequest.Status status, LocalDate from, LocalDate to) {
+    public LeaveRequestResponse.Page list(Long employeeId, int page, LeaveRequest.Status status, LocalDate from, LocalDate to, LeaveRequest.Type type) {
         requireEmployee(employeeId);
         if (page < 0 || (long) page * 10 > Integer.MAX_VALUE)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid leave request page");
         if (from != null && to != null && to.isBefore(from))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Filter end date must be on or after filter start date");
         Specification<LeaveRequest> filter = (root, query, cb) -> cb.equal(root.get("employee").get("id"), employeeId);
+        if (type != null) filter = filter.and((root, query, cb) -> cb.equal(root.get("type"), type));
         if (status != null) filter = filter.and((root, query, cb) -> cb.equal(root.get("status"), status));
         if (from != null) filter = filter.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("endOn"), from));
         if (to != null) filter = filter.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("startOn"), to));
