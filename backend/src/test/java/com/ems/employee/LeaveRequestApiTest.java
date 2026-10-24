@@ -81,4 +81,24 @@ class LeaveRequestApiTest {
             mvc.perform(get(path(id) + "?page=" + page)).andExpect(status().isBadRequest());
         mvc.perform(put(path(id) + "/999999/cancellation")).andExpect(status().isNotFound());
     }
+    @Test void filtersByStatusAndInclusiveOverlappingPeriodBeforePagination() throws Exception {
+        long id = employee("filter@example.com"), other = employee("filter-other@example.com");
+        long cancelled = add(id, "2026-11-28", "2026-12-03");
+        mvc.perform(put(path(id) + "/" + cancelled + "/cancellation")).andExpect(status().isOk());
+        for (int day = 1; day <= 11; day++) add(id, "2026-12-%02d".formatted(day), "2026-12-%02d".formatted(day));
+        add(other, "2026-12-01", "2026-12-01");
+        mvc.perform(get(path(id) + "?status=PENDING")).andExpect(jsonPath("$.totalElements").value(11))
+            .andExpect(jsonPath("$.totalPages").value(2)).andExpect(jsonPath("$.items.length()").value(10));
+        mvc.perform(get(path(id) + "?status=PENDING&page=1")).andExpect(jsonPath("$.items.length()").value(1));
+        mvc.perform(get(path(id) + "?status=CANCELLED&from=2026-12-03&to=2026-12-03"))
+            .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.items[0].id").value(cancelled));
+        mvc.perform(get(path(id) + "?from=2026-12-03&to=2026-12-03")).andExpect(jsonPath("$.totalElements").value(2));
+        mvc.perform(get(path(id) + "?from=2026-12-11")).andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get(path(id) + "?to=2026-11-28")).andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get(path(id) + "?status=CANCELLED&from=2026-12-04")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(other) + "?status=CANCELLED")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(id))).andExpect(jsonPath("$.totalElements").value(12));
+        for (String query : new String[] {"status=UNKNOWN", "from=invalid", "to=invalid", "from=2026-12-02&to=2026-12-01"})
+            mvc.perform(get(path(id) + "?" + query)).andExpect(status().isBadRequest());
+    }
 }

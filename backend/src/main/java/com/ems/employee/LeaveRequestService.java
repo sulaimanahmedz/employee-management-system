@@ -1,5 +1,7 @@
 package com.ems.employee;
 
+import java.time.LocalDate;
+import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.PageRequest;
@@ -31,11 +33,17 @@ public class LeaveRequestService {
         return requests.findByIdAndEmployeeId(requestId, employeeId).orElseThrow(() ->
             new ResponseStatusException(HttpStatus.NOT_FOUND, "Leave request not found"));
     }
-    public LeaveRequestResponse.Page list(Long employeeId, int page) {
+    public LeaveRequestResponse.Page list(Long employeeId, int page, LeaveRequest.Status status, LocalDate from, LocalDate to) {
         requireEmployee(employeeId);
         if (page < 0 || (long) page * 10 > Integer.MAX_VALUE)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid leave request page");
-        var result = requests.findByEmployeeId(employeeId, PageRequest.of(page, 10, Sort.by("id").descending()));
+        if (from != null && to != null && to.isBefore(from))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Filter end date must be on or after filter start date");
+        Specification<LeaveRequest> filter = (root, query, cb) -> cb.equal(root.get("employee").get("id"), employeeId);
+        if (status != null) filter = filter.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        if (from != null) filter = filter.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("endOn"), from));
+        if (to != null) filter = filter.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("startOn"), to));
+        var result = requests.findAll(filter, PageRequest.of(page, 10, Sort.by("id").descending()));
         return new LeaveRequestResponse.Page(result.getContent().stream().map(LeaveRequestResponse::from).toList(),
             page, result.getTotalPages(), result.getTotalElements());
     }
