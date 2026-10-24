@@ -18,7 +18,8 @@ The goal is an employee management application spanning the employee lifecycle.
 
 - Implemented in source: profile viewing and editing (October 21, 2026); execution validation pending.
 - Implemented in source: server-side search, status filtering and pagination (October 24, 2026); execution validation pending.
-- Next: employment history and document metadata.
+- Implemented in source: document metadata register (October 24, 2026); validation status is recorded in its feature PR.
+- Next: employment history.
 - Onboarding and offboarding workflows with assigned tasks.
 - Employee self-service and manager views.
 
@@ -50,3 +51,10 @@ The goal is an employee management application spanning the employee lifecycle.
 - Preserved the original list endpoint for compatibility.
 - Added integration test source and browser acceptance instructions.
 - Validation: static source review only; no downloads, builds, compilation, tests or application runs.
+
+### October 24, 2026 — Employee document metadata
+- Added per-employee document names, categories and optional expiry dates with list/add/remove UI.
+- Added scoped REST endpoints, input validation, missing-record handling and deletion cleanup.
+- Added integration tests for metadata lifecycle, cross-employee isolation, invalid input and employee deletion.
+- File uploads and document contents remain out of scope; authentication and authorization remain prerequisites for production use.
+- Execution validation is recorded in the feature pull request; do not consider the feature validated until those checks pass.

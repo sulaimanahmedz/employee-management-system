@@ -101,7 +101,7 @@ mvn verify
 java -jar target/employee-management-api-0.1.0-SNAPSHOT.jar
 ```
 
-Backend test source covers the employee lifecycle, full profile updates, invalid input, duplicate-email rollback, retaining an employee's own email, missing profiles and health. GitHub Actions provides these checks through manual dispatch only. Commits and pull requests do not trigger builds; dependency downloads and application validation are reserved for the weekly maintenance task.
+Backend test source covers the employee lifecycle, full profile updates, invalid input, duplicate-email rollback, retaining an employee's own email, missing profiles and health. GitHub Actions provides these checks through manual dispatch only. Commits and pull requests do not trigger builds; dependency downloads and application validation now run after each completed feature before merge.
 
 ## Next development
 
@@ -126,3 +126,11 @@ Example: `GET /api/v1/employees/directory?q=engineering&status=ACTIVE&page=0&siz
 - Existing `GET /api/v1/employees` keeps its array response for compatibility.
 
 Added October 24, 2026. Static source review only; compilation, tests and browser execution are pending the weekly check. See [directory acceptance checks](docs/directory-validation.md).
+
+## Document register
+
+Each employee profile includes a document register for names (1–150 characters), categories (`CONTRACT`, `CERTIFICATE`, `OTHER`) and optional ISO expiry dates. Add metadata or remove an entry with confirmation. This does not upload files, store document numbers, or provide access control. Historical expiry dates are allowed. Entries are newest first and are removed when their employee is deleted.
+
+`GET` and `POST /api/v1/employees/{employeeId}/documents` list/create metadata; `GET` and `DELETE /api/v1/employees/{employeeId}/documents/{documentId}` retrieve/remove one entry. Missing employees or a document belonging to another employee return 404. Invalid metadata returns 400. No dependencies were added.
+
+Development now uses `feature/<short-name>` branches. Each completed feature is compiled and validated before its PR is merged into main; this replaces the earlier weekly-only validation policy. GitHub Actions remains manual-only.
