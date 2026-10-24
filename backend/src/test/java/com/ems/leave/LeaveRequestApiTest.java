@@ -125,4 +125,61 @@ class LeaveRequestApiTest {
         mvc.perform(get(path(id) + "?type=INVALID")).andExpect(status().isBadRequest());
         mvc.perform(get(path(id))).andExpect(jsonPath("$.totalElements").value(13));
     }
+
+    @Test void editsPendingDetailsWithoutSelfOverlapAndRefreshesFilters() throws Exception {
+        long id = employee("edit@example.com"), request = add(id, "2026-12-01", "2026-12-03");
+        String url = path(id) + "/" + request;
+        mvc.perform(put(url).contentType(MediaType.APPLICATION_JSON).content(input("2026-12-01", "2026-12-03")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(request));
+        String changed = json.writeValueAsString(Map.of("type", "UNPAID", "startOn", "2026-12-02", "endOn", "2026-12-05"));
+        mvc.perform(put(url).contentType(MediaType.APPLICATION_JSON).content(changed))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.type").value("UNPAID"))
+            .andExpect(jsonPath("$.calendarDays").value(4)).andExpect(jsonPath("$.status").value("PENDING"));
+        mvc.perform(get(url)).andExpect(jsonPath("$.startOn").value("2026-12-02"))
+            .andExpect(jsonPath("$.endOn").value("2026-12-05"));
+        mvc.perform(get(path(id) + "?type=ANNUAL")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(id) + "?type=UNPAID&from=2026-12-05")).andExpect(jsonPath("$.totalElements").value(1));
+        add(id, "2026-12-01", "2026-12-01"); // moving dates releases the old day
+        assertEquals(EmployeeStatus.ACTIVE, employees.findById(id).orElseThrow().getStatus());
+    }
+
+    @Test void rejectsEditOverlapsAndCancelledEditsWithoutChangingStoredDetails() throws Exception {
+        long id = employee("edit-conflict@example.com"), other = employee("edit-other@example.com");
+        long request = add(id, "2026-12-01", "2026-12-02");
+        long blocker = add(id, "2026-12-10", "2026-12-12");
+        String url = path(id) + "/" + request;
+        for (String[] dates : new String[][] {{"2026-12-09", "2026-12-10"}, {"2026-12-12", "2026-12-14"},
+                {"2026-12-11", "2026-12-11"}, {"2026-12-01", "2026-12-31"}}) {
+            mvc.perform(put(url).contentType(MediaType.APPLICATION_JSON).content(input(dates[0], dates[1])))
+                .andExpect(status().isConflict());
+        }
+        mvc.perform(get(url)).andExpect(jsonPath("$.startOn").value("2026-12-01"))
+            .andExpect(jsonPath("$.endOn").value("2026-12-02"));
+        add(other, "2026-12-13", "2026-12-13");
+        mvc.perform(put(url).contentType(MediaType.APPLICATION_JSON).content(input("2026-12-13", "2026-12-13")))
+            .andExpect(status().isOk()); // adjacent dates and another employee do not conflict
+        mvc.perform(put(path(id) + "/" + blocker + "/cancellation")).andExpect(status().isOk());
+        mvc.perform(put(url).contentType(MediaType.APPLICATION_JSON).content(input("2026-12-10", "2026-12-12")))
+            .andExpect(status().isOk()); // cancelled records do not block edits
+        mvc.perform(put(url + "/cancellation")).andExpect(status().isOk());
+        mvc.perform(put(url).contentType(MediaType.APPLICATION_JSON).content(input("2026-12-20", "2026-12-20")))
+            .andExpect(status().isConflict());
+        mvc.perform(get(url)).andExpect(jsonPath("$.status").value("CANCELLED"))
+            .andExpect(jsonPath("$.startOn").value("2026-12-10"));
+    }
+
+    @Test void validatesEditInputAndEmployeeScope() throws Exception {
+        long id = employee("edit-validation@example.com"), other = employee("edit-scope@example.com");
+        long request = add(id, "2026-12-01", "2026-12-01");
+        String url = path(id) + "/" + request;
+        for (String body : new String[] {"{}", input("2026-12-02", "2026-12-01"), input("invalid", "2026-12-01"),
+                json.writeValueAsString(Map.of("type", "UNKNOWN", "startOn", "2026-12-01", "endOn", "2026-12-01"))}) {
+            mvc.perform(put(url).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        }
+        for (String missing : new String[] {path(other) + "/" + request, path(id) + "/999999", path(999999L) + "/" + request}) {
+            mvc.perform(put(missing).contentType(MediaType.APPLICATION_JSON).content(input("2026-12-02", "2026-12-02")))
+                .andExpect(status().isNotFound());
+        }
+        mvc.perform(get(url)).andExpect(jsonPath("$.startOn").value("2026-12-01"));
+    }
 }

@@ -18,6 +18,7 @@ export default function LeaveRequests({ employeeId }: { employeeId: number }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [editing, setEditing] = useState<LeaveRequest | null>(null);
   const [type, setType] = useState<LeaveType>('ANNUAL');
   const [startOn, setStartOn] = useState('');
   const [endOn, setEndOn] = useState('');
@@ -37,12 +38,15 @@ export default function LeaveRequests({ employeeId }: { employeeId: number }) {
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [path, page, reload, filters]);
-  async function mutate(action: () => Promise<unknown>, message: string, created = false) {
+  async function mutate(action: () => Promise<unknown>, message: string, savedDetails = false) {
     if (pending.current) return;
     pending.current = true; setBusy(true); setError(''); setNotice('');
     try {
       await action(); setNotice(message);
-      if (created) { setStartOn(''); setEndOn(''); setPage(0); }
+      if (savedDetails) {
+        if (!editing) setPage(0);
+        setEditing(null); setType('ANNUAL'); setStartOn(''); setEndOn('');
+      }
       setReload(value => value + 1);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save leave request.'); }
     finally { pending.current = false; setBusy(false); }
@@ -54,11 +58,25 @@ export default function LeaveRequests({ employeeId }: { employeeId: number }) {
     }
     setFilters({ ...filterDraft }); setPage(0); setNotice('');
   }
+  function beginEdit(request: LeaveRequest) {
+    if (pending.current) return;
+    if ((startOn || endOn || type !== 'ANNUAL') && !window.confirm('Discard the current leave draft?')) return;
+    setEditing(request); setType(request.type); setStartOn(request.startOn); setEndOn(request.endOn);
+    setError(''); setNotice('');
+  }
+  function cancelEdit() {
+    if (pending.current) return;
+    const changed = editing && (type !== editing.type || startOn !== editing.startOn || endOn !== editing.endOn);
+    if (changed && !window.confirm('Discard your unsaved leave changes?')) return;
+    setEditing(null); setType('ANNUAL'); setStartOn(''); setEndOn(''); setError('');
+  }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!startOn || !endOn) return;
     if (endOn < startOn) { setError('End date must be on or after start date.'); return; }
-    void mutate(() => api<LeaveRequest>(path, { method: 'POST', body: JSON.stringify({ type, startOn, endOn }) }), 'Leave request recorded as pending.', true);
+    void mutate(() => api<LeaveRequest>(editing ? `${path}/${editing.id}` : path, {
+      method: editing ? 'PUT' : 'POST', body: JSON.stringify({ type, startOn, endOn })
+    }), editing ? 'Leave request updated.' : 'Leave request recorded as pending.', true);
   }
   return <section className="panel" aria-labelledby="leave-heading">
     <h2 id="leave-heading">Leave requests</h2>
@@ -66,7 +84,7 @@ export default function LeaveRequests({ employeeId }: { employeeId: number }) {
     {error && <p role="alert" className="error">{error} <button type="button" disabled={busy || loading} onClick={() => setReload(value => value + 1)}>Refresh leave requests</button></p>}
     {notice && <p role="status">{notice}</p>}
     <form onSubmit={applyFilters} aria-label="Filter leave requests">
-      <fieldset disabled={busy} className="profile-fieldset"><legend>Filter leave requests</legend>
+      <fieldset disabled={busy || editing !== null} className="profile-fieldset"><legend>Filter leave requests</legend>
         <div className="form-grid">
           <label>Filter leave type<select value={filterDraft.type} onChange={event => setFilterDraft({ ...filterDraft, type: event.target.value })}>
             <option value="">All leave types</option>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -82,25 +100,26 @@ export default function LeaveRequests({ employeeId }: { employeeId: number }) {
         <button type="button" onClick={() => { setFilterDraft(emptyFilter); setFilters(emptyFilter); setPage(0); setNotice(''); }}>Clear leave filters</button>
       </fieldset>
     </form>
-    {(filters.status || filters.from || filters.to || filters.type) && <p role="status">Showing {filters.status ? filters.status.toLowerCase() : 'all'} {filters.type ? labels[filters.type as LeaveType].toLowerCase() : 'leave'} requests overlapping {filters.from || 'any start date'} through {filters.to || 'any end date'}. New requests may be outside these filters.</p>}
+    {(filters.status || filters.from || filters.to || filters.type) && <p role="status">Showing {filters.status ? filters.status.toLowerCase() : 'all'} {filters.type ? labels[filters.type as LeaveType].toLowerCase() : 'leave'} requests overlapping {filters.from || 'any start date'} through {filters.to || 'any end date'}. New or edited requests may be outside these filters.</p>}
     {loading ? <p role="status">Loading leave requests…</p> : data && <>
       <p>{data.totalElements} matching leave requests</p>
       {data.items.length === 0 ? <p>No leave requests match the applied filters.</p> : <ul>{data.items.map(request => <li key={request.id}>
         <strong>{labels[request.type]} leave</strong> — <time dateTime={request.startOn}>{request.startOn}</time> to <time dateTime={request.endOn}>{request.endOn}</time>
         {' '}({request.calendarDays} calendar {request.calendarDays === 1 ? 'day' : 'days'}) — {request.status === 'PENDING' ? 'Pending' : 'Cancelled'}{' '}
-        {request.status === 'PENDING' && <button type="button" disabled={busy} aria-label={`Cancel leave request starting ${request.startOn}`} onClick={() => {
+        {request.status === 'PENDING' && <button type="button" disabled={busy || editing !== null} aria-label={`Edit leave request starting ${request.startOn}`} onClick={() => beginEdit(request)}>Edit request</button>}{' '}
+        {request.status === 'PENDING' && <button type="button" disabled={busy || editing !== null} aria-label={`Cancel leave request starting ${request.startOn}`} onClick={() => {
           if (window.confirm(`Cancel leave from ${request.startOn} to ${request.endOn}?`))
             void mutate(() => api<LeaveRequest>(`${path}/${request.id}/cancellation`, { method: 'PUT' }), 'Leave request cancelled.');
         }}>Cancel request</button>}
       </li>)}</ul>}
       {data.totalPages > 1 && <nav aria-label="Leave request pages">
-        <button type="button" disabled={busy || page === 0} onClick={() => setPage(value => value - 1)}>Previous requests</button>
+        <button type="button" disabled={busy || editing !== null || page === 0} onClick={() => setPage(value => value - 1)}>Previous requests</button>
         <span> Page {page + 1} of {data.totalPages} </span>
-        <button type="button" disabled={busy || page + 1 >= data.totalPages} onClick={() => setPage(value => value + 1)}>Next requests</button>
+        <button type="button" disabled={busy || editing !== null || page + 1 >= data.totalPages} onClick={() => setPage(value => value + 1)}>Next requests</button>
       </nav>}
     </>}
-    <form onSubmit={submit} aria-label="Record leave request">
-      <fieldset disabled={busy || loading} className="profile-fieldset"><legend>Record leave request</legend>
+    <form onSubmit={submit} aria-label={editing ? "Edit leave request" : "Record leave request"}>
+      <fieldset disabled={busy || loading} className="profile-fieldset"><legend>{editing ? "Edit pending leave request" : "Record leave request"}</legend>
         <div className="form-grid">
           <label>Leave type<select value={type} onChange={event => setType(event.target.value as LeaveType)}>
             {Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -108,7 +127,8 @@ export default function LeaveRequests({ employeeId }: { employeeId: number }) {
           <label>Start date<input type="date" required value={startOn} onChange={event => setStartOn(event.target.value)} /></label>
           <label>End date<input type="date" required min={startOn || undefined} value={endOn} onChange={event => setEndOn(event.target.value)} /></label>
         </div>
-        <button type="submit" disabled={!startOn || !endOn || endOn < startOn}>{busy ? 'Saving…' : 'Record request'}</button>
+        <button type="submit" disabled={!startOn || !endOn || endOn < startOn}>{busy ? 'Saving…' : editing ? 'Save leave changes' : 'Record request'}</button>{' '}
+        {editing && <button type="button" onClick={cancelEdit}>Cancel editing</button>}
       </fieldset>
     </form>
   </section>;

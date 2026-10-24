@@ -141,3 +141,10 @@ The goal is an employee management application spanning the employee lifecycle.
 - Preserved history writes in the employee transaction, database mappings and HTTP contracts; regrouped existing regression tests by feature.
 - Added package/dependency architecture checks and persistent coding standards in AGENTS.md.
 - Actual build, regression and runtime integration results with exact head/base SHAs are recorded in the refactor PR before merge.
+
+### October 25, 2026 — Correct pending leave requests
+- Added scoped pending-request editing for type and dates, preserving record identity and status.
+- Serialized edits with creation/cancellation and excluded the edited record from inclusive overlap checks; cancelled records cannot be changed.
+- Added UI edit/save/cancel with draft retention, discard confirmation and active-filter refresh.
+- Added regressions for unchanged/self-overlapping edits, collisions and rollback, cancellation, adjacent dates, employee scoping and invalid input.
+- Package/layer review, builds, tests and runtime results are recorded against exact head/base SHAs in the feature PR before merge.

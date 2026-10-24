@@ -34,6 +34,11 @@ public class LeaveRequestController {
         var request = service.create(employeeId, input);
         return ResponseEntity.created(URI.create("/api/v1/employees/" + employeeId + "/leave-requests/" + request.id())).body(request);
     }
+    @PutMapping("/{requestId}")
+    public LeaveRequestResponse update(@PathVariable Long employeeId, @PathVariable Long requestId,
+            @Valid @RequestBody LeaveRequestInput input) {
+        return service.update(employeeId, requestId, input);
+    }
     @PutMapping("/{requestId}/cancellation")
     public LeaveRequestResponse cancel(@PathVariable Long employeeId, @PathVariable Long requestId) {
         return service.cancel(employeeId, requestId);

@@ -30,7 +30,7 @@ public class LeaveRequestService {
     private void requireEmployee(Long id) {
         if (!employees.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found");
     }
-    // Serialize creation/cancellation for one employee, including the overlap check.
+    // Serialize creation/editing/cancellation for one employee, including the overlap check.
     private Employee lockEmployee(Long id) {
         var employee = entityManager.find(Employee.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (employee == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found");
@@ -68,6 +68,24 @@ public class LeaveRequestService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Dates overlap an existing pending leave request");
         return LeaveRequestResponse.from(requests.saveAndFlush(new LeaveRequest(employee, input.type(), input.startOn(), input.endOn())));
     }
+    @Transactional
+    public LeaveRequestResponse update(Long employeeId, Long requestId, LeaveRequestInput input) {
+        lockEmployee(employeeId);
+        var request = request(employeeId, requestId);
+        if (request.getStatus() != LeaveRequest.Status.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cancelled leave requests cannot be edited");
+        }
+        if (input.endOn().isBefore(input.startOn())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be on or after start date");
+        }
+        if (requests.existsByEmployeeIdAndIdNotAndStatusAndStartOnLessThanEqualAndEndOnGreaterThanEqual(
+                employeeId, requestId, LeaveRequest.Status.PENDING, input.endOn(), input.startOn())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Dates overlap an existing pending leave request");
+        }
+        request.updateDetails(input.type(), input.startOn(), input.endOn());
+        return LeaveRequestResponse.from(requests.saveAndFlush(request));
+    }
+
     @Transactional
     public LeaveRequestResponse cancel(Long employeeId, Long requestId) {
         lockEmployee(employeeId);
