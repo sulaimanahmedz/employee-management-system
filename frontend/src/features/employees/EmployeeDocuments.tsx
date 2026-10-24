@@ -8,6 +8,7 @@ const categories: Record<Category, string> = { CONTRACT: 'Contract', CERTIFICATE
 
 export default function EmployeeDocuments({ employeeId }: { employeeId: number }) {
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
+  const [editing, setEditing] = useState<DocumentMetadata | null>(null);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('CONTRACT');
   const [expiresOn, setExpiresOn] = useState('');
@@ -34,12 +35,23 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
     if (submitting.current || !name.trim()) return;
     submitting.current = true; setBusy(true); setError(''); setNotice('');
     try {
-      const saved = await api<DocumentMetadata>(path, { method: 'POST',
+      const saved = await api<DocumentMetadata>(editing ? `${path}/${editing.id}` : path, { method: editing ? 'PUT' : 'POST',
         body: JSON.stringify({ name: name.trim(), category, expiresOn: expiresOn || null }) });
-      setDocuments(current => [saved, ...current]);
-      setName(''); setExpiresOn(''); setNotice('Document metadata added.');
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to add document.'); }
+      setDocuments(current => editing ? current.map(item => item.id === saved.id ? saved : item) : [saved, ...current]);
+      setName(''); setExpiresOn(''); setCategory('CONTRACT'); setEditing(null);
+      setNotice(editing ? 'Document metadata updated.' : 'Document metadata added.');
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save document.'); }
     finally { submitting.current = false; setBusy(false); }
+  }
+  function beginEdit(document: DocumentMetadata) {
+    if ((name || expiresOn || category !== 'CONTRACT') && !window.confirm('Discard the current document draft?')) return;
+    setEditing(document); setName(document.name); setCategory(document.category); setExpiresOn(document.expiresOn ?? '');
+    setError(''); setNotice('');
+  }
+  function cancelEdit() {
+    const changed = editing && (name !== editing.name || category !== editing.category || expiresOn !== (editing.expiresOn ?? ''));
+    if (changed && !window.confirm('Discard your unsaved document changes?')) return;
+    setEditing(null); setName(''); setCategory('CONTRACT'); setExpiresOn(''); setError('');
   }
   async function remove(document: DocumentMetadata) {
     if (submitting.current || !window.confirm(`Remove metadata for "${document.name}"?`)) return;
@@ -62,13 +74,14 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
         {documents.map(document => <li key={document.id}>
           <strong>{document.name}</strong> — {categories[document.category]} — {document.expiresOn ?
             <>Expires <time dateTime={document.expiresOn}>{document.expiresOn}</time></> : 'No expiry date'}{' '}
-          <button type="button" disabled={busy} onClick={() => remove(document)}
+          <button type="button" disabled={busy} onClick={() => beginEdit(document)} aria-label={`Edit ${document.name}`}>Edit</button>{' '}
+          <button type="button" disabled={busy || editing !== null} onClick={() => remove(document)}
             aria-label={`Remove ${document.name}`}>Remove</button>
         </li>)}
       </ul>}
-    <form onSubmit={add} aria-label="Add document metadata">
+    <form onSubmit={add} aria-label={editing ? 'Edit document metadata' : 'Add document metadata'}>
       <fieldset disabled={busy || loading} className="profile-fieldset">
-        <legend>Add document metadata</legend>
+        <legend>{editing ? 'Edit document metadata' : 'Add document metadata'}</legend>
         <div className="form-grid">
           <label>Document name<input required maxLength={150} value={name} onChange={event => setName(event.target.value)} /></label>
           <label>Category<select value={category} onChange={event => setCategory(event.target.value as Category)}>
@@ -76,7 +89,8 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
           </select></label>
           <label>Expiry date (optional)<input type="date" value={expiresOn} onChange={event => setExpiresOn(event.target.value)} /></label>
         </div>
-        <button type="submit" disabled={!name.trim()}>{busy ? 'Saving…' : 'Add metadata'}</button>
+        <button type="submit" disabled={!name.trim()}>{busy ? 'Saving…' : editing ? 'Save metadata changes' : 'Add metadata'}</button>
+        {editing && <button type="button" onClick={cancelEdit}>Cancel metadata edit</button>}
       </fieldset>
     </form>
   </section>;

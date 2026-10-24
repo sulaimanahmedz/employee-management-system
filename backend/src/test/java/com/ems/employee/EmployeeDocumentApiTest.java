@@ -69,4 +69,33 @@ class EmployeeDocumentApiTest {
         mvc.perform(delete("/api/v1/employees/" + owner)).andExpect(status().isNoContent());
         assertEquals(0, documents.count());
     }
+    @Test void editsMetadataAndClearsExpiryWithoutCreatingAnotherRecord() throws Exception {
+        long owner = employee("edit@example.com");
+        long id = documents.saveAndFlush(new EmployeeDocument(employees.findById(owner).orElseThrow(),
+            new DocumentRequest("Original", EmployeeDocument.Category.CONTRACT, java.time.LocalDate.of(2027, 1, 1)))).getId();
+        String update = json.writeValueAsString(java.util.Map.of("name", "  Renewed certificate  ", "category", "CERTIFICATE"));
+        mvc.perform(put(path(owner) + "/" + id).contentType(MediaType.APPLICATION_JSON).content(update))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id))
+            .andExpect(jsonPath("$.name").value("Renewed certificate"))
+            .andExpect(jsonPath("$.category").value("CERTIFICATE")).andExpect(jsonPath("$.expiresOn").isEmpty());
+        mvc.perform(get(path(owner) + "/" + id)).andExpect(jsonPath("$.name").value("Renewed certificate"));
+        assertEquals(1, documents.count());
+    }
+    @Test void rejectsInvalidAndCrossEmployeeEditsWithoutChangingMetadata() throws Exception {
+        long owner = employee("edit-owner@example.com"), other = employee("edit-other@example.com");
+        long id = documents.saveAndFlush(new EmployeeDocument(employees.findById(owner).orElseThrow(),
+            new DocumentRequest("Original", EmployeeDocument.Category.CONTRACT, null))).getId();
+        for (String body : new String[] {"{}", json.writeValueAsString(java.util.Map.of("name", " ", "category", "OTHER")),
+            json.writeValueAsString(java.util.Map.of("name", "x".repeat(151), "category", "OTHER")),
+            json.writeValueAsString(java.util.Map.of("name", "Changed", "category", "INVALID")),
+            json.writeValueAsString(java.util.Map.of("name", "Changed", "category", "OTHER", "expiresOn", "invalid"))})
+            mvc.perform(put(path(owner) + "/" + id).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+        String update = json.writeValueAsString(java.util.Map.of("name", "Changed", "category", "OTHER"));
+        for (String url : new String[] {path(other) + "/" + id, path(owner) + "/999999", path(Long.MAX_VALUE) + "/" + id})
+            mvc.perform(put(url).contentType(MediaType.APPLICATION_JSON).content(update)).andExpect(status().isNotFound());
+        mvc.perform(get(path(owner) + "/" + id)).andExpect(jsonPath("$.name").value("Original"))
+            .andExpect(jsonPath("$.category").value("CONTRACT"));
+        assertEquals(1, documents.count());
+    }
 }
