@@ -128,3 +128,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Preserved undated records for category-only queries and displayed applied categories.
 - Added tests for combined filters, pagination, isolation, compatibility and invalid category values.
 - Execution validation and exact head/base SHAs are recorded in the feature PR before merge.
+
+### October 25, 2026 — Leave type review
+- Added leave-type filtering combined with status and date period before pagination.
+- Added an Apply/Clear-compatible type selector and applied-type summary.
+- Added regressions for combined filtering, pagination, cancellation, isolation and invalid types.
+- Execution validation and exact commit SHAs are recorded in the feature PR before merge.

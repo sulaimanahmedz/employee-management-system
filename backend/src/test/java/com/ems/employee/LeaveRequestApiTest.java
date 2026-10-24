@@ -101,4 +101,23 @@ class LeaveRequestApiTest {
         for (String query : new String[] {"status=UNKNOWN", "from=invalid", "to=invalid", "from=2026-12-02&to=2026-12-01"})
             mvc.perform(get(path(id) + "?" + query)).andExpect(status().isBadRequest());
     }
+    @Test void combinesLeaveTypeWithStatusAndPeriodBeforePagination() throws Exception {
+        long id = employee("type@example.com"), other = employee("type-other@example.com");
+        for (int day = 1; day <= 11; day++) add(id, "2026-12-%02d".formatted(day), "2026-12-%02d".formatted(day));
+        mvc.perform(post(path(id)).contentType(MediaType.APPLICATION_JSON)
+            .content(json.writeValueAsString(Map.of("type", "UNPAID", "startOn", "2026-12-12", "endOn", "2026-12-12"))))
+            .andExpect(status().isCreated());
+        long cancelled = add(id, "2026-12-13", "2026-12-13");
+        mvc.perform(put(path(id) + "/" + cancelled + "/cancellation")).andExpect(status().isOk());
+        mvc.perform(get(path(id) + "?type=ANNUAL&status=PENDING&from=2026-12-01&to=2026-12-31"))
+            .andExpect(jsonPath("$.totalElements").value(11)).andExpect(jsonPath("$.totalPages").value(2))
+            .andExpect(jsonPath("$.items.length()").value(10));
+        mvc.perform(get(path(id) + "?type=ANNUAL&status=PENDING&page=1")).andExpect(jsonPath("$.items.length()").value(1));
+        mvc.perform(get(path(id) + "?type=ANNUAL&status=CANCELLED")).andExpect(jsonPath("$.items[0].id").value(cancelled));
+        mvc.perform(get(path(id) + "?type=UNPAID")).andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get(path(id) + "?type=PERSONAL")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(other) + "?type=ANNUAL")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(id) + "?type=INVALID")).andExpect(status().isBadRequest());
+        mvc.perform(get(path(id))).andExpect(jsonPath("$.totalElements").value(13));
+    }
 }

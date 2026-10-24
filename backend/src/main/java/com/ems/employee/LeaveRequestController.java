@@ -16,8 +16,9 @@ public class LeaveRequestController {
     public LeaveRequestResponse.Page list(@PathVariable Long employeeId, @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) LeaveRequest.Status status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return service.list(employeeId, page, status, from, to);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) LeaveRequest.Type type) {
+        return service.list(employeeId, page, status, from, to, type);
     }
     @GetMapping("/{requestId}")
     public LeaveRequestResponse get(@PathVariable Long employeeId, @PathVariable Long requestId) {

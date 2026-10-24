@@ -194,3 +194,7 @@ Use **Expires on or before** and **Apply document filters** to find document met
 ### Document category filters
 
 The document register now combines **Document category** and the optional expiry cutoff using **Apply document filters**; **Clear document filters** resets both. Applied categories are shown above results. Category-only filtering includes undated records; adding an expiry cutoff excludes them. The page endpoint accepts optional `category=CONTRACT|CERTIFICATE|OTHER`, combined with `expiresBy` before pagination. Invalid categories return 400. Totals describe matches. Editing a record's category refreshes the active filters, so it may disappear from results. Validation results are recorded in the feature PR.
+
+### Review leave by type
+
+The leave register's **Filter leave type** selector narrows results to annual, personal or unpaid requests and combines with status and period filters when **Apply leave filters** is selected. Clear resets every filter. The applied summary identifies the type currently shown; changing draft selections does not change results until applied. The collection GET accepts optional `type=ANNUAL|PERSONAL|UNPAID`, combined with the other filters before pagination. Invalid types return 400 and totals describe matches. Defaults and mutation behavior remain unchanged. Execution validation is recorded in the feature PR.
