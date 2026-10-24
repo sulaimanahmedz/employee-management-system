@@ -155,3 +155,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added draft/apply/clear sort controls and applied order summary; profile return preserves order.
 - Added regression coverage for ordering, page boundaries, equal values, combined filters, empty results and unsupported sort parameters.
 - Package/layer review, builds, tests and runtime checks are recorded against exact feature/base SHAs in the PR before merge.
+
+### October 25, 2026 — Employment history event filters
+- Added employee-scoped event-kind filtering before pagination and a profile selector with matching counts/empty states.
+- Preserved newest-first ordering and original unfiltered behavior.
+- Added regressions for filtered pagination, scoping, invalid kinds and legacy baselines.
+- Package review, build/test/runtime checks and validated SHAs are recorded in the feature PR before merge.

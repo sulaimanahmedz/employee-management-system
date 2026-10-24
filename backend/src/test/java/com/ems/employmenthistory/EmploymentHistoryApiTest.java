@@ -91,4 +91,36 @@ class EmploymentHistoryApiTest {
         }
         mvc.perform(get("/api/v1/employees/" + Long.MAX_VALUE + "/history")).andExpect(status().isNotFound());
     }
+
+    @Test void filtersEventKindsBeforePagingAndKeepsEmployeeScope() throws Exception {
+        long id = create("kind@example.com"), other = create("kind-other@example.com");
+        for (int i = 1; i <= 11; i++) update(id, "kind@example.com", "Engineering", "Role " + i, "ACTIVE");
+        String path = "/api/v1/employees/" + id + "/history";
+        mvc.perform(get(path + "?kind=CHANGED&size=10"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(11))
+            .andExpect(jsonPath("$.totalPages").value(2)).andExpect(jsonPath("$.items.length()").value(10))
+            .andExpect(jsonPath("$.items[0].jobTitle").value("Role 11"));
+        mvc.perform(get(path + "?kind=CHANGED&size=10&page=1"))
+            .andExpect(jsonPath("$.items.length()").value(1)).andExpect(jsonPath("$.items[0].jobTitle").value("Role 1"));
+        mvc.perform(get(path + "?kind=CREATED")).andExpect(jsonPath("$.totalElements").value(1))
+            .andExpect(jsonPath("$.items[0].kind").value("CREATED"));
+        mvc.perform(get(path + "?kind=BASELINE")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path)).andExpect(jsonPath("$.totalElements").value(12));
+        mvc.perform(get("/api/v1/employees/" + other + "/history?kind=CHANGED"))
+            .andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path + "?kind=UNKNOWN")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/employees/" + Long.MAX_VALUE + "/history?kind=CHANGED"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test void filtersLegacyBaselineSeparatelyFromChanges() throws Exception {
+        long id = employees.saveAndFlush(new Employee("Synthetic", "Legacy", "baseline-filter@example.com",
+            "Finance", "Analyst", EmployeeStatus.ACTIVE)).getId();
+        update(id, "baseline-filter@example.com", "Finance", "Senior Analyst", "ACTIVE");
+        mvc.perform(get("/api/v1/employees/" + id + "/history?kind=BASELINE"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+            .andExpect(jsonPath("$.items[0].jobTitle").value("Analyst"));
+        mvc.perform(get("/api/v1/employees/" + id + "/history?kind=CREATED"))
+            .andExpect(jsonPath("$.totalElements").value(0));
+    }
 }
