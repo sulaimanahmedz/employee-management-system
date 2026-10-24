@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OnboardingTaskRepository extends JpaRepository<OnboardingTask, Long> {
     Page<OnboardingTask> findByEmployeeId(Long employeeId, Pageable pageable);
+    Page<OnboardingTask> findByEmployeeIdAndCompleted(Long employeeId, boolean completed, Pageable pageable);
+    long countByEmployeeId(Long employeeId);
     Optional<OnboardingTask> findByIdAndEmployeeId(Long id, Long employeeId);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select task from OnboardingTask task where task.id = :taskId and task.employee.id = :employeeId")

@@ -14,8 +14,9 @@ public class OnboardingTaskController {
     public OnboardingTaskController(OnboardingTaskService service) { this.service = service; }
     public record CompletionRequest(@NotNull Boolean completed) {}
     @GetMapping
-    public OnboardingTaskResponse.Page list(@PathVariable Long employeeId, @RequestParam(defaultValue = "0") int page) {
-        return service.list(employeeId, page);
+    public OnboardingTaskResponse.Page list(@PathVariable Long employeeId, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Boolean completed) {
+        return service.list(employeeId, page, completed);
     }
     @GetMapping("/{taskId}")
     public OnboardingTaskResponse get(@PathVariable Long employeeId, @PathVariable Long taskId) {

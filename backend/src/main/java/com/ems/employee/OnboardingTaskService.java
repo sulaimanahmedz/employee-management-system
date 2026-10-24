@@ -22,13 +22,15 @@ public class OnboardingTaskService {
         return tasks.findByIdAndEmployeeId(taskId, employeeId).orElseThrow(() ->
             new ResponseStatusException(HttpStatus.NOT_FOUND, "Onboarding task not found"));
     }
-    public OnboardingTaskResponse.Page list(Long employeeId, int page) {
+    public OnboardingTaskResponse.Page list(Long employeeId, int page, Boolean completed) {
         employee(employeeId);
         if (page < 0 || (long) page * 10 > Integer.MAX_VALUE)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid task page");
-        var result = tasks.findByEmployeeId(employeeId, PageRequest.of(page, 10, Sort.by("id").descending()));
+        var pageable = PageRequest.of(page, 10, Sort.by("id").descending());
+        var result = completed == null ? tasks.findByEmployeeId(employeeId, pageable)
+            : tasks.findByEmployeeIdAndCompleted(employeeId, completed, pageable);
         return new OnboardingTaskResponse.Page(result.getContent().stream().map(OnboardingTaskResponse::from).toList(),
-            page, result.getTotalPages(), result.getTotalElements(), tasks.countByEmployeeIdAndCompletedTrue(employeeId));
+            page, result.getTotalPages(), result.getTotalElements(), tasks.countByEmployeeIdAndCompletedTrue(employeeId), tasks.countByEmployeeId(employeeId));
     }
     public OnboardingTaskResponse get(Long employeeId, Long taskId) {
         employee(employeeId); return OnboardingTaskResponse.from(task(employeeId, taskId));

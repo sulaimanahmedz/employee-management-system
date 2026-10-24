@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api } from '../../lib/api';
 interface Task { id: number; title: string; owner: string; dueOn: string | null; completed: boolean }
-interface TaskPage { items: Task[]; page: number; totalPages: number; totalElements: number; completedTasks: number }
+interface TaskPage { items: Task[]; page: number; totalPages: number; totalElements: number; completedTasks: number; totalTasks: number }
 
 export default function OnboardingTasks({ employeeId }: { employeeId: number }) {
   const [data, setData] = useState<TaskPage | null>(null);
+  const [filter, setFilter] = useState('');
   const [page, setPage] = useState(0);
   const [reload, setReload] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -20,7 +21,7 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
   const path = `/api/v1/employees/${employeeId}/onboarding-tasks`;
   useEffect(() => {
     const controller = new AbortController(); setLoading(true); setError('');
-    api<TaskPage>(`${path}?page=${page}`, { signal: controller.signal }).then(result => {
+    api<TaskPage>(`${path}?page=${page}${filter ? `&completed=${filter}` : ''}`, { signal: controller.signal }).then(result => {
       if (controller.signal.aborted) return;
       const last = Math.max(0, result.totalPages - 1);
       if (page > last) { setPage(last); return; }
@@ -29,7 +30,7 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load checklist.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [path, page, reload]);
+  }, [path, page, reload, filter]);
   async function mutate(action: () => Promise<unknown>, message: string, added = false) {
     if (pending.current) return;
     pending.current = true; setBusy(true); setError(''); setNotice('');
@@ -60,9 +61,14 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
     <p className="muted">Owner labels identify who should handle a task; they do not grant access or send notifications.</p>
     {error && <p role="alert" className="error">{error} <button type="button" disabled={busy || loading} onClick={() => setReload(value => value + 1)}>Refresh checklist</button></p>}
     {notice && <p role="status">{notice}</p>}
+    <label>Show onboarding tasks
+      <select value={filter} disabled={busy || editing !== null} onChange={event => { setFilter(event.target.value); setPage(0); }}>
+        <option value="">All tasks</option><option value="false">Pending tasks</option><option value="true">Completed tasks</option>
+      </select>
+    </label>
     {loading ? <p role="status">Loading checklist…</p> : data && <>
-      <p>{data.completedTasks} of {data.totalElements} tasks complete</p>
-      {data.totalElements === 0 ? <p>No onboarding tasks yet.</p> : <ul>{data.items.map(task => <li key={task.id}>
+      <p>{data.completedTasks} of {data.totalTasks} tasks complete · {data.totalElements} matching tasks</p>
+      {data.totalElements === 0 ? <p>{filter ? 'No tasks match this filter.' : 'No onboarding tasks yet.'}</p> : <ul>{data.items.map(task => <li key={task.id}>
         <strong>{task.title}</strong> — {task.owner} — {task.completed ? 'Complete' : 'Pending'}
         {task.dueOn && <> — Due <time dateTime={task.dueOn}>{task.dueOn}</time></>}{' '}
         <button type="button" disabled={busy} aria-label={`Edit task ${task.title}`} onClick={() => beginEdit(task)}>Edit</button>{' '}

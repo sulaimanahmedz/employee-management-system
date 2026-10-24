@@ -79,3 +79,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Clearing an optional due date is supported; validation and missing/cross-employee records follow existing API conventions.
 - Serialized detail/completion updates with a task-row lock to preserve independent fields.
 - Regression tests and execution results are recorded in the feature PR before merge.
+
+### October 24, 2026 — Onboarding task filters
+- Added server-side pending/completed filtering before pagination and profile filter controls.
+- Kept overall checklist progress independent of filters and refreshed page position after mutations.
+- Added regression tests for filtered pagination, cross-employee isolation, global totals and invalid filter values.
+- Validation commands and exact source commit are recorded in the feature PR before merge.
