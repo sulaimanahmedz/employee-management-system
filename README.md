@@ -157,3 +157,14 @@ Checklist tasks can also be edited using **Edit**: correct the title, owner labe
 Use **Show onboarding tasks** to view all, pending or completed tasks. Filtering happens before pagination and changing the filter resets to the first page. Completing, reopening or removing tasks refreshes the active filter and moves back from an empty last page. A newly added pending task will not appear under the Completed filter; switch to Pending or All to see it. Overall completion totals remain independent of the filter.
 
 The checklist GET endpoint accepts optional `completed=true` or `completed=false`; omit it for all tasks. `totalElements`/`totalPages` describe matches, while the added `totalTasks` and existing `completedTasks` describe the employee's entire checklist. Invalid boolean values return 400. Other endpoints and default list behavior remain compatible.
+
+## Leave requests
+
+Profiles now record annual, personal or unpaid full-day leave requests with start/end dates and a paginated history (10 per page, newest first). Requests begin **Pending** and can be cancelled with confirmation; cancellation is idempotent and retains the record. Failed submissions retain entered dates. Dates are inclusive calendar days, including weekends and holidays, not deducted entitlement. Historical dates and single-day requests are allowed. End dates before start dates return 400; dates overlapping another pending request for the same employee return 409, including shared boundary dates. Creation and cancellation serialize on the employee row to protect overlap checks. Cancelled requests do not block new requests.
+
+- `GET /api/v1/employees/{id}/leave-requests?page=0`: `items`, `page`, `totalPages`, `totalElements`; page must be nonnegative with a signed-integer offset.
+- `POST` to the collection: `{ "type": "ANNUAL", "startOn": "2026-12-01", "endOn": "2026-12-03" }`. Types: `ANNUAL`, `PERSONAL`, `UNPAID`. Returns 201 and Location.
+- `GET /api/v1/employees/{id}/leave-requests/{requestId}`: retrieve one scoped request, including `calendarDays` and `status` (`PENDING`/`CANCELLED`).
+- `PUT /api/v1/employees/{id}/leave-requests/{requestId}/cancellation`: cancel, no body required.
+
+Missing employees or another employee's request return 404. Records are deleted with their employee. This is a request register, not approval or entitlement processing: there are no approval actions, authenticated requesters, balances, half-days, holiday rules, notifications or automatic employee-status changes. Those require future policy/identity work. No reasons or medical details are collected. Execution validation is recorded against the exact feature commit in its PR before merge.
