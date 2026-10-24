@@ -9,6 +9,8 @@ const categories: Record<Category, string> = { CONTRACT: 'Contract', CERTIFICATE
 
 export default function EmployeeDocuments({ employeeId }: { employeeId: number }) {
   const [data, setData] = useState<DocumentPage | null>(null);
+  const [expiryDraft, setExpiryDraft] = useState('');
+  const [expiresBy, setExpiresBy] = useState('');
   const [page, setPage] = useState(0);
   const documents = data?.items ?? [];
   const [editing, setEditing] = useState<DocumentMetadata | null>(null);
@@ -25,7 +27,7 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError('');
-    api<DocumentPage>(`${path}/page?page=${page}`, { signal: controller.signal }).then(value => {
+    api<DocumentPage>(`${path}/page?page=${page}${expiresBy ? `&expiresBy=${encodeURIComponent(expiresBy)}` : ''}`, { signal: controller.signal }).then(value => {
       if (controller.signal.aborted) return;
       const last = Math.max(0, value.totalPages - 1);
       if (page > last) { setPage(last); return; }
@@ -34,7 +36,7 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load documents.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [path, reload, page]);
+  }, [path, reload, page, expiresBy]);
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,8 +78,16 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
     {error && <p role="alert" className="error">{error} <button type="button" disabled={busy || loading}
       onClick={() => setReload(value => value + 1)}>Refresh list</button></p>}
     {notice && <p role="status">{notice}</p>}
+    <form aria-label="Filter document expiry" onSubmit={event => { event.preventDefault(); setExpiresBy(expiryDraft); setPage(0); setReload(value => value + 1); }}>
+      <fieldset disabled={busy || editing !== null} className="profile-fieldset"><legend>Find documents due for renewal</legend>
+        <label>Expires on or before<input type="date" value={expiryDraft} onChange={event => setExpiryDraft(event.target.value)} /></label>
+        <button type="submit">Apply expiry filter</button>{' '}
+        <button type="button" onClick={() => { setExpiryDraft(''); setExpiresBy(''); setPage(0); setReload(value => value + 1); }}>Clear expiry filter</button>
+      </fieldset>
+    </form>
+    {expiresBy && <p role="status">Showing expiry dates on or before {expiresBy}. Records without expiry dates are excluded. New or edited records may fall outside this filter.</p>}
     {loading ? <p role="status">Loading document register…</p> : documents.length === 0 ?
-      <p>No document metadata registered.</p> : <ul>
+      <p>{expiresBy ? 'No document metadata matches this expiry filter.' : 'No document metadata registered.'}</p> : <ul>
         {documents.map(document => <li key={document.id}>
           <strong>{document.name}</strong> — {categories[document.category]} — {document.expiresOn ?
             <>Expires <time dateTime={document.expiresOn}>{document.expiresOn}</time></> : 'No expiry date'}{' '}
@@ -86,7 +96,7 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
             aria-label={`Remove ${document.name}`}>Remove</button>
         </li>)}
       </ul>}
-    {!loading && data && <p>{data.totalElements} document records</p>}
+    {!loading && data && <p>{data.totalElements} matching document records</p>}
     {!loading && data && data.totalPages > 1 && <nav aria-label="Document register pages">
       <button type="button" disabled={busy || editing !== null || page === 0} onClick={() => setPage(value => value - 1)}>Previous documents</button>
       <span> Page {page + 1} of {data.totalPages} </span>

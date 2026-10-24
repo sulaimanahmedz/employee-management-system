@@ -182,3 +182,7 @@ Choose **Edit** beside a document, correct its name, category or expiry date, th
 ### Document register pages
 
 The profile loads 10 document records at a time, newest first, with Previous/Next controls and a total count. Adding returns to the first page, editing preserves the page, and removal returns from an empty last page. Page navigation is disabled while editing. `GET /api/v1/employees/{id}/documents/page?page=0` returns `items`, `page`, `totalPages` and `totalElements`. Page must be nonnegative and its offset must fit a signed integer; invalid pages return 400 and missing employees return 404. Out-of-range pages return empty items with totals. The original collection GET retains its array response for compatibility. Execution validation is recorded in the feature PR.
+
+### Document renewal review
+
+Use **Expires on or before** and **Apply expiry filter** to find document metadata due by a chosen date, including already expired records. The cutoff is inclusive and records without expiry dates are excluded. Clear restores all records. Filters apply before pagination and stay applied after edits/removals; new or edited records outside the cutoff will be hidden. Filtering is disabled while editing. The page endpoint accepts optional `expiresBy=YYYY-MM-DD`; malformed dates return 400, and totals describe matches. This is a manual review aid, with no reminders, automatic status changes or assumptions about document validity. Validation results are recorded in the feature PR.

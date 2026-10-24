@@ -114,4 +114,20 @@ class EmployeeDocumentApiTest {
             mvc.perform(get(path(owner) + "/page?page=" + page)).andExpect(status().isBadRequest());
         mvc.perform(get(path(Long.MAX_VALUE) + "/page")).andExpect(status().isNotFound());
     }
+    @Test void filtersExpiryInclusivelyBeforePaginationAndExcludesUndatedRecords() throws Exception {
+        long owner = employee("expiry@example.com"), other = employee("expiry-other@example.com");
+        var employee = employees.findById(owner).orElseThrow();
+        for (int i = 0; i < 11; i++) documents.saveAndFlush(new EmployeeDocument(employee,
+            new DocumentRequest("Due " + i, EmployeeDocument.Category.CERTIFICATE, java.time.LocalDate.of(2026, 12, 1))));
+        documents.saveAndFlush(new EmployeeDocument(employee, new DocumentRequest("Undated", EmployeeDocument.Category.OTHER, null)));
+        documents.saveAndFlush(new EmployeeDocument(employee, new DocumentRequest("Later", EmployeeDocument.Category.OTHER, java.time.LocalDate.of(2026, 12, 2))));
+        mvc.perform(get(path(owner) + "/page?expiresBy=2026-12-01")).andExpect(status().isOk())
+            .andExpect(jsonPath("$.items.length()").value(10)).andExpect(jsonPath("$.totalElements").value(11))
+            .andExpect(jsonPath("$.totalPages").value(2)).andExpect(jsonPath("$.items[0].name").value("Due 10"));
+        mvc.perform(get(path(owner) + "/page?expiresBy=2026-12-01&page=1")).andExpect(jsonPath("$.items.length()").value(1));
+        mvc.perform(get(path(owner) + "/page?expiresBy=2026-11-30")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(other) + "/page?expiresBy=2026-12-01")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(owner) + "/page")).andExpect(jsonPath("$.totalElements").value(13));
+        mvc.perform(get(path(owner) + "/page?expiresBy=invalid")).andExpect(status().isBadRequest());
+    }
 }

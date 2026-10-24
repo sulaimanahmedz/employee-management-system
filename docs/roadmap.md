@@ -110,3 +110,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Preserved the legacy list API and edit drafts; refreshes after mutations recover from empty last pages.
 - Added API tests for ordering, page boundaries, isolation, invalid pages and compatibility.
 - Build, test and runtime validation results are recorded in the feature PR before merge.
+
+### October 24, 2026 — Document renewal review
+- Added an inclusive expiry cutoff filter before document pagination and matching profile Apply/Clear controls.
+- Excluded undated records from filtered results, retained current filters after mutations and displayed the applied cutoff.
+- Added regression coverage for cutoff boundaries, undated records, filtered pagination, isolation and invalid dates.
+- Execution checks and exact commit SHAs are recorded in the feature PR before merge.
