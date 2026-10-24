@@ -117,4 +117,24 @@ class OnboardingTaskApiTest {
         mvc.perform(get(path(id) + "/" + task)).andExpect(jsonPath("$.title").value("Original"))
             .andExpect(jsonPath("$.owner").value("IT team")).andExpect(jsonPath("$.dueOn").value("2026-12-01"));
     }
+    @Test void filtersBeforePaginationAndKeepsGlobalProgress() throws Exception {
+        long id = employee("filters@example.com"), other = employee("unrelated@example.com");
+        long completedTask = add(id, "Completed first");
+        mvc.perform(put(path(id) + "/" + completedTask + "/completion").contentType(MediaType.APPLICATION_JSON)
+            .content(json.writeValueAsString(Map.of("completed", true)))).andExpect(status().isOk());
+        for (int i = 0; i < 11; i++) add(id, "Pending " + i);
+        add(other, "Other employee");
+        mvc.perform(get(path(id) + "?completed=false")).andExpect(status().isOk())
+            .andExpect(jsonPath("$.items.length()").value(10)).andExpect(jsonPath("$.totalElements").value(11))
+            .andExpect(jsonPath("$.totalPages").value(2)).andExpect(jsonPath("$.completedTasks").value(1))
+            .andExpect(jsonPath("$.totalTasks").value(12));
+        mvc.perform(get(path(id) + "?completed=false&page=1"))
+            .andExpect(jsonPath("$.items.length()").value(1)).andExpect(jsonPath("$.items[0].title").value("Pending 0"));
+        mvc.perform(get(path(id) + "?completed=true")).andExpect(jsonPath("$.totalElements").value(1))
+            .andExpect(jsonPath("$.items[0].id").value(completedTask)).andExpect(jsonPath("$.totalTasks").value(12));
+        mvc.perform(get(path(other) + "?completed=true")).andExpect(jsonPath("$.totalElements").value(0))
+            .andExpect(jsonPath("$.totalTasks").value(1));
+        mvc.perform(get(path(id))).andExpect(jsonPath("$.totalElements").value(12));
+        mvc.perform(get(path(id) + "?completed=invalid")).andExpect(status().isBadRequest());
+    }
 }
