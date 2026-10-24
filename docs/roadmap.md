@@ -20,7 +20,8 @@ The goal is an employee management application spanning the employee lifecycle.
 - Implemented in source: server-side search, status filtering and pagination (October 24, 2026); execution validation pending.
 - Implemented in source: document metadata register (October 24, 2026); validation status is recorded in its feature PR.
 - Implemented in source: recorded employment history (October 24, 2026); validation results are recorded in its feature PR.
-- Onboarding and offboarding workflows with assigned tasks.
+- Implemented in source: onboarding checklist with owner labels; validation recorded in its feature PR.
+- Next: identity-based task assignment, onboarding templates and offboarding workflows.
 - Employee self-service and manager views.
 
 ## Time and operations
@@ -65,3 +66,10 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added tests for normalization/no-op saves, baseline semantics, rollback, scoping, pagination and deletion cleanup.
 - Builds, tests and runtime checks are recorded against the feature commit in its pull request before merge.
 - Effective dates, actor attribution, retained audit records and manual historical imports remain future work.
+
+### October 24, 2026 — Onboarding checklist
+- Added employee-scoped tasks with title, owner label, optional due date, completion and reopening.
+- Added paginated profile checklist and progress totals; confirmed removal and loading/error/retry states.
+- Added tests for scoping, idempotent completion, validation, pagination and deletion cleanup.
+- Validation commands and exact commit SHAs are recorded in the feature PR before merge.
+- Identity-based assignments, templates, reminders and offboarding remain future work.
