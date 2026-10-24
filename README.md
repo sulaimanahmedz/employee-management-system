@@ -134,3 +134,9 @@ Each employee profile includes a document register for names (1–150 characters
 `GET` and `POST /api/v1/employees/{employeeId}/documents` list/create metadata; `GET` and `DELETE /api/v1/employees/{employeeId}/documents/{documentId}` retrieve/remove one entry. Missing employees or a document belonging to another employee return 404. Invalid metadata returns 400. No dependencies were added.
 
 Development now uses `feature/<short-name>` branches. Each completed feature is compiled and validated before its PR is merged into main; this replaces the earlier weekly-only validation policy. GitHub Actions remains manual-only.
+
+## Employment history
+
+Profiles show a read-only, paginated employment timeline, newest first. Creating an employee records their initial department, job title and status. Saving a change to any of these fields appends a snapshot in the same transaction; name/email-only or unchanged saves do not add events. Existing employees get a `BASELINE` of their previous details on their next successful save, followed by a `CHANGED` event if applicable. No past dates are invented.
+
+`GET /api/v1/employees/{id}/history?page=0&size=10` returns `items`, `page`, `size`, `totalElements` and `totalPages`. Page must be nonnegative, size 1–100, and offset must fit a signed integer. Entries include `id`, `recordedAt` (UTC instant), `kind` (`CREATED`, `BASELINE`, `CHANGED`), `department`, `jobTitle` and `status`. Missing employees return 404. Entries are snapshots at save time, not effective-dated employment records or a compliance audit log. The UI formats timestamps in the viewer's local timezone. History is deleted with its employee. Actor attribution and retention controls require future identity/audit work.

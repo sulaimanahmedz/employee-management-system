@@ -19,7 +19,7 @@ The goal is an employee management application spanning the employee lifecycle.
 - Implemented in source: profile viewing and editing (October 21, 2026); execution validation pending.
 - Implemented in source: server-side search, status filtering and pagination (October 24, 2026); execution validation pending.
 - Implemented in source: document metadata register (October 24, 2026); validation status is recorded in its feature PR.
-- Next: employment history.
+- Implemented in source: recorded employment history (October 24, 2026); validation results are recorded in its feature PR.
 - Onboarding and offboarding workflows with assigned tasks.
 - Employee self-service and manager views.
 
@@ -58,3 +58,10 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added integration tests for metadata lifecycle, cross-employee isolation, invalid input and employee deletion.
 - File uploads and document contents remain out of scope; authentication and authorization remain prerequisites for production use.
 - Execution validation is recorded in the feature pull request; do not consider the feature validated until those checks pass.
+
+### October 24, 2026 — Recorded employment history
+- Added transactional snapshots for profile creation and department/job-title/status changes, with explicit baselines for existing profiles.
+- Added a bounded, employee-scoped history endpoint and a read-only profile timeline with pagination, retry and empty states.
+- Added tests for normalization/no-op saves, baseline semantics, rollback, scoping, pagination and deletion cleanup.
+- Builds, tests and runtime checks are recorded against the feature commit in its pull request before merge.
+- Effective dates, actor attribution, retained audit records and manual historical imports remain future work.

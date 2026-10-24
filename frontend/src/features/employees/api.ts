@@ -19,3 +19,6 @@ export function searchEmployees(filters: DirectoryFilters, page: number, signal?
   if (filters.status) params.set('status', filters.status);
   return api<EmployeeDirectory>(`/api/v1/employees/directory?${params}`, { signal });
 }
+
+export const getEmploymentHistory = (id: number, page: number, signal?: AbortSignal) =>
+  api<import('./types').EmploymentHistoryPage>(`/api/v1/employees/${id}/history?page=${page}&size=10`, { signal });

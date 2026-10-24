@@ -23,6 +23,11 @@ public class EmployeeController {
     }
     @GetMapping("/{id}")
     public EmployeeResponse get(@PathVariable Long id) { return service.get(id); }
+    @GetMapping("/{id}/history")
+    public EmploymentHistoryResponse history(@PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return service.history(id, page, size);
+    }
     @PostMapping
     public ResponseEntity<EmployeeResponse> create(@Valid @RequestBody EmployeeRequest request) {
         EmployeeResponse employee = service.create(request);
