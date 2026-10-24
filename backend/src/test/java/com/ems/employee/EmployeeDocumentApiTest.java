@@ -130,4 +130,22 @@ class EmployeeDocumentApiTest {
         mvc.perform(get(path(owner) + "/page")).andExpect(jsonPath("$.totalElements").value(13));
         mvc.perform(get(path(owner) + "/page?expiresBy=invalid")).andExpect(status().isBadRequest());
     }
+    @Test void combinesCategoryAndExpiryFiltersAndPreservesUndatedCategoryMatches() throws Exception {
+        long owner = employee("category@example.com"), other = employee("category-other@example.com");
+        var employee = employees.findById(owner).orElseThrow();
+        for (int i = 0; i < 11; i++) documents.saveAndFlush(new EmployeeDocument(employee,
+            new DocumentRequest("Contract " + i, EmployeeDocument.Category.CONTRACT, java.time.LocalDate.of(2026, 12, 1))));
+        documents.saveAndFlush(new EmployeeDocument(employee, new DocumentRequest("Undated", EmployeeDocument.Category.CONTRACT, null)));
+        documents.saveAndFlush(new EmployeeDocument(employee, new DocumentRequest("Certificate", EmployeeDocument.Category.CERTIFICATE, java.time.LocalDate.of(2026, 12, 1))));
+        mvc.perform(get(path(owner) + "/page?category=CONTRACT")).andExpect(jsonPath("$.totalElements").value(12));
+        mvc.perform(get(path(owner) + "/page?category=CONTRACT&expiresBy=2026-12-01"))
+            .andExpect(jsonPath("$.items.length()").value(10)).andExpect(jsonPath("$.totalElements").value(11))
+            .andExpect(jsonPath("$.totalPages").value(2));
+        mvc.perform(get(path(owner) + "/page?category=CONTRACT&expiresBy=2026-12-01&page=1"))
+            .andExpect(jsonPath("$.items.length()").value(1));
+        mvc.perform(get(path(owner) + "/page?category=CERTIFICATE")).andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get(path(other) + "/page?category=CONTRACT")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(owner) + "/page?category=INVALID")).andExpect(status().isBadRequest());
+        mvc.perform(get(path(owner) + "/page")).andExpect(jsonPath("$.totalElements").value(13));
+    }
 }
