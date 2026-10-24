@@ -15,8 +15,9 @@ public class EmployeeDocumentController {
     @GetMapping
     public List<DocumentResponse> list(@PathVariable Long employeeId) { return service.list(employeeId); }
     @GetMapping("/page")
-    public DocumentResponse.Page page(@PathVariable Long employeeId, @RequestParam(defaultValue = "0") int page) {
-        return service.page(employeeId, page);
+    public DocumentResponse.Page page(@PathVariable Long employeeId, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate expiresBy) {
+        return service.page(employeeId, page, expiresBy);
     }
     @PostMapping
     public ResponseEntity<DocumentResponse> create(@PathVariable Long employeeId, @Valid @RequestBody DocumentRequest request) {

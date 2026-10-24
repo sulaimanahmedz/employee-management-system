@@ -23,12 +23,14 @@ public class EmployeeDocumentService {
         employee(employeeId);
         return documents.findByEmployeeIdOrderByIdDesc(employeeId).stream().map(DocumentResponse::from).toList();
     }
-    public DocumentResponse.Page page(Long employeeId, int page) {
+    public DocumentResponse.Page page(Long employeeId, int page, java.time.LocalDate expiresBy) {
         employee(employeeId);
         if (page < 0 || (long) page * 10 > Integer.MAX_VALUE)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid document page");
-        var result = documents.findByEmployeeId(employeeId, org.springframework.data.domain.PageRequest.of(
-            page, 10, org.springframework.data.domain.Sort.by("id").descending()));
+        var pageable = org.springframework.data.domain.PageRequest.of(
+            page, 10, org.springframework.data.domain.Sort.by("id").descending());
+        var result = expiresBy == null ? documents.findByEmployeeId(employeeId, pageable)
+            : documents.findByEmployeeIdAndExpiresOnLessThanEqual(employeeId, expiresBy, pageable);
         return new DocumentResponse.Page(result.getContent().stream().map(DocumentResponse::from).toList(),
             page, result.getTotalPages(), result.getTotalElements());
     }
