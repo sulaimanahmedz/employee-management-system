@@ -134,3 +134,10 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added an Apply/Clear-compatible type selector and applied-type summary.
 - Added regressions for combined filtering, pagination, cancellation, isolation and invalid types.
 - Execution validation and exact commit SHAs are recorded in the feature PR before merge.
+
+### October 25, 2026 — Backend package and responsibility refactor
+- Split employee, document, leave, onboarding and employment history into feature packages with controller/service/repository/entity/dto layers.
+- Removed entity dependencies on HTTP DTOs; extracted employment history controller/service and the onboarding completion DTO.
+- Preserved history writes in the employee transaction, database mappings and HTTP contracts; regrouped existing regression tests by feature.
+- Added package/dependency architecture checks and persistent coding standards in AGENTS.md.
+- Actual build, regression and runtime integration results with exact head/base SHAs are recorded in the refactor PR before merge.

@@ -41,8 +41,13 @@ frontend/
     styles.css           # Responsive application styling
 backend/
   src/main/java/com/ems/
-    employee/            # Controller, service, repository, entity and DTOs
-    common/              # Shared error handling
+    employee/            # Profile and directory
+    document/            # Document metadata
+    leave/               # Leave requests
+    onboarding/          # Checklist tasks
+    employmenthistory/   # Recorded employment snapshots
+    # Each feature owns controller/, service/, repository/, entity/, dto/
+    common/exception/    # Shared error handling
   src/main/resources/    # Runtime configuration
   src/test/              # API integration tests
   pom.xml
