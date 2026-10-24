@@ -186,3 +186,7 @@ The profile loads 10 document records at a time, newest first, with Previous/Nex
 ### Document renewal review
 
 Use **Expires on or before** and **Apply expiry filter** to find document metadata due by a chosen date, including already expired records. The cutoff is inclusive and records without expiry dates are excluded. Clear restores all records. Filters apply before pagination and stay applied after edits/removals; new or edited records outside the cutoff will be hidden. Filtering is disabled while editing. The page endpoint accepts optional `expiresBy=YYYY-MM-DD`; malformed dates return 400, and totals describe matches. This is a manual review aid, with no reminders, automatic status changes or assumptions about document validity. Validation results are recorded in the feature PR.
+
+### Review onboarding deadlines
+
+**Tasks due on or before** filters the checklist by an inclusive cutoff and combines with the pending/completed selector. Changing or clearing the cutoff resets to page one. Tasks without due dates are excluded when a cutoff is set. Overall completion totals still cover the whole checklist. Edits, completion and removal refresh the active filters; new tasks outside them remain hidden. Date filtering is disabled during editing. The checklist GET endpoint accepts optional `dueBy=YYYY-MM-DD`; malformed dates return 400. This is a manual deadline review, with no notifications or automatic status changes. Validation results are recorded in the feature PR.

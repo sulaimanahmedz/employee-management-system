@@ -22,13 +22,16 @@ public class OnboardingTaskService {
         return tasks.findByIdAndEmployeeId(taskId, employeeId).orElseThrow(() ->
             new ResponseStatusException(HttpStatus.NOT_FOUND, "Onboarding task not found"));
     }
-    public OnboardingTaskResponse.Page list(Long employeeId, int page, Boolean completed) {
+    public OnboardingTaskResponse.Page list(Long employeeId, int page, Boolean completed, java.time.LocalDate dueBy) {
         employee(employeeId);
         if (page < 0 || (long) page * 10 > Integer.MAX_VALUE)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid task page");
         var pageable = PageRequest.of(page, 10, Sort.by("id").descending());
-        var result = completed == null ? tasks.findByEmployeeId(employeeId, pageable)
-            : tasks.findByEmployeeIdAndCompleted(employeeId, completed, pageable);
+        org.springframework.data.jpa.domain.Specification<OnboardingTask> filter =
+            (root, query, cb) -> cb.equal(root.get("employee").get("id"), employeeId);
+        if (completed != null) filter = filter.and((root, query, cb) -> cb.equal(root.get("completed"), completed));
+        if (dueBy != null) filter = filter.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("dueOn"), dueBy));
+        var result = tasks.findAll(filter, pageable);
         return new OnboardingTaskResponse.Page(result.getContent().stream().map(OnboardingTaskResponse::from).toList(),
             page, result.getTotalPages(), result.getTotalElements(), tasks.countByEmployeeIdAndCompletedTrue(employeeId), tasks.countByEmployeeId(employeeId));
     }

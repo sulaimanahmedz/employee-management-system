@@ -137,4 +137,25 @@ class OnboardingTaskApiTest {
         mvc.perform(get(path(id))).andExpect(jsonPath("$.totalElements").value(12));
         mvc.perform(get(path(id) + "?completed=invalid")).andExpect(status().isBadRequest());
     }
+    @Test void combinesDueDateAndCompletionFiltersWithoutChangingProgressTotals() throws Exception {
+        long id = employee("due@example.com"), other = employee("due-other@example.com");
+        long completed = add(id, "Completed");
+        mvc.perform(put(path(id) + "/" + completed + "/completion").contentType(MediaType.APPLICATION_JSON)
+            .content(json.writeValueAsString(Map.of("completed", true)))).andExpect(status().isOk());
+        for (int i = 0; i < 11; i++) add(id, "Due " + i);
+        mvc.perform(post(path(id)).contentType(MediaType.APPLICATION_JSON)
+            .content(json.writeValueAsString(Map.of("title", "Undated", "owner", "HR")))).andExpect(status().isCreated());
+        mvc.perform(post(path(id)).contentType(MediaType.APPLICATION_JSON)
+            .content(json.writeValueAsString(Map.of("title", "Later", "owner", "HR", "dueOn", "2026-12-02")))).andExpect(status().isCreated());
+        mvc.perform(get(path(id) + "?completed=false&dueBy=2026-12-01"))
+            .andExpect(jsonPath("$.items.length()").value(10)).andExpect(jsonPath("$.totalElements").value(11))
+            .andExpect(jsonPath("$.totalPages").value(2)).andExpect(jsonPath("$.totalTasks").value(14))
+            .andExpect(jsonPath("$.completedTasks").value(1));
+        mvc.perform(get(path(id) + "?completed=false&dueBy=2026-12-01&page=1")).andExpect(jsonPath("$.items.length()").value(1));
+        mvc.perform(get(path(id) + "?dueBy=2026-12-01")).andExpect(jsonPath("$.totalElements").value(12));
+        mvc.perform(get(path(id) + "?completed=true&dueBy=2026-12-01")).andExpect(jsonPath("$.items[0].id").value(completed));
+        mvc.perform(get(path(id) + "?dueBy=2026-11-30")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(other) + "?dueBy=2026-12-01")).andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(id) + "?dueBy=invalid")).andExpect(status().isBadRequest());
+    }
 }
