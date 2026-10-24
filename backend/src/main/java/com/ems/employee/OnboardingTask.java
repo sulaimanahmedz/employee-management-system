@@ -18,7 +18,10 @@ public class OnboardingTask {
     @Column(nullable = false) private boolean completed;
     protected OnboardingTask() {}
     public OnboardingTask(Employee employee, OnboardingTaskRequest request) {
-        this.employee = employee; title = request.title().strip(); owner = request.owner().strip(); dueOn = request.dueOn();
+        this.employee = employee; updateDetails(request);
+    }
+    public void updateDetails(OnboardingTaskRequest request) {
+        title = request.title().strip(); owner = request.owner().strip(); dueOn = request.dueOn();
     }
     public void setCompleted(boolean completed) { this.completed = completed; }
     public Long getId() { return id; }
