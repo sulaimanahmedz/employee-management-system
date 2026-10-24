@@ -24,6 +24,11 @@ public class LeaveRequest {
     public LeaveRequest(Employee employee, Type type, LocalDate startOn, LocalDate endOn) {
         this.employee = employee; this.type = type; this.startOn = startOn; this.endOn = endOn; status = Status.PENDING;
     }
+    public void updateDetails(Type type, LocalDate startOn, LocalDate endOn) {
+        this.type = type;
+        this.startOn = startOn;
+        this.endOn = endOn;
+    }
     public void cancel() { status = Status.CANCELLED; }
     public Long getId() { return id; }
     public Type getType() { return type; }

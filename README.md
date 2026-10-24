@@ -165,7 +165,7 @@ The checklist GET endpoint accepts optional `completed=true` or `completed=false
 
 ## Leave requests
 
-Profiles now record annual, personal or unpaid full-day leave requests with start/end dates and a paginated history (10 per page, newest first). Requests begin **Pending** and can be cancelled with confirmation; cancellation is idempotent and retains the record. Failed submissions retain entered dates. Dates are inclusive calendar days, including weekends and holidays, not deducted entitlement. Historical dates and single-day requests are allowed. End dates before start dates return 400; dates overlapping another pending request for the same employee return 409, including shared boundary dates. Creation and cancellation serialize on the employee row to protect overlap checks. Cancelled requests do not block new requests.
+Profiles now record annual, personal or unpaid full-day leave requests with start/end dates and a paginated history (10 per page, newest first). Requests begin **Pending** and can be cancelled with confirmation; cancellation is idempotent and retains the record. Failed submissions retain entered dates. Dates are inclusive calendar days, including weekends and holidays, not deducted entitlement. Historical dates and single-day requests are allowed. End dates before start dates return 400; dates overlapping another pending request for the same employee return 409, including shared boundary dates. Creation, editing and cancellation serialize on the employee row to protect overlap checks. Cancelled requests do not block new requests.
 
 - `GET /api/v1/employees/{id}/leave-requests?page=0`: `items`, `page`, `totalPages`, `totalElements`; page must be nonnegative with a signed-integer offset.
 - `POST` to the collection: `{ "type": "ANNUAL", "startOn": "2026-12-01", "endOn": "2026-12-03" }`. Types: `ANNUAL`, `PERSONAL`, `UNPAID`. Returns 201 and Location.
@@ -203,3 +203,9 @@ The document register now combines **Document category** and the optional expiry
 ### Review leave by type
 
 The leave register's **Filter leave type** selector narrows results to annual, personal or unpaid requests and combines with status and period filters when **Apply leave filters** is selected. Clear resets every filter. The applied summary identifies the type currently shown; changing draft selections does not change results until applied. The collection GET accepts optional `type=ANNUAL|PERSONAL|UNPAID`, combined with the other filters before pagination. Invalid types return 400 and totals describe matches. Defaults and mutation behavior remain unchanged. Execution validation is recorded in the feature PR.
+
+### Correct pending leave requests
+
+Choose **Edit request** on a pending entry to change its type or dates, then **Save leave changes**. The same record and pending status are retained. Failed saves preserve the draft; **Cancel editing** confirms before discarding changes. Filters, paging and cancellation are disabled during editing. Successful edits refresh the current filters and recover from an empty last page; changed dates/types may move a request outside the current results.
+
+`PUT /api/v1/employees/{id}/leave-requests/{requestId}` accepts the same required type/startOn/endOn fields as creation. Invalid input returns 400, missing/cross-employee records return 404, cancelled records or overlaps with another pending request return 409. The current record is excluded from overlap checks; unchanged saves and overlaps with its own previous dates are valid. All leave mutations lock the same employee row before checking or changing data. Edits are last-write-wins, with no version conflict detection or edit audit trail. Execution validation is recorded in the feature PR.

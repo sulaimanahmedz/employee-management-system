@@ -38,3 +38,7 @@ The original list endpoint remains available for existing callers, but is no lon
 ## Recorded employment history
 
 EmployeeService delegates employment snapshots to EmploymentHistoryService in the same transaction as profile creation/update. Updates take a pessimistic write lock on the employee row to serialize the baseline and change snapshot decision. History does not add optimistic edit-conflict detection: profile updates still use last-write-wins. Read APIs return DTO pages sorted by descending history ID. Database foreign-key cascade removes snapshots on employee deletion. This is a profile history feature, not an immutable compliance audit trail.
+
+## Leave mutation consistency
+
+LeaveRequestService owns create/edit/cancel transactions. Every mutation takes a pessimistic write lock on the employee before loading or modifying a request and checking inclusive pending overlaps. Edits exclude the current request ID and reject cancelled records. The entity accepts type/date values without depending on transport DTOs; the controller validates the existing standalone LeaveRequestInput. Concurrent edits remain last-write-wins, but create/edit/cancel share the same lock ordering. No schema or dependency change is required.
