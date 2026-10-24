@@ -148,3 +148,10 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added UI edit/save/cancel with draft retention, discard confirmation and active-filter refresh.
 - Added regressions for unchanged/self-overlapping edits, collisions and rollback, cancellation, adjacent dates, employee scoping and invalid input.
 - Package/layer review, builds, tests and runtime results are recorded against exact head/base SHAs in the feature PR before merge.
+
+### October 25, 2026 — Sortable employee directory
+- Added allowlisted server-side sorting by ID, name, department and job title in both directions before pagination.
+- Added case-insensitive text ordering with stable ID ties, preserving search/status filters and global totals.
+- Added draft/apply/clear sort controls and applied order summary; profile return preserves order.
+- Added regression coverage for ordering, page boundaries, equal values, combined filters, empty results and unsupported sort parameters.
+- Package/layer review, builds, tests and runtime checks are recorded against exact feature/base SHAs in the PR before merge.

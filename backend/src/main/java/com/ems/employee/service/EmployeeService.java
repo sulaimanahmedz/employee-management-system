@@ -33,7 +33,7 @@ public class EmployeeService {
     public List<EmployeeResponse> list() {
         return repository.findAll(Sort.by("id")).stream().map(EmployeeResponse::from).toList();
     }
-    public EmployeeDirectoryResponse directory(String query, EmployeeStatus status, int page, int size) {
+    public EmployeeDirectoryResponse directory(String query, EmployeeStatus status, int page, int size, String sortBy, String direction) {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Page must be non-negative, size must be 1 to 100, and the page offset must fit a signed integer");
@@ -41,6 +41,7 @@ public class EmployeeService {
         if (query.length() > 200) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Search must be at most 200 characters");
         }
+        Sort order = directoryOrder(sortBy, direction);
         String term = query.strip().toLowerCase(Locale.ROOT);
         Specification<Employee> matching = (root, criteria, builder) -> {
             var textMatch = term.isEmpty() ? builder.conjunction() : builder.or(
@@ -54,11 +55,30 @@ public class EmployeeService {
             return status == null ? textMatch :
                 builder.and(textMatch, builder.equal(root.get("status"), status));
         };
-        var result = repository.findAll(matching, PageRequest.of(page, size, Sort.by("id")));
+        var result = repository.findAll(matching, PageRequest.of(page, size, order));
         return new EmployeeDirectoryResponse(
             result.getContent().stream().map(EmployeeResponse::from).toList(),
             result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages(),
             repository.count(), repository.countByStatus(EmployeeStatus.ACTIVE), repository.countDepartments());
+    }
+
+    private Sort directoryOrder(String sortBy, String direction) {
+        Sort.Direction order = switch (direction) {
+            case "asc" -> Sort.Direction.ASC;
+            case "desc" -> Sort.Direction.DESC;
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Direction must be asc or desc");
+        };
+        // Only fixed property names reach Spring Data; never pass through arbitrary client paths.
+        Sort selected = switch (sortBy) {
+            case "id" -> Sort.by(order, "id");
+            case "name" -> Sort.by(new Sort.Order(order, "lastName").ignoreCase(),
+                new Sort.Order(order, "firstName").ignoreCase());
+            case "department" -> Sort.by(new Sort.Order(order, "department").ignoreCase());
+            case "jobTitle" -> Sort.by(new Sort.Order(order, "jobTitle").ignoreCase());
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported directory sort field");
+        };
+        // A fixed unique tie-breaker keeps equal values stable across page boundaries.
+        return sortBy.equals("id") ? selected : selected.and(Sort.by("id"));
     }
 
     public EmployeeResponse get(Long id) { return EmployeeResponse.from(find(id)); }

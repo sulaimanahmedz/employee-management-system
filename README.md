@@ -127,10 +127,10 @@ Example: `GET /api/v1/employees/directory?q=engineering&status=ACTIVE&page=0&siz
 - `page`: zero-based, defaults to 0; non-negative.
 - `size`: 1–100, defaults to 10. The page offset must fit a signed 32-bit integer.
 - Response: `items`, `page`, `size`, `totalElements`, `totalPages`, `totalEmployees`, `activeEmployees`, `departments`. Matching counts apply to filters; the final three counts cover all employees. Department counts use distinct stored department names.
-- Ordering is ascending employee ID. Out-of-range pages return empty items and matching counts; the UI moves back to the last available page.
+- Default ordering is ascending employee ID; optional directory sorting is described below. Out-of-range pages return empty items and matching counts; the UI moves back to the last available page.
 - Existing `GET /api/v1/employees` keeps its array response for compatibility.
 
-Added October 24, 2026. Static source review only; compilation, tests and browser execution are pending the weekly check. See [directory acceptance checks](docs/directory-validation.md).
+Added October 24, 2026 with static review initially. Subsequent feature PRs record executed builds, API regression tests and runtime proxy checks. Browser acceptance checks remain separate. See [directory acceptance checks](docs/directory-validation.md).
 
 ## Document register
 
@@ -209,3 +209,9 @@ The leave register's **Filter leave type** selector narrows results to annual, p
 Choose **Edit request** on a pending entry to change its type or dates, then **Save leave changes**. The same record and pending status are retained. Failed saves preserve the draft; **Cancel editing** confirms before discarding changes. Filters, paging and cancellation are disabled during editing. Successful edits refresh the current filters and recover from an empty last page; changed dates/types may move a request outside the current results.
 
 `PUT /api/v1/employees/{id}/leave-requests/{requestId}` accepts the same required type/startOn/endOn fields as creation. Invalid input returns 400, missing/cross-employee records return 404, cancelled records or overlaps with another pending request return 409. The current record is excluded from overlap checks; unchanged saves and overlaps with its own previous dates are valid. All leave mutations lock the same employee row before checking or changing data. Edits are last-write-wins, with no version conflict detection or edit audit trail. Execution validation is recorded in the feature PR.
+
+### Sort the employee directory
+
+Choose **Sort employees by** and **Sort direction**, then **Apply filters**. Supported fields are Employee ID, Last name/first name, Department and Job title. Changing applied sorting resets to page one; the selected sort is preserved across pages and profile editing. **Clear filters** restores employee ID ascending alongside the default search/status/page size. The applied summary shows the order currently displayed, independently of draft control changes.
+
+The directory endpoint accepts `sortBy=id|name|department|jobTitle` (default `id`) and `direction=asc|desc` (default `asc`). Name ordering compares last name then first name; text sorts ignore case. Equal text values use employee ID ascending as a unique tie-breaker in both directions. Sorting applies before pagination and combines with search/status filters; overview totals remain global. Unsupported values return 400. Empty parameters use their defaults. Database collation determines accent/locale ordering; pages are not a snapshot during concurrent changes. The legacy list endpoint remains ID ascending. No dependency or schema changes are required. Execution results and exact commits are recorded in the feature PR.

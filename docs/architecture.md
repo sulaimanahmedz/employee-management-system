@@ -31,7 +31,7 @@ There is no authentication, payroll, leave approval, attendance tracking, audit 
 
 ## Directory queries
 
-The UI uses `GET /api/v1/employees/directory`, a dedicated DTO with a bounded employee page, matching counts and separate global aggregates. A JPA Specification combines literal case-insensitive substring search with status equality. Criteria `locate` avoids treating SQL wildcard characters as patterns. Page requests sort by ID and validate size/offset before repository access. No extra dependency or schema change is required.
+The UI uses `GET /api/v1/employees/directory`, a dedicated DTO with a bounded employee page, matching counts and separate global aggregates. A JPA Specification combines literal case-insensitive substring search with status equality. Criteria `locate` avoids treating SQL wildcard characters as patterns. Page requests use an allowlisted sort (ID by default) and validate size/offset before repository access. EmployeeService maps sortBy/direction to fixed Spring Data orders: case-insensitive last/first name, department, job title, or numeric ID. Non-ID sorts append ID ascending for deterministic ties. Arbitrary property paths never reach persistence. No extra dependency or schema change is required.
 
 The original list endpoint remains available for existing callers, but is no longer used by the UI. Filter submission resets page zero. Aborted requests cannot replace newer directory state. Empty pages after deletion or changed filter membership trigger a fetch of the last valid page. Database search and aggregate queries can observe concurrent changes at the configured isolation level; pagination is not a frozen snapshot. Substring scans and aggregate counts still need performance review before large-scale production use.
 

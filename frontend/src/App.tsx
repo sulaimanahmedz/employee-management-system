@@ -2,16 +2,21 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import EmployeeProfile from './features/employees/EmployeeProfile';
 import { createEmployee, searchEmployees } from './features/employees/api';
-import type { EmployeeDirectory, EmployeeInput, DirectoryFilters } from './features/employees/types';
+import type { EmployeeDirectory, EmployeeInput, DirectoryFilters, DirectorySort } from './features/employees/types';
 
 const emptyForm: EmployeeInput = { firstName: '', lastName: '', email: '', department: '', jobTitle: '', status: 'ACTIVE' };
+
+const defaultFilters: DirectoryFilters = { q: '', status: '', size: 10, sortBy: 'id', direction: 'asc' };
+const sortLabels: Record<DirectorySort, string> = { id: 'Employee ID', name: 'Last name, first name', department: 'Department', jobTitle: 'Job title' };
 
 export default function App() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [directory, setDirectory] = useState<EmployeeDirectory | null>(null);
-  const [filters, setFilters] = useState<DirectoryFilters>({ q: '', status: '', size: 10 });
+  const [filters, setFilters] = useState<DirectoryFilters>(defaultFilters);
   const [draftStatus, setDraftStatus] = useState<DirectoryFilters['status']>('');
   const [draftSize, setDraftSize] = useState(10);
+  const [draftSort, setDraftSort] = useState<DirectorySort>('id');
+  const [draftDirection, setDraftDirection] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(0);
   const [directoryError, setDirectoryError] = useState('');
   const [form, setForm] = useState<EmployeeInput>(emptyForm);
@@ -65,12 +70,13 @@ export default function App() {
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPage(0);
-    setFilters({ q: query.trim(), status: draftStatus, size: draftSize });
+    setFilters({ q: query.trim(), status: draftStatus, size: draftSize, sortBy: draftSort, direction: draftDirection });
   }
 
   function clearFilters() {
     setQuery(''); setDraftStatus(''); setDraftSize(10); setPage(0);
-    setFilters({ q: '', status: '', size: 10 });
+    setDraftSort('id'); setDraftDirection('asc');
+    setFilters(defaultFilters);
   }
 
   const employees = directory?.items ?? [];
@@ -108,10 +114,20 @@ export default function App() {
               <option value={10}>10</option><option value={25}>25</option><option value={50}>50</option>
             </select>
           </label>
+          <label>Sort employees by
+            <select value={draftSort} onChange={event => setDraftSort(event.target.value as DirectorySort)}>
+              {Object.entries(sortLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
+          <label>Sort direction
+            <select value={draftDirection} onChange={event => setDraftDirection(event.target.value as 'asc' | 'desc')}>
+              <option value="asc">Ascending</option><option value="desc">Descending</option>
+            </select>
+          </label>
           <button type="submit" disabled={saving}>Apply filters</button>
           <button type="button" disabled={saving} onClick={clearFilters}>Clear filters</button>
         </form>
-        <p className="muted">Search: {filters.q || 'All employees'} · Status: {filters.status.replace('_', ' ') || 'All statuses'}. Overview totals cover the whole organization.</p>
+        <p className="muted">Search: {filters.q || 'All employees'} · Status: {filters.status.replace('_', ' ') || 'All statuses'} · Sort: {sortLabels[filters.sortBy]} ({filters.direction === 'asc' ? 'ascending' : 'descending'}). Overview totals cover the whole organization.</p>
         {directoryError && <div className="error" role="alert">{directoryError}
           <button type="button" className="secondary" onClick={() => setReload(value => value + 1)}>Retry directory</button>
         </div>}
