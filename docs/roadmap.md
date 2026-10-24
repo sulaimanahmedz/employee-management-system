@@ -98,3 +98,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added Apply/Clear controls, applied-filter summary and matching empty states; mutations preserve applied filters.
 - Added regressions for boundary overlap, open-ended periods, filtered paging, isolation and invalid filters.
 - Execution validation results and commit SHAs are recorded in the feature PR before merge.
+
+### October 24, 2026 — Edit document metadata
+- Added scoped metadata updates and profile Edit/Save/Cancel controls; clearing expiry is supported.
+- Retained drafts after failures and confirmed discarding changed metadata.
+- Added regression tests for persisted updates, invalid input, cross-employee isolation and missing records.
+- Builds, tests and runtime checks are recorded against the feature commit in its PR before merge.

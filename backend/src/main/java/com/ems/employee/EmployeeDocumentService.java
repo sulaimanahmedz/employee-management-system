@@ -33,6 +33,13 @@ public class EmployeeDocumentService {
         return DocumentResponse.from(find(employeeId, documentId));
     }
     @Transactional
+    public DocumentResponse update(Long employeeId, Long documentId, DocumentRequest request) {
+        employee(employeeId);
+        var document = find(employeeId, documentId);
+        document.update(request);
+        return DocumentResponse.from(documents.saveAndFlush(document));
+    }
+    @Transactional
     public void delete(Long employeeId, Long documentId) {
         employee(employeeId);
         documents.delete(find(employeeId, documentId));

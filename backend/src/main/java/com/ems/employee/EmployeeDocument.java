@@ -22,6 +22,9 @@ public class EmployeeDocument {
     protected EmployeeDocument() {}
     public EmployeeDocument(Employee employee, DocumentRequest request) {
         this.employee = employee;
+        update(request);
+    }
+    public void update(DocumentRequest request) {
         this.name = request.name().strip();
         this.category = request.category();
         this.expiresOn = request.expiresOn();

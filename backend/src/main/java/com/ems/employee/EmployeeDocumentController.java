@@ -23,6 +23,9 @@ public class EmployeeDocumentController {
     public DocumentResponse get(@PathVariable Long employeeId, @PathVariable Long documentId) {
         return service.get(employeeId, documentId);
     }
+    @PutMapping("/{documentId}")
+    public DocumentResponse update(@PathVariable Long employeeId, @PathVariable Long documentId,
+            @Valid @RequestBody DocumentRequest request) { return service.update(employeeId, documentId, request); }
     @DeleteMapping("/{documentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long employeeId, @PathVariable Long documentId) { service.delete(employeeId, documentId); }
