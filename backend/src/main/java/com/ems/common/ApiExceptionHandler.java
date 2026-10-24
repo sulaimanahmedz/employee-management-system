@@ -2,6 +2,8 @@ package com.ems.common;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 public class ApiExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -17,7 +20,7 @@ public class ApiExceptionHandler {
         exception.getBindingResult().getFieldErrors().forEach(error ->
             fields.putIfAbsent(error.getField(), error.getDefaultMessage()));
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
-            "Please check the employee details: " + String.join(", ", fields.keySet()));
+            "Please check the submitted details: " + String.join(", ", fields.keySet()));
         problem.setProperty("errors", fields);
         return problem;
     }
