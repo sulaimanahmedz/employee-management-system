@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import EmployeeDocuments from './EmployeeDocuments';
 import type { FormEvent } from 'react';
 import { getEmployee, updateEmployee } from './api';
 import type { Employee, EmployeeInput } from './types';
@@ -153,5 +154,6 @@ export default function EmployeeProfile({ employeeId, onBack, onSaved }: Props) 
         {dirty && <p className="muted">You have unsaved changes.</p>}
       </form>}
     </div>
+    {!loading && employee && !editing && <EmployeeDocuments key={employee.id} employeeId={employee.id} />}
   </section>;
 }
