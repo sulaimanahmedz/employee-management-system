@@ -1,5 +1,6 @@
 package com.ems.employmenthistory.controller;
 
+import com.ems.employmenthistory.entity.EmploymentHistory;
 import com.ems.employmenthistory.dto.EmploymentHistoryResponse;
 import com.ems.employmenthistory.service.EmploymentHistoryService;
 
@@ -20,7 +21,8 @@ public class EmploymentHistoryController {
 
     @GetMapping
     public EmploymentHistoryResponse history(@PathVariable Long id,
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return service.history(id, page, size);
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) EmploymentHistory.Kind kind) {
+        return service.history(id, page, size, kind);
     }
 }

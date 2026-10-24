@@ -25,12 +25,14 @@ public class EmploymentHistoryService {
         this.history = history;
     }
 
-    public EmploymentHistoryResponse history(Long id, int page, int size) {
+    public EmploymentHistoryResponse history(Long id, int page, int size, EmploymentHistory.Kind kind) {
         if (!employees.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee not found");
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid history page or size");
         }
-        var result = history.findByEmployeeId(id, PageRequest.of(page, size, Sort.by("id").descending()));
+        var pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        var result = kind == null ? history.findByEmployeeId(id, pageable)
+            : history.findByEmployeeIdAndKind(id, kind, pageable);
         return new EmploymentHistoryResponse(result.getContent().stream().map(EmploymentHistoryResponse.Entry::from).toList(),
             result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }

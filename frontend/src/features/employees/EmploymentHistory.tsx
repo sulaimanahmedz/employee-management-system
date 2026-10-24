@@ -5,6 +5,7 @@ import type { EmploymentHistoryPage } from './types';
 const kinds = { CREATED: 'Profile created', BASELINE: 'Existing profile baseline', CHANGED: 'Employment details changed' };
 const statuses = { ACTIVE: 'Active', ON_LEAVE: 'On leave', INACTIVE: 'Inactive' };
 export default function EmploymentHistory({ employeeId }: { employeeId: number }) {
+  const [kind, setKind] = useState<'' | keyof typeof kinds>('');
   const [page, setPage] = useState(0);
   const [data, setData] = useState<EmploymentHistoryPage | null>(null);
   const [error, setError] = useState('');
@@ -13,20 +14,27 @@ export default function EmploymentHistory({ employeeId }: { employeeId: number }
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError(''); setData(null);
-    getEmploymentHistory(employeeId, page, controller.signal).then(result => {
+    getEmploymentHistory(employeeId, page, controller.signal, kind).then(result => {
       if (!controller.signal.aborted) setData(result);
     }).catch((cause: unknown) => {
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load history.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [employeeId, page, retry]);
+  }, [employeeId, page, retry, kind]);
   return <section className="panel" aria-labelledby="history-heading">
     <h2 id="history-heading">Employment history</h2>
     <p className="muted">Recorded profile changes, newest first. Times show when changes were saved, not employment effective dates. Earlier history is not reconstructed.</p>
+    <label>Show history events
+      <select value={kind} onChange={event => { setKind(event.target.value as '' | keyof typeof kinds); setPage(0); }}>
+        <option value="">All events</option>
+        {Object.entries(kinds).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      </select>
+    </label>
     {loading && <p role="status">Loading employment history…</p>}
     {error && <p className="error" role="alert">{error} <button type="button" onClick={() => setRetry(value => value + 1)}>Retry history</button></p>}
     {data && <>
-      {data.totalElements === 0 ? <p>No history recorded yet. A baseline will be recorded on the next profile save.</p> :
+      <p>{data.totalElements} matching history events</p>
+      {data.totalElements === 0 ? <p>{kind ? 'No history events match this type.' : 'No history recorded yet. A baseline will be recorded on the next profile save.'}</p> :
         <ol>{data.items.map(entry => <li key={entry.id}>
           <strong>{kinds[entry.kind]}</strong>{' — '}
           <time dateTime={entry.recordedAt}>{new Date(entry.recordedAt).toLocaleString()}</time>

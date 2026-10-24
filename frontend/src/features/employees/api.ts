@@ -21,5 +21,6 @@ export function searchEmployees(filters: DirectoryFilters, page: number, signal?
   return api<EmployeeDirectory>(`/api/v1/employees/directory?${params}`, { signal });
 }
 
-export const getEmploymentHistory = (id: number, page: number, signal?: AbortSignal) =>
-  api<import('./types').EmploymentHistoryPage>(`/api/v1/employees/${id}/history?page=${page}&size=10`, { signal });
+export const getEmploymentHistory = (id: number, page: number, signal?: AbortSignal,
+  kind: '' | import('./types').EmploymentHistoryPage['items'][number]['kind'] = '') =>
+  api<import('./types').EmploymentHistoryPage>(`/api/v1/employees/${id}/history?page=${page}&size=10${kind ? `&kind=${kind}` : ''}`, { signal });
