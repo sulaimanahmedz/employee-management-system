@@ -9,7 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface OnboardingTaskRepository extends JpaRepository<OnboardingTask, Long> {
+public interface OnboardingTaskRepository extends JpaRepository<OnboardingTask, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<OnboardingTask> {
     Page<OnboardingTask> findByEmployeeId(Long employeeId, Pageable pageable);
     Page<OnboardingTask> findByEmployeeIdAndCompleted(Long employeeId, boolean completed, Pageable pageable);
     long countByEmployeeId(Long employeeId);

@@ -6,6 +6,7 @@ interface TaskPage { items: Task[]; page: number; totalPages: number; totalEleme
 
 export default function OnboardingTasks({ employeeId }: { employeeId: number }) {
   const [data, setData] = useState<TaskPage | null>(null);
+  const [dueBy, setDueBy] = useState('');
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(0);
   const [reload, setReload] = useState(0);
@@ -21,7 +22,7 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
   const path = `/api/v1/employees/${employeeId}/onboarding-tasks`;
   useEffect(() => {
     const controller = new AbortController(); setLoading(true); setError('');
-    api<TaskPage>(`${path}?page=${page}${filter ? `&completed=${filter}` : ''}`, { signal: controller.signal }).then(result => {
+    api<TaskPage>(`${path}?page=${page}${filter ? `&completed=${filter}` : ''}${dueBy ? `&dueBy=${encodeURIComponent(dueBy)}` : ''}`, { signal: controller.signal }).then(result => {
       if (controller.signal.aborted) return;
       const last = Math.max(0, result.totalPages - 1);
       if (page > last) { setPage(last); return; }
@@ -30,7 +31,7 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load checklist.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [path, page, reload, filter]);
+  }, [path, page, reload, filter, dueBy]);
   async function mutate(action: () => Promise<unknown>, message: string, added = false) {
     if (pending.current) return;
     pending.current = true; setBusy(true); setError(''); setNotice('');
@@ -66,9 +67,14 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
         <option value="">All tasks</option><option value="false">Pending tasks</option><option value="true">Completed tasks</option>
       </select>
     </label>
+    <label>Tasks due on or before
+      <input type="date" value={dueBy} disabled={busy || editing !== null} onChange={event => { setDueBy(event.target.value); setPage(0); }} />
+    </label>
+    {dueBy && <><p role="status">Showing tasks due on or before {dueBy}; tasks without a due date are excluded.</p>
+      <button type="button" disabled={busy || editing !== null} onClick={() => { setDueBy(''); setPage(0); }}>Clear due-date filter</button></>}
     {loading ? <p role="status">Loading checklist…</p> : data && <>
       <p>{data.completedTasks} of {data.totalTasks} tasks complete · {data.totalElements} matching tasks</p>
-      {data.totalElements === 0 ? <p>{filter ? 'No tasks match this filter.' : 'No onboarding tasks yet.'}</p> : <ul>{data.items.map(task => <li key={task.id}>
+      {data.totalElements === 0 ? <p>{filter || dueBy ? 'No tasks match these filters.' : 'No onboarding tasks yet.'}</p> : <ul>{data.items.map(task => <li key={task.id}>
         <strong>{task.title}</strong> — {task.owner} — {task.completed ? 'Complete' : 'Pending'}
         {task.dueOn && <> — Due <time dateTime={task.dueOn}>{task.dueOn}</time></>}{' '}
         <button type="button" disabled={busy} aria-label={`Edit task ${task.title}`} onClick={() => beginEdit(task)}>Edit</button>{' '}

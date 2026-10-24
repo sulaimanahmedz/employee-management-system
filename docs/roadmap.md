@@ -116,3 +116,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Excluded undated records from filtered results, retained current filters after mutations and displayed the applied cutoff.
 - Added regression coverage for cutoff boundaries, undated records, filtered pagination, isolation and invalid dates.
 - Execution checks and exact commit SHAs are recorded in the feature PR before merge.
+
+### October 24, 2026 — Onboarding deadline review
+- Added inclusive due-date filtering combined with completion state before pagination.
+- Added profile cutoff/Clear controls while keeping overall progress independent of filters.
+- Added tests for boundaries, undated exclusions, combined filters, pagination, isolation and invalid dates.
+- Execution validation and exact head/base SHAs are recorded in the feature PR before merge.
