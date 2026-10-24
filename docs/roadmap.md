@@ -122,3 +122,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added profile cutoff/Clear controls while keeping overall progress independent of filters.
 - Added tests for boundaries, undated exclusions, combined filters, pagination, isolation and invalid dates.
 - Execution validation and exact head/base SHAs are recorded in the feature PR before merge.
+
+### October 25, 2026 — Document category review
+- Added category filtering combined with expiry review before pagination and matching Apply/Clear controls.
+- Preserved undated records for category-only queries and displayed applied categories.
+- Added tests for combined filters, pagination, isolation, compatibility and invalid category values.
+- Execution validation and exact head/base SHAs are recorded in the feature PR before merge.

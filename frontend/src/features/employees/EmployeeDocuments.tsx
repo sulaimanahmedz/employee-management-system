@@ -9,6 +9,8 @@ const categories: Record<Category, string> = { CONTRACT: 'Contract', CERTIFICATE
 
 export default function EmployeeDocuments({ employeeId }: { employeeId: number }) {
   const [data, setData] = useState<DocumentPage | null>(null);
+  const [categoryDraft, setCategoryDraft] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [expiryDraft, setExpiryDraft] = useState('');
   const [expiresBy, setExpiresBy] = useState('');
   const [page, setPage] = useState(0);
@@ -27,7 +29,7 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError('');
-    api<DocumentPage>(`${path}/page?page=${page}${expiresBy ? `&expiresBy=${encodeURIComponent(expiresBy)}` : ''}`, { signal: controller.signal }).then(value => {
+    api<DocumentPage>(`${path}/page?page=${page}${expiresBy ? `&expiresBy=${encodeURIComponent(expiresBy)}` : ''}${categoryFilter ? `&category=${categoryFilter}` : ''}`, { signal: controller.signal }).then(value => {
       if (controller.signal.aborted) return;
       const last = Math.max(0, value.totalPages - 1);
       if (page > last) { setPage(last); return; }
@@ -36,7 +38,7 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load documents.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [path, reload, page, expiresBy]);
+  }, [path, reload, page, expiresBy, categoryFilter]);
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,16 +80,20 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
     {error && <p role="alert" className="error">{error} <button type="button" disabled={busy || loading}
       onClick={() => setReload(value => value + 1)}>Refresh list</button></p>}
     {notice && <p role="status">{notice}</p>}
-    <form aria-label="Filter document expiry" onSubmit={event => { event.preventDefault(); setExpiresBy(expiryDraft); setPage(0); setReload(value => value + 1); }}>
-      <fieldset disabled={busy || editing !== null} className="profile-fieldset"><legend>Find documents due for renewal</legend>
+    <form aria-label="Filter document register" onSubmit={event => { event.preventDefault(); setExpiresBy(expiryDraft); setCategoryFilter(categoryDraft); setPage(0); setReload(value => value + 1); }}>
+      <fieldset disabled={busy || editing !== null} className="profile-fieldset"><legend>Filter document register</legend>
+        <label>Document category<select value={categoryDraft} onChange={event => setCategoryDraft(event.target.value)}>
+          <option value="">All categories</option>{Object.entries(categories).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select></label>
         <label>Expires on or before<input type="date" value={expiryDraft} onChange={event => setExpiryDraft(event.target.value)} /></label>
-        <button type="submit">Apply expiry filter</button>{' '}
-        <button type="button" onClick={() => { setExpiryDraft(''); setExpiresBy(''); setPage(0); setReload(value => value + 1); }}>Clear expiry filter</button>
+        <button type="submit">Apply document filters</button>{' '}
+        <button type="button" onClick={() => { setExpiryDraft(''); setExpiresBy(''); setCategoryDraft(''); setCategoryFilter(''); setPage(0); setReload(value => value + 1); }}>Clear document filters</button>
       </fieldset>
     </form>
+    {categoryFilter && <p role="status">Showing category: {categories[categoryFilter as Category]}. New or edited records may fall outside this filter.</p>}
     {expiresBy && <p role="status">Showing expiry dates on or before {expiresBy}. Records without expiry dates are excluded. New or edited records may fall outside this filter.</p>}
     {loading ? <p role="status">Loading document register…</p> : documents.length === 0 ?
-      <p>{expiresBy ? 'No document metadata matches this expiry filter.' : 'No document metadata registered.'}</p> : <ul>
+      <p>{expiresBy || categoryFilter ? 'No document metadata matches these filters.' : 'No document metadata registered.'}</p> : <ul>
         {documents.map(document => <li key={document.id}>
           <strong>{document.name}</strong> — {categories[document.category]} — {document.expiresOn ?
             <>Expires <time dateTime={document.expiresOn}>{document.expiresOn}</time></> : 'No expiry date'}{' '}

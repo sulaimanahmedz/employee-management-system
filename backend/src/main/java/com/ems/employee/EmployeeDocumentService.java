@@ -23,14 +23,17 @@ public class EmployeeDocumentService {
         employee(employeeId);
         return documents.findByEmployeeIdOrderByIdDesc(employeeId).stream().map(DocumentResponse::from).toList();
     }
-    public DocumentResponse.Page page(Long employeeId, int page, java.time.LocalDate expiresBy) {
+    public DocumentResponse.Page page(Long employeeId, int page, java.time.LocalDate expiresBy, EmployeeDocument.Category category) {
         employee(employeeId);
         if (page < 0 || (long) page * 10 > Integer.MAX_VALUE)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid document page");
         var pageable = org.springframework.data.domain.PageRequest.of(
             page, 10, org.springframework.data.domain.Sort.by("id").descending());
-        var result = expiresBy == null ? documents.findByEmployeeId(employeeId, pageable)
-            : documents.findByEmployeeIdAndExpiresOnLessThanEqual(employeeId, expiresBy, pageable);
+        org.springframework.data.jpa.domain.Specification<EmployeeDocument> filter =
+            (root, query, cb) -> cb.equal(root.get("employee").get("id"), employeeId);
+        if (expiresBy != null) filter = filter.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("expiresOn"), expiresBy));
+        if (category != null) filter = filter.and((root, query, cb) -> cb.equal(root.get("category"), category));
+        var result = documents.findAll(filter, pageable);
         return new DocumentResponse.Page(result.getContent().stream().map(DocumentResponse::from).toList(),
             page, result.getTotalPages(), result.getTotalElements());
     }
