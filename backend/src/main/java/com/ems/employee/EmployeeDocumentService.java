@@ -23,6 +23,15 @@ public class EmployeeDocumentService {
         employee(employeeId);
         return documents.findByEmployeeIdOrderByIdDesc(employeeId).stream().map(DocumentResponse::from).toList();
     }
+    public DocumentResponse.Page page(Long employeeId, int page) {
+        employee(employeeId);
+        if (page < 0 || (long) page * 10 > Integer.MAX_VALUE)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid document page");
+        var result = documents.findByEmployeeId(employeeId, org.springframework.data.domain.PageRequest.of(
+            page, 10, org.springframework.data.domain.Sort.by("id").descending()));
+        return new DocumentResponse.Page(result.getContent().stream().map(DocumentResponse::from).toList(),
+            page, result.getTotalPages(), result.getTotalElements());
+    }
     @Transactional
     public DocumentResponse create(Long employeeId, DocumentRequest request) {
         var saved = documents.saveAndFlush(new EmployeeDocument(employee(employeeId), request));

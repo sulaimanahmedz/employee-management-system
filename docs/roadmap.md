@@ -104,3 +104,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Retained drafts after failures and confirmed discarding changed metadata.
 - Added regression tests for persisted updates, invalid input, cross-employee isolation and missing records.
 - Builds, tests and runtime checks are recorded against the feature commit in its PR before merge.
+
+### October 24, 2026 — Paginated document register
+- Added a bounded document-page endpoint and profile Previous/Next navigation with totals.
+- Preserved the legacy list API and edit drafts; refreshes after mutations recover from empty last pages.
+- Added API tests for ordering, page boundaries, isolation, invalid pages and compatibility.
+- Build, test and runtime validation results are recorded in the feature PR before merge.

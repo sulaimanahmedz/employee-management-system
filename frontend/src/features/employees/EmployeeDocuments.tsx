@@ -4,10 +4,13 @@ import { api } from '../../lib/api';
 
 type Category = 'CONTRACT' | 'CERTIFICATE' | 'OTHER';
 interface DocumentMetadata { id: number; name: string; category: Category; expiresOn: string | null }
+interface DocumentPage { items: DocumentMetadata[]; page: number; totalPages: number; totalElements: number }
 const categories: Record<Category, string> = { CONTRACT: 'Contract', CERTIFICATE: 'Certificate', OTHER: 'Other' };
 
 export default function EmployeeDocuments({ employeeId }: { employeeId: number }) {
-  const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
+  const [data, setData] = useState<DocumentPage | null>(null);
+  const [page, setPage] = useState(0);
+  const documents = data?.items ?? [];
   const [editing, setEditing] = useState<DocumentMetadata | null>(null);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Category>('CONTRACT');
@@ -22,22 +25,26 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError('');
-    api<DocumentMetadata[]>(path, { signal: controller.signal }).then(value => {
-      if (!controller.signal.aborted) setDocuments(value);
+    api<DocumentPage>(`${path}/page?page=${page}`, { signal: controller.signal }).then(value => {
+      if (controller.signal.aborted) return;
+      const last = Math.max(0, value.totalPages - 1);
+      if (page > last) { setPage(last); return; }
+      setData(value);
     }).catch((cause: unknown) => {
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load documents.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [path, reload]);
+  }, [path, reload, page]);
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting.current || !name.trim()) return;
     submitting.current = true; setBusy(true); setError(''); setNotice('');
     try {
-      const saved = await api<DocumentMetadata>(editing ? `${path}/${editing.id}` : path, { method: editing ? 'PUT' : 'POST',
+      await api<DocumentMetadata>(editing ? `${path}/${editing.id}` : path, { method: editing ? 'PUT' : 'POST',
         body: JSON.stringify({ name: name.trim(), category, expiresOn: expiresOn || null }) });
-      setDocuments(current => editing ? current.map(item => item.id === saved.id ? saved : item) : [saved, ...current]);
+      if (!editing) setPage(0);
+      setReload(value => value + 1);
       setName(''); setExpiresOn(''); setCategory('CONTRACT'); setEditing(null);
       setNotice(editing ? 'Document metadata updated.' : 'Document metadata added.');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save document.'); }
@@ -58,7 +65,7 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
     submitting.current = true; setBusy(true); setError(''); setNotice('');
     try {
       await api<void>(`${path}/${document.id}`, { method: 'DELETE' });
-      setDocuments(current => current.filter(item => item.id !== document.id));
+      setReload(value => value + 1);
       setNotice('Document metadata removed.');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to remove document.'); }
     finally { submitting.current = false; setBusy(false); }
@@ -79,6 +86,12 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
             aria-label={`Remove ${document.name}`}>Remove</button>
         </li>)}
       </ul>}
+    {!loading && data && <p>{data.totalElements} document records</p>}
+    {!loading && data && data.totalPages > 1 && <nav aria-label="Document register pages">
+      <button type="button" disabled={busy || editing !== null || page === 0} onClick={() => setPage(value => value - 1)}>Previous documents</button>
+      <span> Page {page + 1} of {data.totalPages} </span>
+      <button type="button" disabled={busy || editing !== null || page + 1 >= data.totalPages} onClick={() => setPage(value => value + 1)}>Next documents</button>
+    </nav>}
     <form onSubmit={add} aria-label={editing ? 'Edit document metadata' : 'Add document metadata'}>
       <fieldset disabled={busy || loading} className="profile-fieldset">
         <legend>{editing ? 'Edit document metadata' : 'Add document metadata'}</legend>
