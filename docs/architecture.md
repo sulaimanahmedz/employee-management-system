@@ -1,6 +1,10 @@
 # Architecture
 
-The repository is a monorepo with separately built frontend and backend applications. The backend is a modular monolith: business features own their controllers, services, DTOs, entities and repositories. Add future modules alongside `com.ems.employee`, keeping shared infrastructure in `com.ems.common`.
+The repository is a monorepo with separately built frontend and backend applications. The backend is a modular monolith: business features own their controllers, services, DTOs, entities and repositories. Features are `employee`, `document`, `leave`, `onboarding` and `employmenthistory`. Each owns `controller`, `service`, `repository`, `entity` and `dto` subpackages. Add future modules alongside these; create layers only when needed. Shared exception translation lives in `com.ems.common.exception`.
+
+Controllers handle HTTP concerns and delegate to services. Services own business rules and transactions; repositories provide Spring Data persistence without a redundant DAO layer. Entities accept domain values, never API DTOs. Response DTO factories may map entities, but entities cannot depend back on DTOs. Use constructor injection and explicit project imports. Integration tests live under their owning feature; `PackageArchitectureTest` checks package placement and project dependency directions without adding a dependency.
+
+Employment history has its own controller and service. EmployeeService delegates snapshot recording to EmploymentHistoryService, whose write methods require an existing transaction. Employee row locks, snapshot rollback, REST routes, JSON fields, entity names and table names remain unchanged. Cross-feature employee entity references and repository lookups are intentional for ownership checks; cross-feature business operations use services.
 
 ## Request flow
 
@@ -33,4 +37,4 @@ The original list endpoint remains available for existing callers, but is no lon
 
 ## Recorded employment history
 
-EmployeeService writes employment snapshots in the same transaction as profile creation/update. Updates take a pessimistic write lock on the employee row to serialize the baseline and change snapshot decision. History does not add optimistic edit-conflict detection: profile updates still use last-write-wins. Read APIs return DTO pages sorted by descending history ID. Database foreign-key cascade removes snapshots on employee deletion. This is a profile history feature, not an immutable compliance audit trail.
+EmployeeService delegates employment snapshots to EmploymentHistoryService in the same transaction as profile creation/update. Updates take a pessimistic write lock on the employee row to serialize the baseline and change snapshot decision. History does not add optimistic edit-conflict detection: profile updates still use last-write-wins. Read APIs return DTO pages sorted by descending history ID. Database foreign-key cascade removes snapshots on employee deletion. This is a profile history feature, not an immutable compliance audit trail.

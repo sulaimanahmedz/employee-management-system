@@ -1,5 +1,9 @@
 package com.ems.employee;
 
+import com.ems.employee.entity.Employee;
+import com.ems.employee.entity.EmployeeStatus;
+import com.ems.employee.repository.EmployeeRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,12 +23,12 @@ class EmployeeDirectoryApiTest {
 
     @BeforeEach void seedSyntheticEmployees() {
         repository.deleteAll();
-        firstId = repository.saveAndFlush(new Employee(new EmployeeRequest(
-            "Aisha", "Khan", "aisha@example.com", "Engineering", "Developer", EmployeeStatus.ACTIVE))).getId();
-        repository.saveAndFlush(new Employee(new EmployeeRequest(
-            "Noor", "Ali", "noor@example.com", "Finance", "Analyst", EmployeeStatus.ON_LEAVE)));
-        lastId = repository.saveAndFlush(new Employee(new EmployeeRequest(
-            "Zoya", "Ahmed", "zoya@example.com", "Engineering", "Lead", EmployeeStatus.INACTIVE))).getId();
+        firstId = repository.saveAndFlush(new Employee(
+            "Aisha", "Khan", "aisha@example.com", "Engineering", "Developer", EmployeeStatus.ACTIVE)).getId();
+        repository.saveAndFlush(new Employee(
+            "Noor", "Ali", "noor@example.com", "Finance", "Analyst", EmployeeStatus.ON_LEAVE));
+        lastId = repository.saveAndFlush(new Employee(
+            "Zoya", "Ahmed", "zoya@example.com", "Engineering", "Lead", EmployeeStatus.INACTIVE)).getId();
     }
 
     @Test void returnsStablePagesAndGlobalTotals() throws Exception {
