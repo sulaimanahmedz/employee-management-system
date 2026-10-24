@@ -26,3 +26,9 @@ export interface DirectoryFilters {
   status: '' | Employee['status'];
   size: number;
 }
+
+export interface EmploymentHistoryPage {
+  items: { id: number; recordedAt: string; kind: 'CREATED' | 'BASELINE' | 'CHANGED';
+    department: string; jobTitle: string; status: Employee['status'] }[];
+  page: number; size: number; totalElements: number; totalPages: number;
+}
