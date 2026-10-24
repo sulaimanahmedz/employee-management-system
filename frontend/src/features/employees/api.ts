@@ -1,5 +1,5 @@
 import { api } from '../../lib/api';
-import type { Employee, EmployeeInput } from './types';
+import type { Employee, EmployeeInput, EmployeeDirectory, DirectoryFilters } from './types';
 
 export const listEmployees = (signal?: AbortSignal) => api<Employee[]>('/api/v1/employees', { signal });
 export const createEmployee = (employee: EmployeeInput) => api<Employee>('/api/v1/employees', {
@@ -13,3 +13,9 @@ export const updateEmployee = (id: number, employee: EmployeeInput) =>
   api<Employee>(`/api/v1/employees/${id}`, {
     method: 'PUT', body: JSON.stringify(employee),
   });
+
+export function searchEmployees(filters: DirectoryFilters, page: number, signal?: AbortSignal) {
+  const params = new URLSearchParams({ q: filters.q, page: String(page), size: String(filters.size) });
+  if (filters.status) params.set('status', filters.status);
+  return api<EmployeeDirectory>(`/api/v1/employees/directory?${params}`, { signal });
+}

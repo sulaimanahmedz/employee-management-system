@@ -13,6 +13,14 @@ public class EmployeeController {
     public EmployeeController(EmployeeService service) { this.service = service; }
     @GetMapping
     public List<EmployeeResponse> list() { return service.list(); }
+    @GetMapping("/directory")
+    public EmployeeDirectoryResponse directory(
+            @RequestParam(defaultValue = "") String q,
+            @RequestParam(required = false) EmployeeStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return service.directory(q, status, page, size);
+    }
     @GetMapping("/{id}")
     public EmployeeResponse get(@PathVariable Long id) { return service.get(id); }
     @PostMapping

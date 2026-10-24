@@ -58,7 +58,8 @@ The UI lists, searches and adds employees, displays directory totals, and handle
 
 | Method | Endpoint | Behavior |
 | --- | --- | --- |
-| GET | `/api/v1/employees` | List employees |
+| GET | `/api/v1/employees` | Legacy unpaginated list |
+| GET | `/api/v1/employees/directory` | Search/filter a page of employees with organization totals |
 | GET | `/api/v1/employees/{id}` | Get one employee |
 | POST | `/api/v1/employees` | Create employee; returns 201 and Location |
 | PUT | `/api/v1/employees/{id}` | Replace employee details |
@@ -109,3 +110,19 @@ See [architecture](docs/architecture.md) and [roadmap](docs/roadmap.md). This in
 ## Profile feature validation
 
 Profile viewing/editing was added on October 21, 2026. Only static source review was performed for this change; compilation, automated tests and browser execution remain pending the weekly maintenance check. See [profile acceptance checks](docs/profile-validation.md). Existing GET/PUT endpoints are reused without a schema or dependency change.
+
+## Search and pagination
+
+The directory now searches on the server. Enter a full or partial name, email, department or job title, optionally select a status and rows per page, then select **Apply filters** (or press Enter). **Clear filters** restores all employees and 10 rows per page. Previous/Next navigate matching results; the overview cards always show organization-wide totals. Profile changes refresh the directory when you return, preserving the applied filters and page where possible.
+
+Example: `GET /api/v1/employees/directory?q=engineering&status=ACTIVE&page=0&size=10`.
+
+- `q`: optional, at most 200 characters; trimmed, case-insensitive literal substring search. Percent and underscore are ordinary characters.
+- `status`: optional `ACTIVE`, `ON_LEAVE` or `INACTIVE`.
+- `page`: zero-based, defaults to 0; non-negative.
+- `size`: 1–100, defaults to 10. The page offset must fit a signed 32-bit integer.
+- Response: `items`, `page`, `size`, `totalElements`, `totalPages`, `totalEmployees`, `activeEmployees`, `departments`. Matching counts apply to filters; the final three counts cover all employees. Department counts use distinct stored department names.
+- Ordering is ascending employee ID. Out-of-range pages return empty items and matching counts; the UI moves back to the last available page.
+- Existing `GET /api/v1/employees` keeps its array response for compatibility.
+
+Added October 24, 2026. Static source review only; compilation, tests and browser execution are pending the weekly check. See [directory acceptance checks](docs/directory-validation.md).

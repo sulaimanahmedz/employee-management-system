@@ -17,7 +17,8 @@ The goal is an employee management application spanning the employee lifecycle.
 ## Employee lifecycle
 
 - Implemented in source: profile viewing and editing (October 21, 2026); execution validation pending.
-- Next: search pagination, employment history and document metadata.
+- Implemented in source: server-side search, status filtering and pagination (October 24, 2026); execution validation pending.
+- Next: employment history and document metadata.
 - Onboarding and offboarding workflows with assigned tasks.
 - Employee self-service and manager views.
 
@@ -41,3 +42,11 @@ The goal is an employee management application spanning the employee lifecycle.
 - Preserve drafts after errors, confirm discarding edits, and prevent duplicate save submissions.
 - Added backend test source for profile persistence, invalid updates, duplicate-email rollback, unchanged email and deleted employees.
 - Validation: static source review only. No dependency downloads, builds, compilation, tests or application startup were performed for this increment.
+
+### October 24, 2026 — Searchable, paginated directory
+- Added a bounded server-side directory endpoint with literal substring search, optional status filtering and stable ID ordering.
+- Added Apply/Clear filters, page size selection, Previous/Next controls and matching result counts.
+- Kept organization totals independent of filters and refreshed directory data after employee changes.
+- Preserved the original list endpoint for compatibility.
+- Added integration test source and browser acceptance instructions.
+- Validation: static source review only; no downloads, builds, compilation, tests or application runs.

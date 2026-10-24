@@ -20,7 +20,13 @@ Request validation uses Jakarta Validation. Errors follow Spring problem details
 - Organization: replace department text with department and reporting-line relationships.
 - Employee lifecycle: add onboarding, employment history and audited status transitions.
 - Attendance and leave: create separate feature modules with their own business rules.
-- Scale: introduce paginated directory queries before loading large employee datasets.
+- Scale: the UI uses bounded database pagination; add indexes and specialized text search as data grows.
 - Operations: add schema migrations, structured observability and deployment configuration.
 
-There is no authentication, payroll, leave approval, attendance tracking, audit history, or production hosting in this base. The UI exposes list/create and a dedicated view/edit profile screen using the existing GET/PUT endpoints; deletion is currently API-only. Profile data is fetched when opened. A successful update replaces that employee in the directory state, so summaries reflect changed status and department. Failed saves retain the draft. Requests abandoned while loading a profile are cancelled and ignored. Concurrent edits from different users still follow last-write-wins; optimistic locking is a future improvement.
+There is no authentication, payroll, leave approval, attendance tracking, audit history, or production hosting in this base. The UI exposes list/create and a dedicated view/edit profile screen using the existing GET/PUT endpoints; deletion is currently API-only. Profile data is fetched when opened. A successful update invalidates the directory; returning fetches the applied search page and organization totals again. Failed saves retain the draft. Requests abandoned while loading a profile are cancelled and ignored. Concurrent edits from different users still follow last-write-wins; optimistic locking is a future improvement.
+
+## Directory queries
+
+The UI uses `GET /api/v1/employees/directory`, a dedicated DTO with a bounded employee page, matching counts and separate global aggregates. A JPA Specification combines literal case-insensitive substring search with status equality. Criteria `locate` avoids treating SQL wildcard characters as patterns. Page requests sort by ID and validate size/offset before repository access. No extra dependency or schema change is required.
+
+The original list endpoint remains available for existing callers, but is no longer used by the UI. Filter submission resets page zero. Aborted requests cannot replace newer directory state. Empty pages after deletion or changed filter membership trigger a fetch of the last valid page. Database search and aggregate queries can observe concurrent changes at the configured isolation level; pagination is not a frozen snapshot. Substring scans and aggregate counts still need performance review before large-scale production use.

@@ -1,6 +1,9 @@
 package com.ems.employee;
 
 import java.util.List;
+import java.util.Locale;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,6 +18,34 @@ public class EmployeeService {
     public List<EmployeeResponse> list() {
         return repository.findAll(Sort.by("id")).stream().map(EmployeeResponse::from).toList();
     }
+    public EmployeeDirectoryResponse directory(String query, EmployeeStatus status, int page, int size) {
+        if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Page must be non-negative, size must be 1 to 100, and the page offset must fit a signed integer");
+        }
+        if (query.length() > 200) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Search must be at most 200 characters");
+        }
+        String term = query.strip().toLowerCase(Locale.ROOT);
+        Specification<Employee> matching = (root, criteria, builder) -> {
+            var textMatch = term.isEmpty() ? builder.conjunction() : builder.or(
+                builder.greaterThan(builder.locate(builder.lower(
+                    builder.concat(builder.concat(root.<String>get("firstName"), " "),
+                        root.<String>get("lastName"))), term), 0),
+                builder.greaterThan(builder.locate(builder.lower(root.<String>get("email")), term), 0),
+                builder.greaterThan(builder.locate(builder.lower(root.<String>get("department")), term), 0),
+                builder.greaterThan(builder.locate(builder.lower(root.<String>get("jobTitle")), term), 0)
+            );
+            return status == null ? textMatch :
+                builder.and(textMatch, builder.equal(root.get("status"), status));
+        };
+        var result = repository.findAll(matching, PageRequest.of(page, size, Sort.by("id")));
+        return new EmployeeDirectoryResponse(
+            result.getContent().stream().map(EmployeeResponse::from).toList(),
+            result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages(),
+            repository.count(), repository.countByStatus(EmployeeStatus.ACTIVE), repository.countDepartments());
+    }
+
     public EmployeeResponse get(Long id) { return EmployeeResponse.from(find(id)); }
     @Transactional
     public EmployeeResponse create(EmployeeRequest request) {
