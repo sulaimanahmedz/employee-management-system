@@ -168,3 +168,9 @@ Profiles now record annual, personal or unpaid full-day leave requests with star
 - `PUT /api/v1/employees/{id}/leave-requests/{requestId}/cancellation`: cancel, no body required.
 
 Missing employees or another employee's request return 404. Records are deleted with their employee. This is a request register, not approval or entitlement processing: there are no approval actions, authenticated requesters, balances, half-days, holiday rules, notifications or automatic employee-status changes. Those require future policy/identity work. No reasons or medical details are collected. Execution validation is recorded against the exact feature commit in its PR before merge.
+
+### Find leave requests
+
+Use the leave register's **Request status**, **Period from** and **Period to** controls, then **Apply leave filters**. Clear restores all requests. The applied-filter summary identifies the results currently shown even while changing draft filter fields. Filters combine with AND and apply before pagination. Period matching is inclusive overlap, so a request starting before the selected period is included if it ends within or after it. Either date may be omitted. Cancelling or adding refreshes the current filter and returns from an empty last page; new requests outside the filter remain hidden until filters are cleared.
+
+The collection GET accepts optional `status=PENDING|CANCELLED`, `from=YYYY-MM-DD`, and `to=YYYY-MM-DD`. Invalid status/date values or a reversed period return 400. Page totals describe matching requests only. Defaults and all mutation endpoints remain unchanged. Feature PR records build, test and runtime validation against the exact commit.

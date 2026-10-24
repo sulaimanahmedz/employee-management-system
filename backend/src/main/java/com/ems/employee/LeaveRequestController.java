@@ -2,6 +2,8 @@ package com.ems.employee;
 
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,8 +13,11 @@ public class LeaveRequestController {
     private final LeaveRequestService service;
     public LeaveRequestController(LeaveRequestService service) { this.service = service; }
     @GetMapping
-    public LeaveRequestResponse.Page list(@PathVariable Long employeeId, @RequestParam(defaultValue = "0") int page) {
-        return service.list(employeeId, page);
+    public LeaveRequestResponse.Page list(@PathVariable Long employeeId, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) LeaveRequest.Status status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return service.list(employeeId, page, status, from, to);
     }
     @GetMapping("/{requestId}")
     public LeaveRequestResponse get(@PathVariable Long employeeId, @PathVariable Long requestId) {

@@ -92,3 +92,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added API tests for calendar-day semantics, overlap boundaries, cancellation/re-request, scoping, pagination, invalid input and employee deletion.
 - Execution validation commands/results and head/base SHAs are recorded in the feature PR before merge.
 - Next: authenticated approval roles, entitlement balances, organization holiday rules and half-day policies; no policy assumptions or status automation introduced.
+
+### October 24, 2026 — Leave status and period filters
+- Added combined status and inclusive date-overlap filtering before pagination, scoped to the employee.
+- Added Apply/Clear controls, applied-filter summary and matching empty states; mutations preserve applied filters.
+- Added regressions for boundary overlap, open-ended periods, filtered paging, isolation and invalid filters.
+- Execution validation results and commit SHAs are recorded in the feature PR before merge.
