@@ -21,3 +21,11 @@ Reproduce reports at `backend/target/site/jacoco/index.html` and `jacoco.xml`, a
 Tests remain in their owning feature; backend unit tests exercise domain behavior without a Spring context. Existing API integration and package/dependency checks remain intact. Frontend component tests use the real HTTP client with simulated HTTP responses; the Playwright suite separately uses the real backend. No entities, controllers, services, transactions, schema or production dependencies changed. GitHub Actions remains manual-only.
 
 The repository is not enterprise-ready. Authentication/authorization, production migrations, actor-attributed auditing, security, concurrency and operational recovery remain roadmap requirements. This PR must remain unmerged until the coverage gates pass.
+
+## October 25 follow-up: close API helper and status-change gaps
+- Added three frontend API helper unit tests: scoped routes, payloads, AbortSignal forwarding, encoded search/sort/paging and optional status/history filters.
+- Added an API integration regression proving that a status-only employment update records exactly one change and a repeated unchanged status records none.
+- Frontend build passed; 10 frontend tests passed. Full-project coverage: 16.66% lines/statements, 64.93% branches, 45.16% functions; both API helper modules now have 100% coverage.
+- Backend: 56 tests passed, 333/335 lines (99.40%) and 100/100 branches (100%). JaCoCo verification still fails on bootstrap lines 9–10. No coverage thresholds were changed.
+- A real-browser walkthrough exposed a separate profile issue: related sections can repeat after saving a profile. EmployeeProfile gives each sibling feature component the same key; a regression and fix are needed on a bounded follow-up. Reopening the profile refreshes the sections. This run does not alter production behavior.
+- PR remains unmerged. E2E revalidation and exact source/base SHAs are recorded in PR #19.
