@@ -193,3 +193,8 @@ The current unauthenticated development application is not enterprise-ready.
 - Added11 profile unit cases, HTTP conflict/draft-retention integration coverage and a real-browser conflict/recovery scenario at five widths.
 - Profile component now measures100% line/branch/function coverage. Full frontend line coverage65.16%; strict project gate still fails.
 - Backend57 tests and100% line/branch coverage pass; three E2E scenarios/11 viewport executions pass. Existing sibling-key fix stays on PR20; no production code changed or merge performed.
+
+### October 25 — Leave request validation (PR19 pending)
+- Added 11 unit cases, a real-client HTTP conflict integration case, and a real-backend browser lifecycle/overlap scenario at five widths.
+- Leave component now measures 100% lines and 98.31% branches. Frontend 41 tests pass; full-project coverage still fails the unchanged gate (71.72% lines, 87.27% branches).
+- Backend 57 tests pass with 100% line/branch coverage. No production change or merge; authentication remains next after validation foundations.
