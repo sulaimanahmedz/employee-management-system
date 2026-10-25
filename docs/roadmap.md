@@ -161,3 +161,9 @@ The goal is an employee management application spanning the employee lifecycle.
 - Preserved newest-first ordering and original unfiltered behavior.
 - Added regressions for filtered pagination, scoping, invalid kinds and legacy baselines.
 - Package review, build/test/runtime checks and validated SHAs are recorded in the feature PR before merge.
+
+### October 25, 2026 — Document name search
+- Added bounded, literal case-insensitive name search combined with document category/expiry filters before pagination.
+- Added Apply/Clear search input and applied text summary, preserving existing edit drafts and filtered refresh behavior.
+- Added pagination, scoping, combined-filter, wildcard and length regression coverage.
+- Package/layer review and build/test/runtime results are recorded with exact SHAs in the feature PR.

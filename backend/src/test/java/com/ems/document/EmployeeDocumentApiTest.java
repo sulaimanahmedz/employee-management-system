@@ -154,4 +154,40 @@ class EmployeeDocumentApiTest {
         mvc.perform(get(path(owner) + "/page?category=INVALID")).andExpect(status().isBadRequest());
         mvc.perform(get(path(owner) + "/page")).andExpect(jsonPath("$.totalElements").value(13));
     }
+
+    @Test void searchesDocumentNamesBeforePaginationAndCombinesFilters() throws Exception {
+        long owner = employee("search@example.com"), other = employee("search-other@example.com");
+        var employee = employees.findById(owner).orElseThrow();
+        for (int i = 0; i < 11; i++) documents.saveAndFlush(new EmployeeDocument(employee,
+            "Safety certificate " + i, EmployeeDocument.Category.CERTIFICATE, java.time.LocalDate.of(2026, 12, 1)));
+        documents.saveAndFlush(new EmployeeDocument(employee, "Safety contract", EmployeeDocument.Category.CONTRACT, null));
+        documents.saveAndFlush(new EmployeeDocument(employees.findById(other).orElseThrow(),
+            "Safety certificate", EmployeeDocument.Category.CERTIFICATE, java.time.LocalDate.of(2026, 12, 1)));
+        mvc.perform(get(path(owner) + "/page").param("q", "  SAFETY  ").param("category", "CERTIFICATE").param("expiresBy", "2026-12-01"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(11))
+            .andExpect(jsonPath("$.totalPages").value(2)).andExpect(jsonPath("$.items.length()").value(10));
+        mvc.perform(get(path(owner) + "/page").param("q", "certificate").param("page", "1"))
+            .andExpect(jsonPath("$.items.length()").value(1));
+        mvc.perform(get(path(owner) + "/page").param("q", "contract"))
+            .andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get(path(owner) + "/page").param("q", "contract").param("expiresBy", "2026-12-01"))
+            .andExpect(jsonPath("$.totalElements").value(0));
+        mvc.perform(get(path(owner) + "/page").param("q", "   "))
+            .andExpect(jsonPath("$.totalElements").value(12));
+    }
+
+    @Test void treatsSearchWildcardsLiterallyAndValidatesLength() throws Exception {
+        long owner = employee("literal@example.com");
+        documents.saveAndFlush(new EmployeeDocument(employees.findById(owner).orElseThrow(),
+            "100%_complete", EmployeeDocument.Category.OTHER, null));
+        documents.saveAndFlush(new EmployeeDocument(employees.findById(owner).orElseThrow(),
+            "Another record", EmployeeDocument.Category.OTHER, null));
+        for (String term : new String[] {"%", "_", "100%_"}) {
+            mvc.perform(get(path(owner) + "/page").param("q", term)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1));
+        }
+        mvc.perform(get(path(owner) + "/page").param("q", "x".repeat(150))).andExpect(status().isOk());
+        mvc.perform(get(path(owner) + "/page").param("q", "x".repeat(151))).andExpect(status().isBadRequest());
+        mvc.perform(get(path(owner))).andExpect(jsonPath("$.length()").value(2));
+    }
 }

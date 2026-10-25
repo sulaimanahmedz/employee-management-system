@@ -219,3 +219,7 @@ The directory endpoint accepts `sortBy=id|name|department|jobTitle` (default `id
 ### Filter employment history
 
 Use **Show history events** to view all events, profile creation, existing-profile baselines or employment detail changes. Changing the selector resets to the first page. Counts and pages describe matching events, and the empty state distinguishes a filtered result from an employee without history. The history endpoint accepts optional `kind=CREATED|BASELINE|CHANGED`; filtering is employee-scoped and applied before pagination, newest first. Invalid kinds return 400. Omit kind to retain the original behavior. Snapshot creation and transactions are unchanged. Validation results are recorded in the feature PR.
+
+### Search document names
+
+Use **Search document names**, then **Apply document filters**, to find names by a case-insensitive literal substring. Search combines with category/expiry filters before pagination. **Clear document filters** resets all three; applied search text is shown above results. Edits and removals refresh the current search, so renamed records may leave the results. The page endpoint accepts optional `q` (at most 150 characters, trimmed; blank means all names). Percent and underscore are literal characters. Overlong queries return 400. The legacy list endpoint is unchanged. Validation is recorded in the feature PR.

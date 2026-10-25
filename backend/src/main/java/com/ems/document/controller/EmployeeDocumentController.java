@@ -22,8 +22,9 @@ public class EmployeeDocumentController {
     @GetMapping("/page")
     public DocumentResponse.Page page(@PathVariable Long employeeId, @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate expiresBy,
-            @RequestParam(required = false) EmployeeDocument.Category category) {
-        return service.page(employeeId, page, expiresBy, category);
+            @RequestParam(required = false) EmployeeDocument.Category category,
+            @RequestParam(defaultValue = "") String q) {
+        return service.page(employeeId, page, expiresBy, category, q);
     }
     @PostMapping
     public ResponseEntity<DocumentResponse> create(@PathVariable Long employeeId, @Valid @RequestBody DocumentRequest request) {
