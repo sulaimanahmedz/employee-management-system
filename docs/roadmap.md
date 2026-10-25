@@ -167,3 +167,18 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added Apply/Clear search input and applied text summary, preserving existing edit drafts and filtered refresh behavior.
 - Added pagination, scoping, combined-filter, wildcard and length regression coverage.
 - Package/layer review and build/test/runtime results are recorded with exact SHAs in the feature PR.
+
+### October 25, 2026 — Test foundations (pending validation gates)
+- Added backend unit tests, JaCoCo reports and 100% line/branch gate.
+- Added frontend unit/component integration tests, Vitest coverage reports and 100% thresholds.
+- Added Playwright real-backend onboarding lifecycle coverage with synthetic database and cleanup.
+- This branch must remain unmerged until coverage and E2E gates pass; see its PR for actual results.
+- Task-title/owner search was not committed in the previous workspace and remains future work.
+
+### Enterprise readiness priorities
+- [ ] Close inherited frontend/backend coverage gaps to 100%.
+- [ ] Authentication and role-based authorization with negative access tests.
+- [ ] Production database migrations and database integration tests.
+- [ ] Actor-attributed auditability and secure data handling.
+- [ ] Concurrency, observability, backup/restore and operational recovery tests.
+The current unauthenticated development application is not enterprise-ready.
