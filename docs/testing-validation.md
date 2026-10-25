@@ -41,3 +41,18 @@ Validation on parent `85e2ab106350ad0e1147fb55bca0e22486b32c5e` plus this increm
 - Initial startup test failed because the old property-based initializer registration was ignored; replaced with test-only `META-INF/spring.factories` registration and reran clean verify successfully. No mocked bootstrap or coverage exclusions.
 
 Authentication with roles is the next requested product feature; see `docs/authentication-plan.md`. This does not claim authentication is implemented.
+
+## Employment history coverage increment — October 25
+
+Resumed PR19 at parent `2b12fc54a4d9e32a9d0ac0285dc77f8e425ddae7`; latest main `511f2a6d6b637e5068dae89b003616e1e2b24d74` is already an ancestor and was rechecked unchanged. Resulting validated head/tree are recorded in the PR.
+
+- Added six component unit cases under `frontend/tests/unit/employmenthistory/`: loading, both empty states, event/status display, pagination and filter reset, typed/untyped error retry, and late success/failure from aborted employee requests.
+- Added one HTTP-client integration case under `frontend/tests/integration/employmenthistory/`: error mapping, retry and exact filtered/paginated request contract.
+- Added a named real-backend Employment history E2E suite: persisted change display, filtered empty/results states and invalid-kind rejection, executed at320/390/412/768/1440px Chromium widths with isolated employee cleanup. This is one distinct scenario executed five times; including existing onboarding, two distinct scenarios/six executions passed. This checks functional use at those widths, not visual perfection or all physical devices.
+- `npm ci --prefix frontend`: installed locked dependencies without lockfile changes. `npm run build --prefix frontend`: PASS.
+- `npm run test:coverage --prefix frontend`:17 tests PASS. EmploymentHistory.tsx:100% lines,branches,functions,statements. Full-project:23.22% lines/statements,75.23% branches,54.28% functions; strict coverage gate FAIL. No exclusions/thresholds weakened. Reports:frontend/coverage.
+- Maven3.9.9 `-s /tmp/history-settings.xml -f backend/pom.xml --batch-mode clean verify`: PASS,57 tests including architecture;335/335 lines and100/100 branches. Initial offline attempt found no cached dependencies; downloaded pinned dependencies using environment-specific proxy settings and reran successfully. Reports:backend/target/site/jacoco.
+- `npm exec -- playwright install chromium`, then `npm run test:e2e --prefix frontend`: PASS,6 executions in20.5s against packaged backend and Vite proxy; temporary servers stopped.
+- Initial integration assertion omitted the existing size=10 parameter; corrected the assertion to the actual contract and reran successfully.
+
+No production code, package/layer boundaries, transactions or schema changed. New tests use the required feature/unit and feature/integration grouping; broader existing-test reorganization remains in dependent PR20. Authentication remains the next product feature after these foundations pass. PR19 must remain unmerged while App/main, profile, documents, leave and partial onboarding coverage gaps remain.

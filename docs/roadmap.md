@@ -183,3 +183,8 @@ The goal is an employee management application spanning the employee lifecycle.
 - [ ] Actor-attributed auditability and secure data handling.
 - [ ] Concurrency, observability, backup/restore and operational recovery tests.
 The current unauthenticated development application is not enterprise-ready.
+
+### October 25 — Employment history validation (PR19 pending)
+- Added unit coverage for loading, filtering, paging, error recovery and abandoned requests; added HTTP-client integration coverage.
+- EmploymentHistory.tsx now measures100% line/branch/function coverage; full-project frontend coverage still fails the unchanged gate.
+- Real-backend history scenario passes at five Chromium viewport widths. Backend57 tests and100% line/branch coverage pass. Exact head/base and commands are recorded in PR19; no product behavior changed or merge performed.
