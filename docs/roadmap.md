@@ -203,3 +203,8 @@ The current unauthenticated development application is not enterprise-ready.
 - Added six directory unit cases, actual React entry-point/HTTP recovery integration coverage, and a real-backend directory scenario at five viewport widths.
 - App.tsx and main.tsx now have 100% line/branch coverage. All 48 frontend tests pass; full frontend coverage remains below the unchanged gate (91.66% lines,90.61% branches).
 - Backend57 tests and100% line/branch coverage pass. Document/onboarding coverage and two leave guards remain; no production behavior changed or merge performed. Authentication stays next after foundations.
+
+### October 25 — Document register validation (PR19 pending)
+- Added 12 document unit cases, real-client validation/retry integration coverage and a real-backend filtering/edit/removal scenario at five widths.
+- Document component now measures100% line/branch/function coverage. All61 frontend tests pass; full frontend coverage remains below the unchanged gate (97.67% lines,95.48% branches).
+- Backend57 tests and100% line/branch coverage pass. Onboarding and two leave guards remain. No production change or merge; authentication remains the next product feature.
