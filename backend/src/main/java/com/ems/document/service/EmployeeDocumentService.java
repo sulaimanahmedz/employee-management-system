@@ -31,14 +31,14 @@ public class EmployeeDocumentService {
         employee(employeeId);
         return documents.findByEmployeeIdOrderByIdDesc(employeeId).stream().map(DocumentResponse::from).toList();
     }
-    public DocumentResponse.Page page(Long employeeId, int page, java.time.LocalDate expiresBy, EmployeeDocument.Category category, String query) {
+    public DocumentResponse.Page page(Long employeeId, int page, java.time.LocalDate expiresBy, EmployeeDocument.Category category, String searchText) {
         employee(employeeId);
         if (page < 0 || (long) page * 10 > Integer.MAX_VALUE)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid document page");
-        if (query.length() > 150) {
+        if (searchText.length() > 150) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Document search must be at most 150 characters");
         }
-        String term = query.strip().toLowerCase(Locale.ROOT);
+        String term = searchText.strip().toLowerCase(Locale.ROOT);
         var pageable = org.springframework.data.domain.PageRequest.of(
             page, 10, org.springframework.data.domain.Sort.by("id").descending());
         org.springframework.data.jpa.domain.Specification<EmployeeDocument> filter =
