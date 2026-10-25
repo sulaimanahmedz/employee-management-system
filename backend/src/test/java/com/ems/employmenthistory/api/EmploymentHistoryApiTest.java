@@ -1,4 +1,4 @@
-package com.ems.employmenthistory;
+package com.ems.employmenthistory.api;
 
 import com.ems.employee.entity.Employee;
 import com.ems.employee.entity.EmployeeStatus;
@@ -123,4 +123,17 @@ class EmploymentHistoryApiTest {
         mvc.perform(get("/api/v1/employees/" + id + "/history?kind=CREATED"))
             .andExpect(jsonPath("$.totalElements").value(0));
     }
+    @Test void statusOnlyChangesProduceOneSnapshotAndRepeatedStatusIsANoOp() throws Exception {
+        long id = create("status-only@example.com");
+        update(id, "status-only@example.com", "Engineering", "Developer", "ON_LEAVE");
+        update(id, "status-only@example.com", "Engineering", "Developer", "ON_LEAVE");
+        mvc.perform(get("/api/v1/employees/" + id + "/history?kind=CHANGED"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+            .andExpect(jsonPath("$.items[0].department").value("Engineering"))
+            .andExpect(jsonPath("$.items[0].jobTitle").value("Developer"))
+            .andExpect(jsonPath("$.items[0].status").value("ON_LEAVE"));
+        mvc.perform(get("/api/v1/employees/" + id)).andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("ON_LEAVE"));
+    }
+
 }

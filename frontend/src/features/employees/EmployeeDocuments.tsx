@@ -97,13 +97,16 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
     {categoryFilter && <p role="status">Showing category: {categories[categoryFilter as Category]}. New or edited records may fall outside this filter.</p>}
     {expiresBy && <p role="status">Showing expiry dates on or before {expiresBy}. Records without expiry dates are excluded. New or edited records may fall outside this filter.</p>}
     {loading ? <p role="status">Loading document register…</p> : documents.length === 0 ?
-      <p>{query || expiresBy || categoryFilter ? 'No document metadata matches these filters.' : 'No document metadata registered.'}</p> : <ul>
-        {documents.map(document => <li key={document.id}>
-          <strong>{document.name}</strong> — {categories[document.category]} — {document.expiresOn ?
-            <>Expires <time dateTime={document.expiresOn}>{document.expiresOn}</time></> : 'No expiry date'}{' '}
+      <p>{query || expiresBy || categoryFilter ? 'No document metadata matches these filters.' : 'No document metadata registered.'}</p> : <ul className="document-list">
+        {documents.map(document => <li className="document-item" key={document.id}>
+          <strong className="document-name">{document.name}</strong>
+          <div className="document-meta">{categories[document.category]} — {document.expiresOn ?
+            <>Expires <time dateTime={document.expiresOn}>{document.expiresOn}</time></> : 'No expiry date'}</div>
+          <div className="document-actions">
           <button type="button" disabled={busy} onClick={() => beginEdit(document)} aria-label={`Edit ${document.name}`}>Edit</button>{' '}
           <button type="button" disabled={busy || editing !== null} onClick={() => remove(document)}
             aria-label={`Remove ${document.name}`}>Remove</button>
+          </div>
         </li>)}
       </ul>}
     {!loading && data && <p>{data.totalElements} matching document records</p>}
