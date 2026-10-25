@@ -10,6 +10,7 @@ The goal is an employee management application spanning the employee lifecycle.
 
 ## Identity and organization
 
+- Next requested product feature (October 25): full authentication and role-based access. See [authentication delivery plan](authentication-plan.md). Complete pending validation foundations first; no unrelated product feature takes priority.
 - Sign-in and role-based permissions for administrators, HR, managers and employees.
 - Departments, locations, teams and reporting hierarchy.
 - Auditing, PostgreSQL and versioned database migrations.

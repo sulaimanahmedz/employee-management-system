@@ -29,3 +29,15 @@ The repository is not enterprise-ready. Authentication/authorization, production
 - Backend: 56 tests passed, 333/335 lines (99.40%) and 100/100 branches (100%). JaCoCo verification still fails on bootstrap lines 9–10. No coverage thresholds were changed.
 - A real-browser walkthrough exposed a separate profile issue: related sections can repeat after saving a profile. EmployeeProfile gives each sibling feature component the same key; a regression and fix are needed on a bounded follow-up. Reopening the profile refreshes the sections. This run does not alter production behavior.
 - PR remains unmerged. E2E revalidation and exact source/base SHAs are recorded in PR #19.
+# October 25 — real entry-point startup coverage
+
+Added `application/integration/ApplicationStartupIntegrationTest`: invokes the actual main method, starts the embedded server on a random loopback port with a unique in-memory database, asserts health UP, creates a synthetic employee over HTTP and retrieves persisted fields. A test-only Spring initializer captures the context for guaranteed shutdown in finally. It is absent from the packaged application. No production source or architecture rules changed.
+
+Validation on parent `85e2ab106350ad0e1147fb55bca0e22486b32c5e` plus this increment, based on main `511f2a6d6b637e5068dae89b003616e1e2b24d74` (resulting head recorded in PR):
+- `/tmp/apache-maven-3.9.9/bin/mvn -o -f backend/pom.xml --batch-mode clean verify`: PASS, 57 tests including architecture checks. JaCoCo: 335/335 lines, 100/100 branches, 165/165 methods. Reports `backend/target/site/jacoco/{index.html,jacoco.xml}`.
+- `npm run build --prefix frontend`: PASS TypeScript and Vite.
+- `npm run test:coverage --prefix frontend`: 10 tests PASS; coverage gate FAIL: 16.66% lines/statements, 64.93% branches, 45.16% functions. Reports `frontend/coverage/`. Remaining gaps include App/main, profile, documents, history, leave and partial onboarding. PR remains unmerged.
+- `npm run test:e2e --prefix frontend`: PASS, 1 existing onboarding scenario / 1 Chromium execution against real UI and isolated backend. No new product behavior added in this increment; the five-viewport suite organization remains in dependent PR #20. Temporary servers stopped.
+- Initial startup test failed because the old property-based initializer registration was ignored; replaced with test-only `META-INF/spring.factories` registration and reran clean verify successfully. No mocked bootstrap or coverage exclusions.
+
+Authentication with roles is the next requested product feature; see `docs/authentication-plan.md`. This does not claim authentication is implemented.
