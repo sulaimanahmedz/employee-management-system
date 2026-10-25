@@ -35,7 +35,7 @@ it('retains the task draft after a backend save error', async () => {
   await screen.findByText('No onboarding tasks yet.');
   await user.type(screen.getByLabelText('Task title'), 'Laptop');
   await user.type(screen.getByLabelText('Owner label'), 'IT');
-  await user.click(screen.getByRole('button', { name: 'Add task', exact: true }));
+  await user.click(screen.getByRole('button', { name: /^Add task$/ }));
   await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Unable to save'));
   expect((screen.getByLabelText('Task title') as HTMLInputElement).value).toBe('Laptop');
   expect((screen.getByLabelText('Owner label') as HTMLInputElement).value).toBe('IT');
