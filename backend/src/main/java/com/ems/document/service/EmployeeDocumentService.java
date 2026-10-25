@@ -8,6 +8,7 @@ import com.ems.employee.entity.Employee;
 import com.ems.employee.repository.EmployeeRepository;
 
 import java.util.List;
+import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -30,16 +31,24 @@ public class EmployeeDocumentService {
         employee(employeeId);
         return documents.findByEmployeeIdOrderByIdDesc(employeeId).stream().map(DocumentResponse::from).toList();
     }
-    public DocumentResponse.Page page(Long employeeId, int page, java.time.LocalDate expiresBy, EmployeeDocument.Category category) {
+    public DocumentResponse.Page page(Long employeeId, int page, java.time.LocalDate expiresBy, EmployeeDocument.Category category, String query) {
         employee(employeeId);
         if (page < 0 || (long) page * 10 > Integer.MAX_VALUE)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid document page");
+        if (query.length() > 150) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Document search must be at most 150 characters");
+        }
+        String term = query.strip().toLowerCase(Locale.ROOT);
         var pageable = org.springframework.data.domain.PageRequest.of(
             page, 10, org.springframework.data.domain.Sort.by("id").descending());
         org.springframework.data.jpa.domain.Specification<EmployeeDocument> filter =
             (root, query, cb) -> cb.equal(root.get("employee").get("id"), employeeId);
         if (expiresBy != null) filter = filter.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("expiresOn"), expiresBy));
         if (category != null) filter = filter.and((root, query, cb) -> cb.equal(root.get("category"), category));
+        if (!term.isEmpty()) {
+            filter = filter.and((root, criteria, cb) ->
+                cb.greaterThan(cb.locate(cb.lower(root.get("name")), term), 0));
+        }
         var result = documents.findAll(filter, pageable);
         return new DocumentResponse.Page(result.getContent().stream().map(DocumentResponse::from).toList(),
             page, result.getTotalPages(), result.getTotalElements());
