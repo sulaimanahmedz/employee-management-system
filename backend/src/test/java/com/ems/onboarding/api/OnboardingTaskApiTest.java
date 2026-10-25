@@ -1,4 +1,4 @@
-package com.ems.onboarding;
+package com.ems.onboarding.api;
 
 import com.ems.employee.entity.Employee;
 import com.ems.employee.entity.EmployeeStatus;

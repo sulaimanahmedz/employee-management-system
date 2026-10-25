@@ -157,9 +157,9 @@ export default function EmployeeProfile({ employeeId, onBack, onSaved }: Props) 
         {dirty && <p className="muted">You have unsaved changes.</p>}
       </form>}
     </div>
-    {!loading && employee && !editing && <LeaveRequests key={employee.id} employeeId={employee.id} />}
-    {!loading && employee && !editing && <OnboardingTasks key={employee.id} employeeId={employee.id} />}
-    {!loading && employee && !editing && <EmploymentHistory key={employee.id} employeeId={employee.id} />}
-    {!loading && employee && !editing && <EmployeeDocuments key={employee.id} employeeId={employee.id} />}
+    {!loading && employee && !editing && <LeaveRequests key={`LeaveRequests-${employee.id}`} employeeId={employee.id} />}
+    {!loading && employee && !editing && <OnboardingTasks key={`OnboardingTasks-${employee.id}`} employeeId={employee.id} />}
+    {!loading && employee && !editing && <EmploymentHistory key={`EmploymentHistory-${employee.id}`} employeeId={employee.id} />}
+    {!loading && employee && !editing && <EmployeeDocuments key={`EmployeeDocuments-${employee.id}`} employeeId={employee.id} />}
   </section>;
 }

@@ -223,3 +223,33 @@ Use **Show history events** to view all events, profile creation, existing-profi
 ### Search document names
 
 Use **Search document names**, then **Apply document filters**, to find names by a case-insensitive literal substring. Search combines with category/expiry filters before pagination. **Clear document filters** resets all three; applied search text is shown above results. Edits and removals refresh the current search, so renamed records may leave the results. The page endpoint accepts optional `q` (at most 150 characters, trimmed; blank means all names). Percent and underscore are literal characters. Overlong queries return 400. The legacy list endpoint is unchanged. Validation is recorded in the feature PR.
+
+## Test and coverage gates
+
+Every feature requires unit, integration and real-browser E2E tests. No production code is excluded to inflate coverage. Full-project coverage is reported separately from coverage of changed code; inherited gaps remain work to complete, not permission to weaken a gate.
+
+Backend: `mvn -f backend/pom.xml clean verify` compiles, packages, runs the JUnit unit/API integration/architecture suites, and generates JaCoCo HTML/XML at `backend/target/site/jacoco/`. Verification fails below 100% line or branch coverage. Surefire explicitly loads the pinned Mockito agent alongside JaCoCo for runtimes that prohibit dynamic attachment.
+
+Frontend:
+```bash
+npm ci --prefix frontend
+npm run build --prefix frontend
+npm run test:coverage --prefix frontend
+cd frontend
+npx playwright install chromium
+npm run test:e2e
+```
+
+Vitest runs focused unit tests and component/HTTP-client integration tests. HTML, JSON and LCOV reports are in `frontend/coverage/`; all source files are counted, with only test files and ambient declarations omitted. The coverage command fails below 100% thresholds.
+
+Playwright launches the packaged backend with an isolated in-memory H2 database and the Vite proxy, refuses to reuse existing servers, and stops its servers on completion. Build the backend JAR first. The onboarding E2E exercises blank-title validation, task creation, editing, completion, filtering and persisted results through the real application. Synthetic employee records are removed after each test. Failure screenshots/traces are in `frontend/test-results/`. A failed coverage command still leaves reports and the packaged backend for diagnosis; it does not authorize merging.
+
+Coverage/E2E results and exact source/base SHAs belong in the PR. No automatic GitHub Actions triggers were added. The application remains unhosted and is not yet enterprise-ready.
+
+## Responsive layout and test suites
+
+The mobile-layout feature branch places each document record's Edit/Remove controls on a separate row below its name and metadata. Document upload is not implemented; this is the existing metadata register. Forms and filters stack at narrow widths; long values wrap, controls have 44px minimum height, and wide tables scroll within their container.
+
+Playwright has **4 distinct E2E scenarios in 4 named suites**, executed at 5 Chromium viewport profiles (320, 390, 412, 768 and 1440 pixels): **20 executions**. These cover directory form/filter fit, document action placement/edit/removal, profile-save section uniqueness, and onboarding lifecycle/validation. Browser emulation is not proof of compatibility with every physical device or browser.
+
+See [test organization](docs/test-organization.md) for separate unit, API, integration, architecture and E2E locations. The profile duplicate-section bug is fixed with distinct feature component keys. Coverage gates remain unchanged; feature PRs stay unmerged until all required gates pass.

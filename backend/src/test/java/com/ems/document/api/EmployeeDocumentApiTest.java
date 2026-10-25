@@ -1,4 +1,4 @@
-package com.ems.document;
+package com.ems.document.api;
 
 import com.ems.document.entity.EmployeeDocument;
 import com.ems.document.repository.EmployeeDocumentRepository;
