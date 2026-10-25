@@ -188,3 +188,8 @@ The current unauthenticated development application is not enterprise-ready.
 - Added unit coverage for loading, filtering, paging, error recovery and abandoned requests; added HTTP-client integration coverage.
 - EmploymentHistory.tsx now measures100% line/branch/function coverage; full-project frontend coverage still fails the unchanged gate.
 - Real-backend history scenario passes at five Chromium viewport widths. Backend57 tests and100% line/branch coverage pass. Exact head/base and commands are recorded in PR19; no product behavior changed or merge performed.
+
+### October 25 — Profile validation (PR19 pending)
+- Added11 profile unit cases, HTTP conflict/draft-retention integration coverage and a real-browser conflict/recovery scenario at five widths.
+- Profile component now measures100% line/branch/function coverage. Full frontend line coverage65.16%; strict project gate still fails.
+- Backend57 tests and100% line/branch coverage pass; three E2E scenarios/11 viewport executions pass. Existing sibling-key fix stays on PR20; no production code changed or merge performed.

@@ -56,3 +56,19 @@ Resumed PR19 at parent `2b12fc54a4d9e32a9d0ac0285dc77f8e425ddae7`; latest main `
 - Initial integration assertion omitted the existing size=10 parameter; corrected the assertion to the actual contract and reran successfully.
 
 No production code, package/layer boundaries, transactions or schema changed. New tests use the required feature/unit and feature/integration grouping; broader existing-test reorganization remains in dependent PR20. Authentication remains the next product feature after these foundations pass. PR19 must remain unmerged while App/main, profile, documents, leave and partial onboarding coverage gaps remain.
+
+## Employee profile validation increment — October 25
+
+Resumed PR19 at `638bc41c679940d48ee697448740b78add1c98ad`. Latest main `511f2a6d6b637e5068dae89b003616e1e2b24d74` is already an ancestor; both remote heads were rechecked unchanged before committing. Resulting head/tree recorded in PR19.
+
+- Added11 component unit cases in tests/unit/employees covering view/focus/back navigation, unchanged and dirty cancellation, discard confirmation, beforeunload cleanup, duplicate-submit prevention, pending-save controls, normalized successful saves, typed/untyped errors with retry, and aborted stale success/failure.
+- Added one tests/integration/employees case using actual feature/HTTP helpers and related components to verify submitted JSON and draft retention after409.
+- Added one distinct profile editing/conflict-recovery E2E scenario, executed at320/390/412/768/1440px Chromium widths, with synthetic fixtures under e2e/support. Conflicting email updates preserve stored fields; corrected data persists. Cleanup removes both employees.
+- `npm ci --prefix frontend`: pinned lockfile install; no package/lock changes.
+- `npm run build --prefix frontend`:PASS after correcting a test-only unsupported exact option to an anchored role-name matcher.
+- `npm run test:coverage --prefix frontend`:29 tests PASS; EmployeeProfile.tsx100% lines/branches/functions/statements. Full project65.16% lines/statements,76.59% branches,42.10% functions; gate FAIL. Loading real related components adds their runtime function counters to the denominator, so function percentages are not comparable to component-mocked results alone. Reports frontend/coverage. No thresholds or exclusions changed.
+- Maven3.9.9 `-s /tmp/profile-settings.xml -f backend/pom.xml --batch-mode clean verify`:PASS57 tests including architecture,335/335 lines and100/100 branches. Environment proxy settings only; pinned dependencies downloaded. Reports backend/target/site/jacoco.
+- `npm exec -- playwright install chromium`; `npm run test:e2e --prefix frontend`:PASS11 executions in39.5s. Three distinct business scenarios: history five widths, profile editing five widths, onboarding once. Real packaged backend, isolated H2 and Vite proxy; ports8080/5173 stopped. These are functional Chromium viewport checks, not universal device/browser certification.
+- React reports the known duplicate sibling keys in EmployeeProfile. This increment does not suppress the warning or duplicate the fix already pending in PR20. Passing targeted tests does not resolve that known issue.
+
+No production code, package/layer boundaries, transactions or schema changed. PR19 remains unmerged: App/main and partial document/leave/onboarding coverage gaps remain, as does the separate pending profile-key fix. Authentication/roles remain the next product feature after validation foundations.
