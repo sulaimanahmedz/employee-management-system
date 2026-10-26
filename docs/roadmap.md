@@ -208,3 +208,8 @@ The current unauthenticated development application is not enterprise-ready.
 - Added 12 document unit cases, real-client validation/retry integration coverage and a real-backend filtering/edit/removal scenario at five widths.
 - Document component now measures100% line/branch/function coverage. All61 frontend tests pass; full frontend coverage remains below the unchanged gate (97.67% lines,95.48% branches).
 - Backend57 tests and100% line/branch coverage pass. Onboarding and two leave guards remain. No production change or merge; authentication remains the next product feature.
+
+### October 26 — Onboarding validation (PR19 pending)
+- Added 11 onboarding unit cases, an HTTP validation/retry integration case and a real-backend deadline/completion/removal browser scenario at five viewport widths.
+- Onboarding now measures 100% line/branch/function coverage; all 73 frontend tests pass. Full frontend coverage is 100% lines and 99.64% branches, leaving two leave-request pending guards uncovered.
+- Backend 57 tests and 100% line/branch coverage pass. No production changes or merge; authentication remains next after validation foundations. Exact browser results and validated SHAs are recorded in PR19.
