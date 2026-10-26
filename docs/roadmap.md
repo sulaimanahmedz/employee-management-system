@@ -10,6 +10,7 @@ The goal is an employee management application spanning the employee lifecycle.
 
 ## Identity and organization
 
+- Next requested product feature (October 25): full authentication and role-based access. See [authentication delivery plan](authentication-plan.md). Complete pending validation foundations first; no unrelated product feature takes priority.
 - Sign-in and role-based permissions for administrators, HR, managers and employees.
 - Departments, locations, teams and reporting hierarchy.
 - Auditing, PostgreSQL and versioned database migrations.
@@ -167,3 +168,48 @@ The goal is an employee management application spanning the employee lifecycle.
 - Added Apply/Clear search input and applied text summary, preserving existing edit drafts and filtered refresh behavior.
 - Added pagination, scoping, combined-filter, wildcard and length regression coverage.
 - Package/layer review and build/test/runtime results are recorded with exact SHAs in the feature PR.
+
+### October 25, 2026 — Test foundations (pending validation gates)
+- Added backend unit tests, JaCoCo reports and 100% line/branch gate.
+- Added frontend unit/component integration tests, Vitest coverage reports and 100% thresholds.
+- Added Playwright real-backend onboarding lifecycle coverage with synthetic database and cleanup.
+- This branch must remain unmerged until coverage and E2E gates pass; see its PR for actual results.
+- Task-title/owner search was not committed in the previous workspace and remains future work.
+
+### Enterprise readiness priorities
+- [ ] Close inherited frontend/backend coverage gaps to 100%.
+- [ ] Authentication and role-based authorization with negative access tests.
+- [ ] Production database migrations and database integration tests.
+- [ ] Actor-attributed auditability and secure data handling.
+- [ ] Concurrency, observability, backup/restore and operational recovery tests.
+The current unauthenticated development application is not enterprise-ready.
+
+### October 25 — Employment history validation (PR19 pending)
+- Added unit coverage for loading, filtering, paging, error recovery and abandoned requests; added HTTP-client integration coverage.
+- EmploymentHistory.tsx now measures100% line/branch/function coverage; full-project frontend coverage still fails the unchanged gate.
+- Real-backend history scenario passes at five Chromium viewport widths. Backend57 tests and100% line/branch coverage pass. Exact head/base and commands are recorded in PR19; no product behavior changed or merge performed.
+
+### October 25 — Profile validation (PR19 pending)
+- Added11 profile unit cases, HTTP conflict/draft-retention integration coverage and a real-browser conflict/recovery scenario at five widths.
+- Profile component now measures100% line/branch/function coverage. Full frontend line coverage65.16%; strict project gate still fails.
+- Backend57 tests and100% line/branch coverage pass; three E2E scenarios/11 viewport executions pass. Existing sibling-key fix stays on PR20; no production code changed or merge performed.
+
+### October 25 — Leave request validation (PR19 pending)
+- Added 11 unit cases, a real-client HTTP conflict integration case, and a real-backend browser lifecycle/overlap scenario at five widths.
+- Leave component now measures 100% lines and 98.31% branches. Frontend 41 tests pass; full-project coverage still fails the unchanged gate (71.72% lines, 87.27% branches).
+- Backend 57 tests pass with 100% line/branch coverage. No production change or merge; authentication remains next after validation foundations.
+
+### October 25 — Application startup and directory validation (PR19 pending)
+- Added six directory unit cases, actual React entry-point/HTTP recovery integration coverage, and a real-backend directory scenario at five viewport widths.
+- App.tsx and main.tsx now have 100% line/branch coverage. All 48 frontend tests pass; full frontend coverage remains below the unchanged gate (91.66% lines,90.61% branches).
+- Backend57 tests and100% line/branch coverage pass. Document/onboarding coverage and two leave guards remain; no production behavior changed or merge performed. Authentication stays next after foundations.
+
+### October 25 — Document register validation (PR19 pending)
+- Added 12 document unit cases, real-client validation/retry integration coverage and a real-backend filtering/edit/removal scenario at five widths.
+- Document component now measures100% line/branch/function coverage. All61 frontend tests pass; full frontend coverage remains below the unchanged gate (97.67% lines,95.48% branches).
+- Backend57 tests and100% line/branch coverage pass. Onboarding and two leave guards remain. No production change or merge; authentication remains the next product feature.
+
+### October 26 — Onboarding validation (PR19 pending)
+- Added 11 onboarding unit cases, an HTTP validation/retry integration case and a real-backend deadline/completion/removal browser scenario at five viewport widths.
+- Onboarding now measures 100% line/branch/function coverage; all 73 frontend tests pass. Full frontend coverage is 100% lines and 99.64% branches, leaving two leave-request pending guards uncovered.
+- Backend 57 tests and 100% line/branch coverage pass. No production changes or merge; authentication remains next after validation foundations. Exact browser results and validated SHAs are recorded in PR19.

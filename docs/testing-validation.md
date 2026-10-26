@@ -1,0 +1,128 @@
+# Test foundation validation — October 25, 2026
+
+Status: **unmerged; coverage gates fail**. Source and base commit IDs are recorded in PR #19. No production behavior was modified.
+
+## Executed checks
+- Dependency installation added pinned test tools; existing locked package versions were compared and did not change.
+- `npm run build --prefix frontend`: TypeScript compilation (including test configurations and E2E source) and Vite production build passed. An initial Testing Library option typing error was corrected before the final build.
+- `npm run test:coverage --prefix frontend`: 7 tests passed; command failed the coverage gate. Full-source line/statement coverage 13.93%, branch coverage 59.42%, function coverage 30.76%. Shared HTTP client has 100% coverage; this is not full-application coverage.
+- `mvn -f backend/pom.xml -s /tmp/ems-maven-settings.xml --batch-mode clean verify` using Maven 3.9.9: compilation, packaging and 55 tests (including 2 architecture checks) passed. Verification failed the JaCoCo gate: 333/335 lines (99.40%) and 99/100 branches (99%). Runtime proxy settings are environment-specific and are not committed.
+- `cd frontend && npm exec -- playwright install chromium`: Chromium 141.0.7390.37 / Playwright build 1194 installed.
+- `npm run test:e2e --prefix frontend`: 1 Chromium E2E passed against packaged Spring Boot and Vite with in-memory synthetic H2. Backend health, browser UI, Vite/API integration, task validation/create/edit/completion/filtering and persisted results were checked. Synthetic employee cleanup passed; ports 8080/5173 were confirmed closed after servers stopped.
+- `git diff --check`: passed.
+
+## Remaining coverage work
+Backend: application bootstrap lines 9–10 and one EmployeeService employment-change predicate branch at line 98 are uncovered.
+Frontend: directory/app bootstrap, employee profile, documents, leave, employment history and employee API helpers lack coverage; onboarding has partial coverage (83.16% lines, 57.14% branches). Extend meaningful unit and integration tests rather than excluding these paths or relaxing thresholds.
+
+Reproduce reports at `backend/target/site/jacoco/index.html` and `jacoco.xml`, and `frontend/coverage/index.html`, `coverage-final.json`, `lcov.info`. These generated reports are intentionally not committed. Playwright retains failure traces/screenshots under `frontend/test-results/` when tests fail.
+
+## Architecture review
+Tests remain in their owning feature; backend unit tests exercise domain behavior without a Spring context. Existing API integration and package/dependency checks remain intact. Frontend component tests use the real HTTP client with simulated HTTP responses; the Playwright suite separately uses the real backend. No entities, controllers, services, transactions, schema or production dependencies changed. GitHub Actions remains manual-only.
+
+The repository is not enterprise-ready. Authentication/authorization, production migrations, actor-attributed auditing, security, concurrency and operational recovery remain roadmap requirements. This PR must remain unmerged until the coverage gates pass.
+
+## October 25 follow-up: close API helper and status-change gaps
+- Added three frontend API helper unit tests: scoped routes, payloads, AbortSignal forwarding, encoded search/sort/paging and optional status/history filters.
+- Added an API integration regression proving that a status-only employment update records exactly one change and a repeated unchanged status records none.
+- Frontend build passed; 10 frontend tests passed. Full-project coverage: 16.66% lines/statements, 64.93% branches, 45.16% functions; both API helper modules now have 100% coverage.
+- Backend: 56 tests passed, 333/335 lines (99.40%) and 100/100 branches (100%). JaCoCo verification still fails on bootstrap lines 9–10. No coverage thresholds were changed.
+- A real-browser walkthrough exposed a separate profile issue: related sections can repeat after saving a profile. EmployeeProfile gives each sibling feature component the same key; a regression and fix are needed on a bounded follow-up. Reopening the profile refreshes the sections. This run does not alter production behavior.
+- PR remains unmerged. E2E revalidation and exact source/base SHAs are recorded in PR #19.
+# October 25 — real entry-point startup coverage
+
+Added `application/integration/ApplicationStartupIntegrationTest`: invokes the actual main method, starts the embedded server on a random loopback port with a unique in-memory database, asserts health UP, creates a synthetic employee over HTTP and retrieves persisted fields. A test-only Spring initializer captures the context for guaranteed shutdown in finally. It is absent from the packaged application. No production source or architecture rules changed.
+
+Validation on parent `85e2ab106350ad0e1147fb55bca0e22486b32c5e` plus this increment, based on main `511f2a6d6b637e5068dae89b003616e1e2b24d74` (resulting head recorded in PR):
+- `/tmp/apache-maven-3.9.9/bin/mvn -o -f backend/pom.xml --batch-mode clean verify`: PASS, 57 tests including architecture checks. JaCoCo: 335/335 lines, 100/100 branches, 165/165 methods. Reports `backend/target/site/jacoco/{index.html,jacoco.xml}`.
+- `npm run build --prefix frontend`: PASS TypeScript and Vite.
+- `npm run test:coverage --prefix frontend`: 10 tests PASS; coverage gate FAIL: 16.66% lines/statements, 64.93% branches, 45.16% functions. Reports `frontend/coverage/`. Remaining gaps include App/main, profile, documents, history, leave and partial onboarding. PR remains unmerged.
+- `npm run test:e2e --prefix frontend`: PASS, 1 existing onboarding scenario / 1 Chromium execution against real UI and isolated backend. No new product behavior added in this increment; the five-viewport suite organization remains in dependent PR #20. Temporary servers stopped.
+- Initial startup test failed because the old property-based initializer registration was ignored; replaced with test-only `META-INF/spring.factories` registration and reran clean verify successfully. No mocked bootstrap or coverage exclusions.
+
+Authentication with roles is the next requested product feature; see `docs/authentication-plan.md`. This does not claim authentication is implemented.
+
+## Employment history coverage increment — October 25
+
+Resumed PR19 at parent `2b12fc54a4d9e32a9d0ac0285dc77f8e425ddae7`; latest main `511f2a6d6b637e5068dae89b003616e1e2b24d74` is already an ancestor and was rechecked unchanged. Resulting validated head/tree are recorded in the PR.
+
+- Added six component unit cases under `frontend/tests/unit/employmenthistory/`: loading, both empty states, event/status display, pagination and filter reset, typed/untyped error retry, and late success/failure from aborted employee requests.
+- Added one HTTP-client integration case under `frontend/tests/integration/employmenthistory/`: error mapping, retry and exact filtered/paginated request contract.
+- Added a named real-backend Employment history E2E suite: persisted change display, filtered empty/results states and invalid-kind rejection, executed at320/390/412/768/1440px Chromium widths with isolated employee cleanup. This is one distinct scenario executed five times; including existing onboarding, two distinct scenarios/six executions passed. This checks functional use at those widths, not visual perfection or all physical devices.
+- `npm ci --prefix frontend`: installed locked dependencies without lockfile changes. `npm run build --prefix frontend`: PASS.
+- `npm run test:coverage --prefix frontend`:17 tests PASS. EmploymentHistory.tsx:100% lines,branches,functions,statements. Full-project:23.22% lines/statements,75.23% branches,54.28% functions; strict coverage gate FAIL. No exclusions/thresholds weakened. Reports:frontend/coverage.
+- Maven3.9.9 `-s /tmp/history-settings.xml -f backend/pom.xml --batch-mode clean verify`: PASS,57 tests including architecture;335/335 lines and100/100 branches. Initial offline attempt found no cached dependencies; downloaded pinned dependencies using environment-specific proxy settings and reran successfully. Reports:backend/target/site/jacoco.
+- `npm exec -- playwright install chromium`, then `npm run test:e2e --prefix frontend`: PASS,6 executions in20.5s against packaged backend and Vite proxy; temporary servers stopped.
+- Initial integration assertion omitted the existing size=10 parameter; corrected the assertion to the actual contract and reran successfully.
+
+No production code, package/layer boundaries, transactions or schema changed. New tests use the required feature/unit and feature/integration grouping; broader existing-test reorganization remains in dependent PR20. Authentication remains the next product feature after these foundations pass. PR19 must remain unmerged while App/main, profile, documents, leave and partial onboarding coverage gaps remain.
+
+## Employee profile validation increment — October 25
+
+Resumed PR19 at `638bc41c679940d48ee697448740b78add1c98ad`. Latest main `511f2a6d6b637e5068dae89b003616e1e2b24d74` is already an ancestor; both remote heads were rechecked unchanged before committing. Resulting head/tree recorded in PR19.
+
+- Added11 component unit cases in tests/unit/employees covering view/focus/back navigation, unchanged and dirty cancellation, discard confirmation, beforeunload cleanup, duplicate-submit prevention, pending-save controls, normalized successful saves, typed/untyped errors with retry, and aborted stale success/failure.
+- Added one tests/integration/employees case using actual feature/HTTP helpers and related components to verify submitted JSON and draft retention after409.
+- Added one distinct profile editing/conflict-recovery E2E scenario, executed at320/390/412/768/1440px Chromium widths, with synthetic fixtures under e2e/support. Conflicting email updates preserve stored fields; corrected data persists. Cleanup removes both employees.
+- `npm ci --prefix frontend`: pinned lockfile install; no package/lock changes.
+- `npm run build --prefix frontend`:PASS after correcting a test-only unsupported exact option to an anchored role-name matcher.
+- `npm run test:coverage --prefix frontend`:29 tests PASS; EmployeeProfile.tsx100% lines/branches/functions/statements. Full project65.16% lines/statements,76.59% branches,42.10% functions; gate FAIL. Loading real related components adds their runtime function counters to the denominator, so function percentages are not comparable to component-mocked results alone. Reports frontend/coverage. No thresholds or exclusions changed.
+- Maven3.9.9 `-s /tmp/profile-settings.xml -f backend/pom.xml --batch-mode clean verify`:PASS57 tests including architecture,335/335 lines and100/100 branches. Environment proxy settings only; pinned dependencies downloaded. Reports backend/target/site/jacoco.
+- `npm exec -- playwright install chromium`; `npm run test:e2e --prefix frontend`:PASS11 executions in39.5s. Three distinct business scenarios: history five widths, profile editing five widths, onboarding once. Real packaged backend, isolated H2 and Vite proxy; ports8080/5173 stopped. These are functional Chromium viewport checks, not universal device/browser certification.
+- React reports the known duplicate sibling keys in EmployeeProfile. This increment does not suppress the warning or duplicate the fix already pending in PR20. Passing targeted tests does not resolve that known issue.
+
+No production code, package/layer boundaries, transactions or schema changed. PR19 remains unmerged: App/main and partial document/leave/onboarding coverage gaps remain, as does the separate pending profile-key fix. Authentication/roles remain the next product feature after validation foundations.
+
+## Leave request validation increment — October 25
+
+Resumed PR19 from `51afe1e0ff29610d538d9ac22e1390c177b56ce0`, with main `511f2a6d6b637e5068dae89b003616e1e2b24d74` already an ancestor. The resulting tested tree and commit are recorded in PR19.
+
+- Added 11 focused unit cases under `frontend/tests/unit/leave`: invalid/missing dates, combined and open-ended filters, duplicate submission prevention, pending controls, create/edit/cancel, discard confirmations, typed/untyped save and load failures, retry, stale aborted results and pagination recovery.
+- Added `frontend/tests/integration/leave` coverage using the real HTTP helper and a fetch boundary to verify a 409 response preserves the submitted draft.
+- Added one distinct business scenario in `frontend/e2e/leave`, using the shared synthetic employee fixture: create, reject an overlap without inserting a record, retain the draft, edit persisted dates, cancel and filter/clear. The scenario runs against the real frontend/backend at five widths.
+- `npm ci` in frontend: lockfile install, no dependency changes. `npm run build`: PASS.
+- `npm run test:coverage`: 41 tests PASS; strict coverage gate FAIL. LeaveRequests.tsx: 100% lines/statements/functions, 98.31% branches; two unhit busy-guard returns at lines 62 and 68. Full frontend: 71.72% lines/statements, 87.27% branches, 64.10% functions. Other gaps remain in App.tsx, main.tsx, EmployeeDocuments.tsx and OnboardingTasks.tsx. Reports: `frontend/coverage/index.html`, `coverage-final.json`, `lcov.info`. No exclusions or thresholds changed.
+- `/tmp/apache-maven-3.9.9/bin/mvn -s /tmp/leave-settings.xml -B clean verify` in backend: PASS, 57 tests, 335/335 lines and 100/100 branches. Settings only configure the environment network proxy. Reports: `backend/target/site/jacoco/index.html`, `jacoco.xml`, `backend/target/surefire-reports/`. Architecture checks passed; no production package or layer changes.
+- Initial browser attempt timed out on the new test's exact wrapped-label selector after the cancellation step. Changed the test to select the combobox by accessible role/name; no production change or weakened assertion.
+- Known EmployeeProfile duplicate sibling-key warnings remain visible; the fix stays on PR20. No production code, schema, transactions or workflow triggers changed. PR19 remains draft and unmerged until coverage gates pass. Authentication/roles remain next after the validation foundations.
+- `npx playwright install chromium` and `npm run test:e2e`: PASS, 16 executions in 24.9s, four distinct scenarios (history/profile/leave at five widths each, onboarding once). Chromium 141.0.7390.37 / Playwright 1.56.1; widths 320/390/412/768/1440 at height 1000. Real packaged Spring Boot, isolated in-memory H2 and Vite proxy. These are functional viewport checks, not universal device compatibility certification. Playwright retains failure screenshots/traces under `frontend/test-results/` on failures; final run has no failure artifacts. Temporary test servers stopped after execution.
+
+## Application startup and directory validation — October 25
+
+Resumed PR19 from `5d09502bae5e86266e75fc5ab626a40e53f283f3`, base `511f2a6d6b637e5068dae89b003616e1e2b24d74` (already an ancestor). Resulting head/tree are recorded in PR19.
+
+- Added six cases under `frontend/tests/unit/directory` covering trimmed combined filters, sort/size changes, clearing, pagination recovery, profile-return refresh, typed/untyped creation failures with draft retention and retry, and aborted late directory success/failure. Profile navigation is isolated with a component fixture; existing real-profile integration/E2E suites remain intact.
+- Added `frontend/tests/integration/application/Startup.test.tsx`: imports the actual main entry point, renders the actual App through the real React root/StrictMode, maps an HTTP 503 through the real client, retries successfully and unmounts the captured root. Only fetch responses are substituted at the HTTP boundary; createRoot is observed with a passthrough spy.
+- Added one distinct directory E2E scenario under `frontend/e2e/directory`, using shared synthetic employee fixtures: no-match status filter, matching search/sort, profile navigation with preserved filters, and clearing controls. Runs at 320/390/412/768/1440px widths.
+- `npm ci` and `npm run build` in frontend: PASS; lockfile/dependencies unchanged.
+- `npm run test:coverage`: 48 tests PASS; coverage gate FAIL. App.tsx and main.tsx each have 100% lines/branches/functions/statements. Full frontend: 91.66% lines/statements, 90.61% branches, 72.34% functions. Remaining production gaps: EmployeeDocuments (64.22% lines,46.87% branches), OnboardingTasks (83.16% lines,57.14% branches), LeaveRequests busy-return guards at lines 62/68 (98.31% branches). No thresholds/exclusions changed. Reports: `frontend/coverage/{index.html,coverage-final.json,lcov.info}`.
+- `/tmp/apache-maven-3.9.9/bin/mvn -s /tmp/bootstrap-settings.xml -B clean verify` in backend: PASS, 57 tests, 335/335 lines and100/100 branches. Settings configure only the environment network proxy. Reports: `backend/target/site/jacoco/` and `backend/target/surefire-reports/`. Architecture checks pass.
+- No production code, layer boundaries, transaction semantics, dependency versions or workflow triggers changed. Known profile sibling-key warnings remain unsuppressed; their fix remains on PR20. PR19 must stay draft/unmerged while full frontend coverage fails. Authentication/roles remains the next product increment after foundations.
+- `npx playwright install chromium`; `npm run test:e2e`: PASS, 21 executions in27.8s. Five distinct business scenarios: directory/history/leave/profile at five widths each, onboarding once. Chromium141.0.7390.37 / Playwright1.56.1, real packaged Spring Boot with isolated H2 and Vite proxy. Synthetic records removed and temporary servers stopped. Functional viewport checks do not establish universal browser/device compatibility. Failure artifacts are retained under `frontend/test-results/` only on failure; this run had none.
+
+## Document register validation — October 25
+
+Resumed PR19 from `7aafb65ea79a72eb514b6f84b2eff254159513d8`, base `511f2a6d6b637e5068dae89b003616e1e2b24d74` already an ancestor. The resulting tested head/tree are recorded in PR19.
+
+- Added 12 unit cases under `frontend/tests/unit/documents` covering combined/cleared filters and query escaping, blank-name validation, trimmed creation, pending duplicate-submit protection, dated/undated edits, optional-date clearing, discard confirmation, typed/untyped save/remove/load failures with retry, stale aborted responses and pagination recovery.
+- Added one `frontend/tests/integration/documents` case using the real HTTP client with fetch responses at the boundary: HTTP400 mapping, retained draft, trimmed/null serialization and successful retry.
+- Added one distinct E2E scenario in `frontend/e2e/documents`: whitespace-only input remains disabled, combined name/category/expiry filtering, edit moves metadata outside the cutoff, persisted data verification, clearing filters and declined/accepted removal. Shared synthetic fixtures and five viewport widths are used. No actual file upload is claimed.
+- `npm ci`, `npm run build` in frontend: PASS. Initial TypeScript build rejected an unsupported test-helper role option; removed it and reran the build successfully. No dependency or lockfile changes.
+- `npm run test:coverage`:61 tests PASS; coverage gate FAIL. EmployeeDocuments.tsx now100% lines/branches/functions/statements. Full frontend97.67% lines/statements,95.48% branches,88.54% functions. Remaining gaps: OnboardingTasks83.16% lines/57.14% branches/35.29% functions and LeaveRequests busy guards at lines62/68 (98.31% branches). Reports frontend/coverage/{index.html,coverage-final.json,lcov.info}; no thresholds or exclusions changed.
+- `/tmp/apache-maven-3.9.9/bin/mvn -s /tmp/doc-settings.xml -B clean verify` in backend:PASS57 tests,335/335 lines and100/100 branches, including architecture checks. Proxy settings are environment-only. Reports backend/target/site/jacoco and backend/target/surefire-reports.
+- Production code, package/layer dependencies, schema and transactions are unchanged. PR20 retains the separate document layout and profile-key fix; warnings remain visible here. PR19 stays draft/unmerged while full frontend coverage fails. Authentication remains next after foundations.
+- `npx playwright install chromium`; `npm run test:e2e`:PASS26 executions in47.6s, six distinct business scenarios. Directory/document/history/leave/profile each run at320/390/412/768/1440px; onboarding once. Chromium141.0.7390.37 / Playwright1.56.1, real packaged backend with isolated H2 and Vite proxy. A truncated browser download was retried successfully by Playwright's fallback mirror. Synthetic cleanup passed and temporary servers stopped. Functional viewport tests do not establish universal device/browser compatibility. Failure screenshots/traces default to frontend/test-results; none generated by the successful run.
+
+## Onboarding validation — October 26 one-time retry
+
+Resumed PR19 from `f46e290550a4861a83ffa84215d5e4349da912bf`; latest main `511f2a6d6b637e5068dae89b003616e1e2b24d74` is already an ancestor. Resulting head/tree are recorded in PR19.
+
+- Added 11 unit cases under `frontend/tests/unit/onboarding`: combined deadline/completion filters, independent clearing, required trimmed fields, pending duplicate-submit protection, dated/undated edits, discard decisions, optional-date clearing, mutation/load failures and retry, stale aborted responses, and paging recovery.
+- Added a real HTTP-client integration case under `frontend/tests/integration/onboarding`: HTTP400 detail mapping, retained draft, trimmed/null serialization and successful retry. Fetch is substituted at the HTTP boundary; this supplements real-backend E2E.
+- Added one named business scenario under `frontend/e2e/onboarding`, across 320/390/412/768/1440px: deadline boundary filtering, completion/reopening under active filters, global totals, persisted state, declined/accepted deletion and invalid API input. Shared synthetic fixture cleanup remains isolated.
+- Frontend `npm ci` and `npm run build`: PASS after removing unsupported RTL role-helper options caught by TypeScript. Dependency versions and lockfile unchanged.
+- `npm run test:coverage`: 73 tests PASS, full-project coverage gate FAIL. OnboardingTasks.tsx is now 100% lines/branches/functions/statements. Full frontend: 100% lines/statements/functions, 99.64% branches. Remaining gaps are LeaveRequests.tsx pending guards at lines 62 and 68 (component 98.31% branches). No threshold/exclusion changes. Reports: `frontend/coverage/{index.html,coverage-final.json,lcov.info}`.
+- Backend `/tmp/apache-maven-3.9.9/bin/mvn -s /tmp/retry-settings.xml -B clean verify`: PASS, 57 tests including architecture checks; 335/335 lines, 100/100 branches. The settings file supplies the runtime network proxy only. Reports: `backend/target/site/jacoco` and `backend/target/surefire-reports`.
+- No production code, schema, transactions, package/layer boundaries or Actions triggers changed. Existing profile sibling-key warnings remain visible; PR20 owns their fix. New tests follow feature/type grouping. PR19 remains draft/unmerged until all gates pass; authentication/roles remains the next product feature after foundations. This retry does not resume the recurring schedule.
+- `npx playwright install chromium` succeeded after automatic fallback-mirror retries for truncated downloads; `npm run test:e2e`: PASS, 31 executions in 39.3s covering seven distinct business scenarios. Chromium 141.0.7390.37 / Playwright 1.56.1, real packaged Spring Boot, disposable H2 and Vite proxy. Six scenarios run at five widths; the existing onboarding lifecycle runs once. Cleanup succeeded, and ports 8080/5173 were verified closed afterward. Failure artifacts default to `frontend/test-results`; no failures occurred. Viewport functional coverage is not universal physical-device/browser certification.
+- Static review and `git diff --cached --check`: PASS. The only changed files are onboarding tests and validation/roadmap documentation.

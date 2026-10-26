@@ -1,0 +1,3 @@
+# Test-only context capture for entry-point startup integration; never packaged in the application.
+org.springframework.context.ApplicationContextInitializer=\
+com.ems.application.integration.ApplicationStartupIntegrationTest$CaptureContext

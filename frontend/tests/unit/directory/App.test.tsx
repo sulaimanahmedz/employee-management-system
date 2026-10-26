@@ -1,0 +1,67 @@
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import App from '../../../src/App';
+import { searchEmployees, createEmployee } from '../../../src/features/employees/api';
+import type { EmployeeDirectory } from '../../../src/features/employees/types';
+vi.mock('../../../src/features/employees/api', () => ({ searchEmployees: vi.fn(), createEmployee: vi.fn() }));
+vi.mock('../../../src/features/employees/EmployeeProfile', () => ({ default: ({ employeeId, onBack, onSaved }: { employeeId: number; onBack: () => void; onSaved: () => void }) => <section><h1>Profile {employeeId}</h1><button onClick={onSaved}>Save profile fixture</button><button onClick={onBack}>Back fixture</button></section> }));
+const load = vi.mocked(searchEmployees), create = vi.mocked(createEmployee);
+const employee = { id: 7, firstName: 'Synthetic', lastName: 'Employee', email: 'synthetic@example.com', department: 'IT', jobTitle: 'Engineer', status: 'ACTIVE' as const };
+const empty: EmployeeDirectory = { items: [], page: 0, size: 10, totalPages: 0, totalElements: 0, totalEmployees: 0, activeEmployees: 0, departments: 0 };
+const populated = { ...empty, items: [employee], totalPages: 1, totalElements: 1, totalEmployees: 1, activeEmployees: 1, departments: 1 };
+const button = (name: string) => screen.getByRole('button', { name });
+beforeEach(() => { load.mockReset(); create.mockReset(); });
+afterEach(cleanup);
+it('applies trimmed search, status, size and sorting, then clears all filters', async () => {
+  load.mockResolvedValue({ ...empty, totalEmployees: 8 }); const user = userEvent.setup(); render(<App />);
+  await screen.findByText('No employees match your filters');
+  await user.type(screen.getByLabelText('Search employees'), '  Engineering  ');
+  await user.selectOptions(screen.getByLabelText('Employee status'), 'ON_LEAVE');
+  await user.selectOptions(screen.getByLabelText('Rows per page'), '25');
+  await user.selectOptions(screen.getByLabelText('Sort employees by'), 'department');
+  await user.selectOptions(screen.getByLabelText('Sort direction'), 'desc');
+  await user.click(button('Apply filters'));
+  await waitFor(() => expect(load).toHaveBeenLastCalledWith({ q: 'Engineering', status: 'ON_LEAVE', size: 25, sortBy: 'department', direction: 'desc' }, 0, expect.any(AbortSignal)));
+  expect(screen.getByText(/Sort: Department \(descending\)/)).toBeTruthy();
+  await user.click(button('Clear filters')); await waitFor(() => expect(load).toHaveBeenLastCalledWith({ q: '', status: '', size: 10, sortBy: 'id', direction: 'asc' }, 0, expect.any(AbortSignal)));
+  expect((screen.getByLabelText('Search employees') as HTMLInputElement).value).toBe('');
+});
+it('navigates pages, recovers from a removed last page and refreshes after a profile save', async () => {
+  let shrinking = false;
+  load.mockImplementation(async (_filters, page) => ({ ...populated, page, totalPages: shrinking ? 1 : 2, totalElements: 11 }));
+  const user = userEvent.setup(); render(<App />); await screen.findByText('Synthetic Employee');
+  await user.click(button('Next')); await screen.findByText('Page 2 of 2');
+  await user.click(button('Previous')); await screen.findByText('Page 1 of 2'); shrinking = true;
+  await user.click(button('Next')); await screen.findByText('Page 1 of 1');
+  await user.click(button('View profile for Synthetic Employee')); expect(screen.getByRole('heading').textContent).toBe('Profile 7');
+  const calls = load.mock.calls.length; await user.click(button('Save profile fixture')); expect(load).toHaveBeenCalledTimes(calls);
+  await user.click(button('Back fixture')); await screen.findByText('Synthetic Employee'); expect(load).toHaveBeenCalledTimes(calls + 1);
+});
+it.each([new Error('Duplicate email'), null])('retains a failed new employee draft and saves it on retry: %s', async cause => {
+  load.mockResolvedValue(empty); create.mockRejectedValueOnce(cause).mockResolvedValue(employee); const user = userEvent.setup(); render(<App />);
+  await screen.findByText('Your directory starts here'); await user.click(button('+ Add employee')); await user.click(button('Close form')); expect(screen.queryByLabelText('First name')).toBeNull(); await user.click(button('+ Add employee'));
+  for (const [name, value] of [['First name','Synthetic'],['Last name','Employee'],['Work email','synthetic@example.com'],['Department','IT'],['Job title','Engineer']]) await user.type(screen.getByLabelText(name), value);
+  await user.selectOptions(screen.getByLabelText('Status', { exact: true }), 'INACTIVE');
+  await user.click(button('Save employee')); expect((await screen.findByRole('alert')).textContent).toContain(cause instanceof Error ? cause.message : 'Unable to add employee.');
+  expect((screen.getByLabelText('Work email') as HTMLInputElement).value).toBe('synthetic@example.com');
+  await user.click(button('Save employee')); await screen.findByText('Employee added successfully.');
+  expect(create).toHaveBeenLastCalledWith({ firstName: 'Synthetic', lastName: 'Employee', email: 'synthetic@example.com', department: 'IT', jobTitle: 'Engineer', status: 'INACTIVE' });
+  expect(screen.queryByLabelText('First name')).toBeNull();
+});
+it('ignores an abandoned directory failure and displays a fallback error for an active request', async () => {
+  let reject!: (reason: unknown) => void;
+  load.mockReturnValueOnce(new Promise((_yes, no) => { reject = no; })).mockRejectedValueOnce(null).mockResolvedValue(empty);
+  const user = userEvent.setup(); render(<App />); const signal = load.mock.calls[0][2]!;
+  await user.click(button('Apply filters')); expect(signal.aborted).toBe(true);
+  await act(async () => reject(new Error('Stale failure'))); expect((await screen.findByRole('alert')).textContent).toContain('Unable to load directory.');
+  await user.click(button('Retry directory')); await screen.findByText('Your directory starts here'); expect(screen.queryByRole('alert')).toBeNull();
+});
+it('ignores a late successful response from an abandoned directory search', async () => {
+  let resolve!: (value: EmployeeDirectory) => void;
+  load.mockReturnValueOnce(new Promise(yes => { resolve = yes; })).mockResolvedValue(empty);
+  const user = userEvent.setup(); render(<App />); const signal = load.mock.calls[0][2]!;
+  await user.click(button('Apply filters')); await screen.findByText('Your directory starts here');
+  expect(signal.aborted).toBe(true); await act(async () => resolve(populated));
+  expect(screen.queryByText('Synthetic Employee')).toBeNull(); expect(screen.getByText('Your directory starts here')).toBeTruthy();
+});
