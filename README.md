@@ -245,3 +245,11 @@ Vitest runs focused unit tests and component/HTTP-client integration tests. HTML
 Playwright launches the packaged backend with an isolated in-memory H2 database and the Vite proxy, refuses to reuse existing servers, and stops its servers on completion. Build the backend JAR first. The onboarding E2E exercises blank-title validation, task creation, editing, completion, filtering and persisted results through the real application. Synthetic employee records are removed after each test. Failure screenshots/traces are in `frontend/test-results/`. A failed coverage command still leaves reports and the packaged backend for diagnosis; it does not authorize merging.
 
 Coverage/E2E results and exact source/base SHAs belong in the PR. No automatic GitHub Actions triggers were added. The application remains unhosted and is not yet enterprise-ready.
+
+## Responsive layout and test suites
+
+The mobile-layout feature branch places each document record's Edit/Remove controls on a separate row below its name and metadata. Document upload is not implemented; this is the existing metadata register. Forms and filters stack at narrow widths; long values wrap, controls have 44px minimum height, and wide tables scroll within their container.
+
+Playwright has **4 distinct E2E scenarios in 4 named suites**, executed at 5 Chromium viewport profiles (320, 390, 412, 768 and 1440 pixels): **20 executions**. These cover directory form/filter fit, document action placement/edit/removal, profile-save section uniqueness, and onboarding lifecycle/validation. Browser emulation is not proof of compatibility with every physical device or browser.
+
+See [test organization](docs/test-organization.md) for separate unit, API, integration, architecture and E2E locations. The profile duplicate-section bug is fixed with distinct feature component keys. Coverage gates remain unchanged; feature PRs stay unmerged until all required gates pass.

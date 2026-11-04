@@ -3,6 +3,13 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   workers: 1,
+  projects: [
+    { name: 'small-phone', use: { viewport: { width: 320, height: 740 }, isMobile: true, hasTouch: true } },
+    { name: 'iphone-size', use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },
+    { name: 'android-size', use: { viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true } },
+    { name: 'tablet', use: { viewport: { width: 768, height: 1024 }, hasTouch: true } },
+    { name: 'desktop', use: { viewport: { width: 1440, height: 1000 } } },
+  ],
   use: { baseURL: 'http://127.0.0.1:5173', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   webServer: [
     {

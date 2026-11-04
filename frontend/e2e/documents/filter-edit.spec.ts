@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { createProfileEmployee } from '../support/profile-fixtures';
 test.describe('Document renewal filtering and metadata edits', () => {
-  for (const width of [320, 390, 412, 768, 1440]) {
-    test(`updates filter membership and removes metadata at ${width}px`, async ({ page, request }) => {
-      await page.setViewportSize({ width, height: 1000 });
+    test(`updates filter membership and removes metadata`, async ({ page, request }) => {
+      const width = page.viewportSize()!.width;
       const employee = await createProfileEmployee(request, `Documents${width}`);
       const path = `/api/v1/employees/${employee.id}/documents`;
       try {
@@ -35,5 +34,4 @@ test.describe('Document renewal filtering and metadata edits', () => {
         expect((await request.get(`${path}/${document.id}`)).status()).toBe(404);
       } finally { expect((await request.delete(`/api/v1/employees/${employee.id}`)).status()).toBe(204); }
     });
-  }
 });

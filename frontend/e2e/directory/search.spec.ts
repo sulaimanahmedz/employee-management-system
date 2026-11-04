@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { createProfileEmployee } from '../support/profile-fixtures';
 test.describe('Directory search and navigation', () => {
-  for (const width of [320, 390, 412, 768, 1440]) {
-    test(`filters synthetic records and preserves search on profile return at ${width}px`, async ({ page, request }) => {
-      await page.setViewportSize({ width, height: 1000 });
+    test(`filters synthetic records and preserves search on profile return`, async ({ page, request }) => {
+      const width = page.viewportSize()!.width;
       const employee = await createProfileEmployee(request, `Directory${width}`);
       try {
         await page.goto('/');
@@ -30,5 +29,4 @@ test.describe('Directory search and navigation', () => {
         expect((await request.delete(`/api/v1/employees/${employee.id}`)).status()).toBe(204);
       }
     });
-  }
 });

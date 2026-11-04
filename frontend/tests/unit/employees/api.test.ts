@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { listEmployees, createEmployee, getEmployee, updateEmployee, searchEmployees, getEmploymentHistory } from './api';
-import type { EmployeeInput } from './types';
+import { listEmployees, createEmployee, getEmployee, updateEmployee, searchEmployees, getEmploymentHistory } from '../../../src/features/employees/api';
+import type { EmployeeInput } from '../../../src/features/employees/types';
 
 afterEach(() => vi.unstubAllGlobals());
 const employee: EmployeeInput = { firstName: 'Synthetic', lastName: 'Person', email: 'test@example.com', department: 'IT', jobTitle: 'Engineer', status: 'ACTIVE' };

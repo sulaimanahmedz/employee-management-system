@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+test.describe('Onboarding checklist', () => {
 test('adds, edits and completes a task through the real application', async ({ page, request }) => {
   const created = await request.post('/api/v1/employees', { data: {
     firstName: 'Synthetic', lastName: 'Playwright', email: 'playwright@example.com',
@@ -33,4 +34,6 @@ test('adds, edits and completes a task through the real application', async ({ p
   } finally {
     expect((await request.delete(path)).status()).toBe(204);
   }
+});
+
 });

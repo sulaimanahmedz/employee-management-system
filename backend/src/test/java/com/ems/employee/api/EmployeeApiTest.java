@@ -1,4 +1,4 @@
-package com.ems.employee;
+package com.ems.employee.api;
 
 import com.ems.employee.repository.EmployeeRepository;
 

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import OnboardingTasks from './OnboardingTasks';
+import OnboardingTasks from '../../../src/features/employees/OnboardingTasks';
 
 const requests: string[] = [];
 beforeEach(() => { requests.length = 0; });

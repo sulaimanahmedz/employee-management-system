@@ -2,9 +2,8 @@ import { expect, test } from '@playwright/test';
 import { createProfileEmployee } from '../support/profile-fixtures';
 
 test.describe('Leave requests and overlap recovery', () => {
-  for (const width of [320, 390, 412, 768, 1440]) {
-    test(`records, rejects overlaps, edits and cancels at ${width}px`, async ({ page, request }) => {
-      await page.setViewportSize({ width, height: 1000 });
+    test(`records, rejects overlaps, edits and cancels`, async ({ page, request }) => {
+      const width = page.viewportSize()!.width;
       const employee = await createProfileEmployee(request, `Leave${width}`);
       const path = `/api/v1/employees/${employee.id}/leave-requests`;
       try {
@@ -42,5 +41,4 @@ test.describe('Leave requests and overlap recovery', () => {
         expect((await request.delete(`/api/v1/employees/${employee.id}`)).status()).toBe(204);
       }
     });
-  }
 });

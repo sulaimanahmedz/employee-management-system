@@ -25,3 +25,9 @@
 - Never weaken coverage gates, exclude production paths or use trivial tests to inflate coverage. Leave failed gates unmerged with exact report paths and gaps in the PR.
 - Record Playwright browser/commands/results and stop temporary test servers. Mocked HTTP component tests supplement, but never replace, real E2E.
 - Enterprise readiness requires authentication, role-based access, versioned migrations, auditability, security, concurrency, observability and backup/recovery validation. Do not claim enterprise readiness until implemented and verified.
+
+## Test suite organization
+- Backend: feature/unit for isolated domain/service tests, feature/api for HTTP contract integration tests, feature/integration for service/persistence collaboration tests. Keep architecture checks separate.
+- Frontend: tests/unit/<feature> and tests/integration/<feature>, separate from production sources.
+- Playwright: e2e/<feature> with named business suites and shared synthetic-data helpers in e2e/support. Keep per-test setup/cleanup isolated.
+- Report distinct E2E scenarios separately from browser/viewport executions. Responsive checks include 320px phones through desktop; never claim universal device compatibility from emulation alone.

@@ -136,3 +136,13 @@ Added two focused leave unit regressions that dispatch save/edit or save/cancel 
 `npm ci --prefix frontend` and `npm run test:coverage --prefix frontend`: PASS, 75 tests, full frontend 100% statements/lines/branches/functions. Both previously uncovered LeaveRequests pending guards are exercised. Coverage reports: `frontend/coverage/{index.html,coverage-final.json,lcov.info}`. No dependency or lockfile changes.
 
 Full frontend build, backend `clean verify`, real-backend Playwright regression suite, temporary server cleanup and final head/base checks are required before merge. Their final commands, actual results and validated commit/tree SHAs are recorded in PR19. No unexecuted gate is claimed passed here. No production code, backend layer boundaries, transactions, schemas or workflow triggers changed. Architecture checks remain mandatory; existing sibling-key warnings are not suppressed and their fix remains in dependent PR20.
+
+## Mobile layout integration — November 4
+
+PR20 incorporates main `a79e323251b35e5c36cf9bb91a1ca95aacea4ef6` (merged PR19). Merge conflicts were limited to appended roadmap history and test discovery. Both histories were retained; all tests now live under tests/, so Vitest discovers that directory without changing any coverage threshold or production coverage scope.
+
+Existing per-spec width loops were replaced by the five Playwright projects already defined in PR20, preserving all business assertions and each width while avoiding a five-by-five repetition. Ten distinct scenarios now yield 50 executions across 320/390/412/768/1440px. These are Chromium viewport/touch emulations, not physical-device or other-browser certification.
+
+The issue #21 fix gives document filter actions a 12px gap and margin, a 44px minimum target height and equal-width stacked buttons at widths up to 600px. The document E2E checks field-to-button spacing, phone alignment, inter-button gap, target height, long-name wrapping and no page overflow, then exercises edit/remove against the real backend. This is document metadata, not file upload.
+
+Backend production, schema and transaction behavior remain unchanged. Existing feature/layer architecture checks stay mandatory; backend unit/API/persistence integration tests remain in their owning feature subpackages. Frontend builds/coverage, backend clean verify, real-backend E2E and opted-in disposable Faker startup checks must pass before merge. The final commands, actual outcomes, report paths and validated head/base/tree SHAs are recorded in PR20; no pending check is claimed passed in this entry.

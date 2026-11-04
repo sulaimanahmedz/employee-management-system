@@ -184,6 +184,14 @@ The goal is an employee management application spanning the employee lifecycle.
 - [ ] Concurrency, observability, backup/restore and operational recovery tests.
 The current unauthenticated development application is not enterprise-ready.
 
+### October 25, 2026 — Responsive document actions and organized tests (feature branch)
+- Moved document action buttons below names and metadata, with wrapping long names and touch-sized controls.
+- Improved narrow layouts, form input sizing, wrapping navigation and contained table scrolling.
+- Fixed sibling key collisions that duplicated profile sections after edits.
+- Separated backend unit/API/integration tests and frontend unit/integration tests; grouped E2E by business feature with shared helpers.
+- Four distinct Playwright scenarios execute across five viewport profiles (20 runs). Exact validation and coverage blockers are recorded in the PR.
+- A narrated walkthrough previews these unmerged changes; it does not demonstrate actual file upload.
+
 ### October 25 — Employment history validation (PR19 pending)
 - Added unit coverage for loading, filtering, paging, error recovery and abandoned requests; added HTTP-client integration coverage.
 - EmploymentHistory.tsx now measures100% line/branch/function coverage; full-project frontend coverage still fails the unchanged gate.
@@ -218,3 +226,9 @@ The current unauthenticated development application is not enterprise-ready.
 - Added two unit regressions proving that simultaneous edit/cancel actions cannot replace an in-flight leave draft before busy controls render, including retention after a failed save.
 - All 75 frontend tests pass with full 100% line/branch/function coverage; no production guard, exclusion or threshold was changed.
 - Full build/backend/E2E and merge results are recorded against the resulting commit in PR19. PR20 follows in dependency order; authentication remains the next product feature once foundations pass.
+
+### November 4 — Integrate validated foundations and fix document filter spacing
+- PR19 merged as `a79e323251b35e5c36cf9bb91a1ca95aacea4ef6` with 100% frontend/backend line and branch coverage, 75 frontend tests, 57 backend tests and 31 browser executions passing.
+- Integrated that main into PR20, preserving both roadmap histories and moving all frontend tests into tests/unit or tests/integration. Six feature groups now contain ten E2E scenarios, each run once by five viewport projects (50 executions).
+- Addressed issue #21 with a dedicated document filter-action row: 12px spacing, at least 44px controls, equal full-width phone buttons. Added geometric browser assertions alongside long-name wrapping/edit/remove coverage.
+- PR20 requires fresh builds, coverage, architecture, real-backend browser and isolated Faker startup checks against the integrated tree before merge. Final commands/results and SHAs are recorded in PR20. Authentication remains next; the application is not enterprise-ready.

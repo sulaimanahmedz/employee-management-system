@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { createProfileEmployee } from '../support/profile-fixtures';
 test.describe('Profile editing and conflict recovery', () => {
-  for (const width of [320, 390, 412, 768, 1440]) {
-    test(`retains failed edits and saves corrected data at ${width}px`, async ({ page, request }) => {
-      await page.setViewportSize({ width, height: 1000 });
+    test(`retains failed edits and saves corrected data`, async ({ page, request }) => {
+      const width = page.viewportSize()!.width;
       const employee = await createProfileEmployee(request, `Edit${width}`);
       let otherId: number | undefined;
       try {
@@ -29,5 +28,4 @@ test.describe('Profile editing and conflict recovery', () => {
         expect((await request.delete(`/api/v1/employees/${employee.id}`)).status()).toBe(204);
       }
     });
-  }
 });

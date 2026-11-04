@@ -1,4 +1,4 @@
-package com.ems.employmenthistory;
+package com.ems.employmenthistory.api;
 
 import com.ems.employee.entity.Employee;
 import com.ems.employee.entity.EmployeeStatus;

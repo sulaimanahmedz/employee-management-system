@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Employment history', () => {
-  for (const width of [320, 390, 412, 768, 1440]) {
-    test(`shows persisted changes and filters events at ${width}px`, async ({ page, request }) => {
-      await page.setViewportSize({ width, height: 1000 });
+    test(`shows persisted changes and filters events`, async ({ page, request }) => {
+      const width = page.viewportSize()!.width;
       const employee = { firstName: 'Synthetic', lastName: `History${width}`, email: `history.${width}@example.com`,
         department: 'IT', jobTitle: 'Engineer', status: 'ACTIVE' };
       const created = await request.post('/api/v1/employees', { data: employee });
@@ -29,5 +28,4 @@ test.describe('Employment history', () => {
         expect((await request.delete(path)).status()).toBe(204);
       }
     });
-  }
 });

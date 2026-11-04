@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { createProfileEmployee } from '../support/profile-fixtures';
 test.describe('Onboarding deadline review and removal', () => {
-  for (const width of [320, 390, 412, 768, 1440]) {
-    test(`filters, reopens and removes tasks at ${width}px`, async ({ page, request }) => {
-      await page.setViewportSize({ width, height: 1000 });
+    test(`filters, reopens and removes tasks`, async ({ page, request }) => {
+      const width = page.viewportSize()!.width;
       const employee = await createProfileEmployee(request, `Onboarding${width}`);
       const path = `/api/v1/employees/${employee.id}/onboarding-tasks`;
       try {
@@ -34,5 +33,4 @@ test.describe('Onboarding deadline review and removal', () => {
         await expect(section.getByText('No onboarding tasks yet.')).toBeVisible(); expect((await request.get(`${path}/${task.id}`)).status()).toBe(404);
       } finally { expect((await request.delete(`/api/v1/employees/${employee.id}`)).status()).toBe(204); }
     });
-  }
 });
