@@ -12,6 +12,17 @@ test('document actions sit below long names and remain usable without page overf
     const section = page.getByRole('region', { name: 'Document register' });
     const title = section.getByText(name, { exact: true });
     await expect(title).toBeVisible();
+    const apply = await section.getByRole('button', { name: 'Apply document filters', exact: true }).boundingBox();
+    const clear = await section.getByRole('button', { name: 'Clear document filters', exact: true }).boundingBox();
+    const expiry = await section.getByLabel('Expires on or before', { exact: true }).boundingBox();
+    expect(apply!.y - (expiry!.y + expiry!.height)).toBeGreaterThanOrEqual(11);
+    expect(apply!.height).toBeGreaterThanOrEqual(44);
+    expect(clear!.height).toBeGreaterThanOrEqual(44);
+    if (page.viewportSize()!.width <= 600) {
+      expect(Math.abs(apply!.width - clear!.width)).toBeLessThanOrEqual(1);
+      expect(clear!.y - (apply!.y + apply!.height)).toBeGreaterThanOrEqual(11);
+    }
+
     const edit = section.getByRole('button', { name: 'Edit ' + name, exact: true });
     const titleBox = await title.boundingBox();
     const editBox = await edit.boundingBox();

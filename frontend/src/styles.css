@@ -50,3 +50,11 @@ button, select, input { min-height: 44px; }
   .stats article { display: flex; align-items: center; justify-content: space-between; }
   .stats strong { margin-top: 0; }
 }
+
+/* Keep document filter actions separated from date fields and equally sized on phones. */
+.filter-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.filter-actions button { min-height: 44px; }
+@media (max-width: 600px) {
+  .filter-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .filter-actions button { width: 100%; }
+}

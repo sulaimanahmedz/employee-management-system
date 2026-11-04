@@ -89,8 +89,10 @@ export default function EmployeeDocuments({ employeeId }: { employeeId: number }
           <option value="">All categories</option>{Object.entries(categories).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select></label>
         <label>Expires on or before<input type="date" value={expiryDraft} onChange={event => setExpiryDraft(event.target.value)} /></label>
-        <button type="submit">Apply document filters</button>{' '}
+        <div className="filter-actions">
+        <button type="submit">Apply document filters</button>
         <button type="button" onClick={() => { setQueryDraft(''); setQuery(''); setExpiryDraft(''); setExpiresBy(''); setCategoryDraft(''); setCategoryFilter(''); setPage(0); setReload(value => value + 1); }}>Clear document filters</button>
+        </div>
       </fieldset>
     </form>
     {query && <p role="status">Showing document names containing: {query}. New or edited records may fall outside this search.</p>}

@@ -10,6 +10,8 @@
 | Frontend integration | frontend/tests/integration/<feature> | Components with real HTTP client and simulated responses |
 | Browser E2E | frontend/e2e/<feature> | User journeys against real frontend/backend |
 
-API tests are also integration tests by execution scope, but have their own directory so their contract purpose is clear. Do not duplicate tests solely to fill folders. Test helpers live in e2e/support. Playwright contains four named business suites: Directory, Profiles, Documents and Onboarding. Each scenario runs against five viewport profiles (320,390,412,768,1440px) using Chromium. These are emulated screen/touch conditions, not certification on every physical phone or browser.
+API tests are also integration tests by execution scope, but have their own directory so their contract purpose is clear. Do not duplicate tests solely to fill folders. Test helpers live in e2e/support. Playwright contains six business feature groups: Directory, Profiles, Documents, Onboarding, Leave and Employment History. There are ten distinct scenarios. Each scenario runs against five viewport profiles (320,390,412,768,1440px) using Chromium. These are emulated screen/touch conditions, not certification on every physical phone or browser.
 
 Run frontend unit/integration suites with npm test or npm run test:coverage, and browser suites with npm run test:e2e. Backend mvn verify discovers *Test classes recursively; package reorganization does not change discovery. Coverage thresholds and architecture checks remain unchanged.
+
+Viewport configuration lives only in playwright.config.ts; scenarios use the active project viewport and do not nest a second width loop. Ten scenarios across five projects produce 50 executions, not 50 distinct scenarios.
