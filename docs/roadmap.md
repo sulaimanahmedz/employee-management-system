@@ -213,3 +213,8 @@ The current unauthenticated development application is not enterprise-ready.
 - Added 11 onboarding unit cases, an HTTP validation/retry integration case and a real-backend deadline/completion/removal browser scenario at five viewport widths.
 - Onboarding now measures 100% line/branch/function coverage; all 73 frontend tests pass. Full frontend coverage is 100% lines and 99.64% branches, leaving two leave-request pending guards uncovered.
 - Backend 57 tests and 100% line/branch coverage pass. No production changes or merge; authentication remains next after validation foundations. Exact browser results and validated SHAs are recorded in PR19.
+
+### November 4 — Close leave save-race coverage gaps
+- Added two unit regressions proving that simultaneous edit/cancel actions cannot replace an in-flight leave draft before busy controls render, including retention after a failed save.
+- All 75 frontend tests pass with full 100% line/branch/function coverage; no production guard, exclusion or threshold was changed.
+- Full build/backend/E2E and merge results are recorded against the resulting commit in PR19. PR20 follows in dependency order; authentication remains the next product feature once foundations pass.

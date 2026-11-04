@@ -101,3 +101,45 @@ it('summarizes open-ended periods and status-only filters without requiring a ty
   await screen.findByText(/Showing cancelled leave requests overlapping any start date through any end date/);
   expect(call).toHaveBeenLastCalledWith('/api/v1/employees/7/leave-requests?page=0&status=CANCELLED', expect.any(Object));
 });
+
+it('keeps a creation draft intact when an edit arrives in the same event batch as save', async () => {
+  const save = deferred();
+  call.mockImplementation((_url, options) => options?.method ? save.promise : Promise.resolve(populated));
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  render(<LeaveRequests employeeId={7} />); await screen.findByText('Annual leave');
+  date('Start date', '2027-01-01'); date('End date', '2027-01-02');
+  const form = screen.getByRole('form', { name: 'Record leave request' });
+  const edit = button('Edit leave request starting 2026-12-01');
+  // Batch before React commits disabled controls: the synchronous pending guard
+  // must protect the draft even when the busy render has not yet occurred.
+  act(() => {
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    edit.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  expect(confirm).not.toHaveBeenCalled();
+  expect(screen.getByRole('form', { name: 'Record leave request' })).toBeTruthy();
+  expect((screen.getByLabelText('Start date') as HTMLInputElement).value).toBe('2027-01-01');
+  expect(call.mock.calls.filter(([, options]) => options?.method)).toHaveLength(1);
+  await act(async () => save.resolve(pending)); await screen.findByText('Leave request recorded as pending.');
+});
+
+it('retains the edit draft when cancellation arrives before the saving render, including after failure', async () => {
+  const save = deferred();
+  call.mockImplementation((_url, options) => options?.method ? save.promise : Promise.resolve(populated));
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  const user = userEvent.setup(); render(<LeaveRequests employeeId={7} />); await screen.findByText('Annual leave');
+  await user.click(button('Edit leave request starting 2026-12-01')); date('End date', '2026-12-03');
+  const form = screen.getByRole('form', { name: 'Edit leave request' }); const cancel = button('Cancel editing');
+  act(() => {
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    cancel.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+  expect(confirm).not.toHaveBeenCalled();
+  expect(screen.getByRole('form', { name: 'Edit leave request' })).toBeTruthy();
+  expect((screen.getByLabelText('End date') as HTMLInputElement).value).toBe('2026-12-03');
+  await act(async () => save.reject(new Error('Concurrent edit rejected')));
+  expect((await screen.findByRole('alert')).textContent).toContain('Concurrent edit rejected');
+  expect((screen.getByLabelText('End date') as HTMLInputElement).value).toBe('2026-12-03');
+  await user.click(button('Cancel editing')); expect(confirm).toHaveBeenCalledOnce();
+  expect(screen.getByRole('form', { name: 'Record leave request' })).toBeTruthy();
+});

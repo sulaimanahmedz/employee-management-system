@@ -126,3 +126,13 @@ Resumed PR19 from `f46e290550a4861a83ffa84215d5e4349da912bf`; latest main `511f2
 - No production code, schema, transactions, package/layer boundaries or Actions triggers changed. Existing profile sibling-key warnings remain visible; PR20 owns their fix. New tests follow feature/type grouping. PR19 remains draft/unmerged until all gates pass; authentication/roles remains the next product feature after foundations. This retry does not resume the recurring schedule.
 - `npx playwright install chromium` succeeded after automatic fallback-mirror retries for truncated downloads; `npm run test:e2e`: PASS, 31 executions in 39.3s covering seven distinct business scenarios. Chromium 141.0.7390.37 / Playwright 1.56.1, real packaged Spring Boot, disposable H2 and Vite proxy. Six scenarios run at five widths; the existing onboarding lifecycle runs once. Cleanup succeeded, and ports 8080/5173 were verified closed afterward. Failure artifacts default to `frontend/test-results`; no failures occurred. Viewport functional coverage is not universal physical-device/browser certification.
 - Static review and `git diff --cached --check`: PASS. The only changed files are onboarding tests and validation/roadmap documentation.
+
+## Leave save-race regression checks — November 4
+
+Resumed PR19 from `fe13c7f13aeb8d93a4f7b1ff2deacb8a547096fb`, with main `511f2a6d6b637e5068dae89b003616e1e2b24d74` already an ancestor.
+
+Added two focused leave unit regressions that dispatch save/edit or save/cancel in one event batch before React commits disabled controls. They assert the in-flight draft and mode remain intact, no discard confirmation occurs, only one save is issued, and a rejected edit still retains its values for deliberate cancellation. No private React internals, removed guards or coverage exclusions are used.
+
+`npm ci --prefix frontend` and `npm run test:coverage --prefix frontend`: PASS, 75 tests, full frontend 100% statements/lines/branches/functions. Both previously uncovered LeaveRequests pending guards are exercised. Coverage reports: `frontend/coverage/{index.html,coverage-final.json,lcov.info}`. No dependency or lockfile changes.
+
+Full frontend build, backend `clean verify`, real-backend Playwright regression suite, temporary server cleanup and final head/base checks are required before merge. Their final commands, actual results and validated commit/tree SHAs are recorded in PR19. No unexecuted gate is claimed passed here. No production code, backend layer boundaries, transactions, schemas or workflow triggers changed. Architecture checks remain mandatory; existing sibling-key warnings are not suppressed and their fix remains in dependent PR20.
