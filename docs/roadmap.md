@@ -232,3 +232,15 @@ The current unauthenticated development application is not enterprise-ready.
 - Integrated that main into PR20, preserving both roadmap histories and moving all frontend tests into tests/unit or tests/integration. Six feature groups now contain ten E2E scenarios, each run once by five viewport projects (50 executions).
 - Addressed issue #21 with a dedicated document filter-action row: 12px spacing, at least 44px controls, equal full-width phone buttons. Added geometric browser assertions alongside long-name wrapping/edit/remove coverage.
 - PR20 requires fresh builds, coverage, architecture, real-backend browser and isolated Faker startup checks against the integrated tree before merge. Final commands/results and SHAs are recorded in PR20. Authentication remains next; the application is not enterprise-ready.
+
+### November 5 — Authentication credential foundation (unmerged)
+- Added the identity feature with immutable account persistence, normalized unique logins,
+  four stored roles, salted BCrypt cost-12 hashing and credential-free identity projection.
+- Added focused unit and database integration tests for valid/invalid credentials,
+  missing accounts, Unicode/byte limits, duplicate logins and role round trips.
+- No public account endpoint, session, bootstrap credential or authorization is enabled.
+  Existing APIs remain unauthenticated. Continue this branch with secured sessions,
+  protected provisioning, scoped permissions and React flows before merge.
+- Build, coverage and existing browser regression results are recorded in the PR;
+  authentication-specific API/frontend/E2E gates remain pending. This is not a completed
+  authentication feature or enterprise readiness claim.

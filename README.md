@@ -253,3 +253,11 @@ The mobile-layout feature branch places each document record's Edit/Remove contr
 Playwright has **4 distinct E2E scenarios in 4 named suites**, executed at 5 Chromium viewport profiles (320, 390, 412, 768 and 1440 pixels): **20 executions**. These cover directory form/filter fit, document action placement/edit/removal, profile-save section uniqueness, and onboarding lifecycle/validation. Browser emulation is not proof of compatibility with every physical device or browser.
 
 See [test organization](docs/test-organization.md) for separate unit, API, integration, architecture and E2E locations. The profile duplicate-section bug is fixed with distinct feature component keys. Coverage gates remain unchanged; feature PRs stay unmerged until all required gates pass.
+
+### Authentication work in progress
+
+The `feature/auth-accounts` branch contains internal credential storage and verification
+with Spring Security Crypto, salted BCrypt hashes and credential-free identity results.
+It does **not** enable login, sessions or authorization. No account endpoints or default
+credentials exist. Employee APIs remain unauthenticated. See
+[the authentication plan](docs/authentication-plan.md) for the pending flow and merge gates.

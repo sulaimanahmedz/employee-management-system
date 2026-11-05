@@ -42,3 +42,14 @@ EmployeeService delegates employment snapshots to EmploymentHistoryService in th
 ## Leave mutation consistency
 
 LeaveRequestService owns create/edit/cancel transactions. Every mutation takes a pessimistic write lock on the employee before loading or modifying a request and checking inclusive pending overlaps. Edits exclude the current request ID and reject cancelled records. The entity accepts type/date values without depending on transport DTOs; the controller validates the existing standalone LeaveRequestInput. Concurrent edits remain last-write-wins, but create/edit/cancel share the same lock ordering. No schema or dependency change is required.
+
+## Identity credential foundation (not enabled)
+
+`identity/entity`, `identity/repository`, `identity/service` and `identity/dto` own internal
+account persistence, salted password hashing and credential-free identity projection.
+There is no identity controller or security filter chain yet. AccountService owns the
+provisioning transaction and normalizes identifiers; the database unique constraint
+arbitrates duplicates. Entities accept domain values and have no HTTP/DTO dependency.
+No default accounts are created. Existing endpoints remain unauthenticated; the branch
+must not be merged as a completed authentication feature until enforcement and browser
+flows pass the authentication plan. No architecture guardrail has been relaxed.
