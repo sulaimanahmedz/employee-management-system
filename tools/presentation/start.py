@@ -22,6 +22,8 @@ admin_login = 'bootstrap-' + secrets.token_hex(8)
 admin_password = secrets.token_urlsafe(32)
 for port in (8080, 5173):
     with socket.socket() as probe:
+        # Reuse closed TCP sockets in TIME_WAIT, while still rejecting an active listener.
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         probe.bind(('127.0.0.1', port))  # Refuse to reuse an existing application.
 try:
     processes.append(subprocess.Popen(

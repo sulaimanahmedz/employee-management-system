@@ -255,3 +255,5 @@ The current unauthenticated development application is not enterprise-ready.
 - Adapted Java Faker presentation startup to disposable authenticated admin/HR sessions.
 - Login abuse/audit, scoped ownership, account lifecycle/revocation/reset and their full
   acceptance tests remain merge gates. No merge or enterprise readiness is claimed.
+- Fixed presentation startup immediately after browser teardown: port preflight permits
+  closed TIME_WAIT sockets while still refusing live listeners; failures retain launcher diagnostics.

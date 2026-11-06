@@ -1,14 +1,17 @@
-import subprocess,time,urllib.request,json,signal,os,socket,secrets,sys
+import subprocess,time,urllib.request,json,signal,os,socket,secrets,sys,tempfile
 from pathlib import Path
 root=Path(__file__).resolve().parents[4]
 script=root/'tools/presentation'
 sys.path.insert(0,str(script))
 from auth import sign_in
 login='synthetic-presentation'; password=secrets.token_urlsafe(32)
-p=subprocess.Popen(['python3',str(script/'start.py')],stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT,env=dict(os.environ,PRESENTATION_LOGIN=login,PRESENTATION_PASSWORD=password))
+output=tempfile.TemporaryFile(mode='w+t')
+p=subprocess.Popen(['python3',str(script/'start.py')],stdout=output,stderr=subprocess.STDOUT,env=dict(os.environ,PRESENTATION_LOGIN=login,PRESENTATION_PASSWORD=password))
 try:
  for _ in range(100):
-  if p.poll() is not None:raise RuntimeError('Launcher exited')
+  if p.poll() is not None:
+   output.seek(0)
+   raise RuntimeError('Launcher exited: '+output.read())
   try:
    urllib.request.urlopen('http://127.0.0.1:5173',timeout=2)
    client,token,cookie=sign_in(login,password)
@@ -25,7 +28,7 @@ try:
   assert r.returncode!=0 and expected in r.stderr
   print('PASS guard: '+expected,flush=True)
 finally:
- p.send_signal(signal.SIGINT);p.wait(timeout=30)
+ p.send_signal(signal.SIGINT);p.wait(timeout=30);output.close()
 for port in (8080,5173):
  with socket.socket() as s:assert s.connect_ex(('127.0.0.1',port))!=0
 print('PASS temporary server cleanup',flush=True)
