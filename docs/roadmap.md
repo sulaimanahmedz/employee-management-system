@@ -244,3 +244,14 @@ The current unauthenticated development application is not enterprise-ready.
 - Build, coverage and existing browser regression results are recorded in the PR;
   authentication-specific API/frontend/E2E gates remain pending. This is not a completed
   authentication feature or enterprise readiness claim.
+
+### November 6 — Authenticated sessions and initial role gate (PR22, unmerged)
+- Added Spring Security login/logout, server sessions, CSRF, secure cookie defaults,
+  session identity and protected ADMIN account provisioning with explicit empty-store bootstrap.
+- Added React login/retry/logout/expiry/access-denied flows. HR can access employee APIs;
+  ADMIN has no HR bypass, and MANAGER/EMPLOYEE business access is denied pending linkage.
+- Added unit/API/integration and real-backend browser scenarios; authenticated existing
+  business fixtures without disabling security. Full validation results are recorded in PR22.
+- Adapted Java Faker presentation startup to disposable authenticated admin/HR sessions.
+- Login abuse/audit, scoped ownership, account lifecycle/revocation/reset and their full
+  acceptance tests remain merge gates. No merge or enterprise readiness is claimed.

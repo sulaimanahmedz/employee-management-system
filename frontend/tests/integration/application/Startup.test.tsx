@@ -16,7 +16,7 @@ afterEach(async () => {
 it('boots the real application in StrictMode and recovers from a directory HTTP failure', async () => {
   const root = document.createElement('div'); root.id = 'root'; document.body.append(root);
   let failing = true;
-  const fetch = vi.fn(async () => failing
+  const fetch = vi.fn(async (url: string) => url.endsWith('/auth/csrf') ? new Response(JSON.stringify({headerName: 'X-CSRF-TOKEN', token: 'synthetic'})) : url.endsWith('/auth/session') ? new Response(JSON.stringify({login: 'synthetic-hr', authorities: ['ROLE_HR']})) : failing
     ? new Response(JSON.stringify({ detail: 'Directory temporarily unavailable' }), { status: 503 })
     : new Response(JSON.stringify({ items: [], page: 0, size: 10, totalPages: 0, totalElements: 0, totalEmployees: 0, activeEmployees: 0, departments: 0 }), { status: 200 }));
   vi.stubGlobal('fetch', fetch);

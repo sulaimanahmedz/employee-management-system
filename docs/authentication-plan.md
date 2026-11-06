@@ -1,6 +1,6 @@
 # Next feature: authentication and roles
 
-Requested October 25, 2026. This is an implementation plan, not completed security functionality. The application currently exposes unauthenticated APIs and must not be deployed as an enterprise system.
+Requested October 25, 2026. This is an implementation plan with partial session functionality on the unmerged authentication branch. Main remains unauthenticated; neither branch is ready for enterprise deployment.
 
 Deliver coherent `feature/auth-*` increments after the pending testing foundations. Use Spring Security, separate identity feature/layer packages and the existing React architecture. All merge, coverage, architecture and real-backend E2E gates remain mandatory.
 
@@ -56,3 +56,54 @@ Then add account changes with session revocation and expiring single-use reset t
 Enforce the matrix on every collection, aggregate and nested endpoint. Add negative unit,
 API, integration and real-backend browser scenarios before enabling access. MFA, SSO,
 versioned migrations and production session/recovery operations remain readiness work.
+
+## November 6 — Session increment (PR22, still draft)
+
+The branch now enables Spring Security server-side sessions, default session-ID rotation
+on login, CSRF on unsafe requests including login/logout, and a 30-minute inactivity timeout.
+Session cookies default to Secure, HttpOnly and SameSite=Strict. For loopback-only HTTP
+validation set SESSION_COOKIE_SECURE=false; production must retain Secure and use TLS.
+Frontend and API must share an origin (Vite proxies /api during development).
+
+| Route | Anonymous | ADMIN | HR | MANAGER / EMPLOYEE |
+| --- | --- | --- | --- | --- |
+| GET /actuator/health | Health only | Health only | Health only | Health only |
+| GET /api/v1/auth/csrf | CSRF token | CSRF token | CSRF token | CSRF token |
+| POST /api/v1/auth/login | Credentials + CSRF | Credentials + CSRF | Credentials + CSRF | Credentials + CSRF |
+| GET /api/v1/auth/session | 401 | Own identity | Own identity | Own identity |
+| POST /api/v1/auth/logout | CSRF required | Own session | Own session | Own session |
+| POST /api/v1/admin/accounts | Denied | Provision account | Denied | Denied |
+| /api/v1/employees and every nested route | Denied | Denied | Employee lifecycle | Denied |
+| Other routes | Denied | Denied | Denied | Denied |
+
+/error is permitted only as framework error rendering; it exposes no business operation.
+Manager and employee roles have no business access yet. No department-text shortcut or
+unlinked-account fallback grants access. Explicit employee linkage and team relationships
+are still required before enabling scoped permissions. Admin does not inherit HR access.
+
+An operator may explicitly supply EMS_BOOTSTRAP_LOGIN and EMS_BOOTSTRAP_PASSWORD to create
+one ADMIN when the account table is empty. Both must be supplied; there are no defaults.
+Existing accounts are never overwritten. This is a single-instance initial setup mechanism,
+not a multi-instance bootstrap or recovery protocol. Remove bootstrap secrets after setup.
+The admin can provision accounts through the CSRF-protected account endpoint. There is no
+public registration. Account-management UI is still pending; non-HR users see access denied
+in the directory UI and can sign out. Passwords remain only in transient form state.
+
+React now shows login, generic failed-login feedback, session checking/retry, logout and
+access denied. An API 401 removes the employee workspace and requests a new sign-in.
+The browser obtains a new CSRF token after login/logout; no tokens are stored in localStorage.
+Existing business E2Es now authenticate as synthetic HR instead of bypassing filters.
+Four new session/role scenarios run at all five viewport widths against the real backend.
+
+Remaining merge blockers: login abuse controls, safe security audit events, account-to-employee
+and manager/team scope, account-management UI, password/profile changes, role/deactivation
+revocation, reset expiry/reuse, and complete acceptance coverage for those capabilities.
+The configured inactivity timeout still needs a dedicated expiry integration test.
+MFA, SSO, versioned migrations, production session persistence, backup/recovery and security
+operations remain readiness work. Do not mark the entire authentication feature complete.
+
+The presentation launcher now creates an ephemeral admin with generated credentials in its
+disposable database, provisions an explicitly supplied presentation HR identity, signs out
+the admin, and passes an HR session/CSRF token to Java Faker before opening the UI. It never
+prints credentials. PRESENTATION_LOGIN/PRESENTATION_PASSWORD are required. Existing seed
+opt-in, empty-database checks, deterministic names/example.com emails and cleanup remain.

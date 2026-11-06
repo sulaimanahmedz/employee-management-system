@@ -254,10 +254,20 @@ Playwright has **4 distinct E2E scenarios in 4 named suites**, executed at 5 Chr
 
 See [test organization](docs/test-organization.md) for separate unit, API, integration, architecture and E2E locations. The profile duplicate-section bug is fixed with distinct feature component keys. Coverage gates remain unchanged; feature PRs stay unmerged until all required gates pass.
 
-### Authentication work in progress
+### Authentication branch: local setup and limitations
 
-The `feature/auth-accounts` branch contains internal credential storage and verification
-with Spring Security Crypto, salted BCrypt hashes and credential-free identity results.
-It does **not** enable login, sessions or authorization. No account endpoints or default
-credentials exist. Employee APIs remain unauthenticated. See
-[the authentication plan](docs/authentication-plan.md) for the pending flow and merge gates.
+The unmerged `feature/auth-accounts` branch now has login/logout, CSRF-protected server
+sessions, an HR-only employee workspace and ADMIN-only account provisioning API. Main
+remains unchanged. Full role scopes, account lifecycle, reset, abuse controls and audit
+requirements are unfinished; do not deploy this branch.
+
+Supply explicit `EMS_BOOTSTRAP_LOGIN` and `EMS_BOOTSTRAP_PASSWORD` through your local
+secret environment to initialize an ADMIN in an empty account store. There are no default
+credentials. For local HTTP only, bind `SERVER_ADDRESS=127.0.0.1` and set
+`SESSION_COOKIE_SECURE=false`; keep the default Secure cookies for HTTPS. Remove bootstrap
+secrets after initial setup. Sign in through the UI; ADMIN cannot access the HR directory.
+Use the authenticated, CSRF-protected `POST /api/v1/admin/accounts` endpoint to provision an
+HR account. See [the permission matrix and remaining gates](docs/authentication-plan.md).
+
+Presentation runs require explicit `PRESENTATION_LOGIN` and `PRESENTATION_PASSWORD`; the
+launcher uses a disposable database and seeds through authenticated requests before the UI.

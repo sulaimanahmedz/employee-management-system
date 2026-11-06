@@ -27,7 +27,7 @@ Request validation uses Jakarta Validation. Errors follow Spring problem details
 - Scale: the UI uses bounded database pagination; add indexes and specialized text search as data grows.
 - Operations: add schema migrations, structured observability and deployment configuration.
 
-There is no authentication, payroll, leave approval, attendance tracking, audit history, or production hosting in this base. The UI exposes list/create and a dedicated view/edit profile screen using the existing GET/PUT endpoints; deletion is currently API-only. Profile data is fetched when opened. A successful update invalidates the directory; returning fetches the applied search page and organization totals again. Failed saves retain the draft. Requests abandoned while loading a profile are cancelled and ignored. Concurrent edits from different users still follow last-write-wins; optimistic locking is a future improvement.
+Payroll, leave approval, attendance tracking, immutable audit history and production hosting remain unimplemented. The unmerged authentication branch adds the session boundary described below. The UI exposes list/create and a dedicated view/edit profile screen using the existing GET/PUT endpoints; deletion is currently API-only. Profile data is fetched when opened. A successful update invalidates the directory; returning fetches the applied search page and organization totals again. Failed saves retain the draft. Requests abandoned while loading a profile are cancelled and ignored. Concurrent edits from different users still follow last-write-wins; optimistic locking is a future improvement.
 
 ## Directory queries
 
@@ -43,13 +43,19 @@ EmployeeService delegates employment snapshots to EmploymentHistoryService in th
 
 LeaveRequestService owns create/edit/cancel transactions. Every mutation takes a pessimistic write lock on the employee before loading or modifying a request and checking inclusive pending overlaps. Edits exclude the current request ID and reject cancelled records. The entity accepts type/date values without depending on transport DTOs; the controller validates the existing standalone LeaveRequestInput. Concurrent edits remain last-write-wins, but create/edit/cancel share the same lock ordering. No schema or dependency change is required.
 
-## Identity credential foundation (not enabled)
+## Identity and sessions (authentication branch, not yet merged)
 
-`identity/entity`, `identity/repository`, `identity/service` and `identity/dto` own internal
-account persistence, salted password hashing and credential-free identity projection.
-There is no identity controller or security filter chain yet. AccountService owns the
-provisioning transaction and normalizes identifiers; the database unique constraint
-arbitrates duplicates. Entities accept domain values and have no HTTP/DTO dependency.
-No default accounts are created. Existing endpoints remain unauthenticated; the branch
-must not be merged as a completed authentication feature until enforcement and browser
-flows pass the authentication plan. No architecture guardrail has been relaxed.
+Identity owns controller/service/repository/entity/dto layers. SessionController maps the
+framework authentication/CSRF context; AccountController delegates provisioning to
+AccountService. IdentitySecurityConfiguration is infrastructure wiring in the identity
+service package and enforces the route matrix in docs/authentication-plan.md. The account
+provider delegates credential verification to the transactional account service. No
+cross-feature persistence or locking semantics were changed.
+
+Spring Security protects every employee route for HR only. ADMIN provisions accounts but
+has no employee-data bypass. Manager/employee access is denied until explicit ownership
+relationships exist. Sessions are server-side, CSRF remains enabled, and cookies default
+to Secure/HttpOnly/SameSite Strict. Existing HTTP tests use authenticated HR fixtures with
+CSRF through the real filter chain; dedicated identity API/E2E tests use actual login.
+No architecture or coverage guardrails are relaxed. See the authentication plan for the
+remaining abuse-control, revocation, reset and scoped-authorization gates before merge.

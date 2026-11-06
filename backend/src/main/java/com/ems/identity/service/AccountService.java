@@ -11,7 +11,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Internal foundation. No public provisioning or authentication endpoint is enabled. */
+/** Credential and provisioning transactions; HTTP access is enforced by the identity security chain. */
 @Service
 @Transactional
 public class AccountService {

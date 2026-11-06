@@ -1,5 +1,11 @@
 package com.ems.document.api;
 
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+
 import com.ems.document.entity.EmployeeDocument;
 import com.ems.document.repository.EmployeeDocumentRepository;
 import com.ems.employee.entity.Employee;
@@ -22,6 +28,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class EmployeeDocumentApiTest {
     @Autowired MockMvc mvc;
+    @Autowired WebApplicationContext webContext;
+    @BeforeEach void authenticateHrFixture() {
+        mvc = MockMvcBuilders.webAppContextSetup(webContext).apply(springSecurity())
+            .defaultRequest(get("/").with(user("synthetic-hr").roles("HR")).with(csrf())).build();
+    }
+
     @Autowired ObjectMapper json;
     @Autowired EmployeeRepository employees;
     @Autowired EmployeeDocumentRepository documents;
