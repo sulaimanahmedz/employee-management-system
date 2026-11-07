@@ -43,7 +43,7 @@ export default function AuthShell() {
         body: new URLSearchParams({ username: login, password }),
       });
       setPassword('');
-      if (!response.ok) { setError('Unable to sign in. Check your login and password.'); return; }
+      if (!response.ok) { setError('Unable to sign in. Check your login and password, or wait a minute before retrying.'); return; }
       await loadSession();
     } catch { setError('Cannot reach the server. Please retry.'); }
     finally { setBusy(false); }

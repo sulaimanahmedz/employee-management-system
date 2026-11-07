@@ -11,12 +11,22 @@ import java.util.List;
 @Service
 public class AccountAuthenticationProvider implements AuthenticationProvider {
     private final AccountService accounts;
-    public AccountAuthenticationProvider(AccountService accounts) { this.accounts = accounts; }
+    private final LoginAttemptService attempts;
+    public AccountAuthenticationProvider(AccountService accounts, LoginAttemptService attempts) {
+        this.accounts = accounts; this.attempts = attempts;
+    }
     @Override public Authentication authenticate(Authentication authentication) {
-        var identity = accounts.verifyCredentials(authentication.getName(), (String) authentication.getCredentials())
-            .orElseThrow(() -> new BadCredentialsException("Invalid login or password"));
-        return UsernamePasswordAuthenticationToken.authenticated(identity.login(), null,
-            List.of(new SimpleGrantedAuthority("ROLE_" + identity.role().name())));
+        String login = authentication.getName();
+        attempts.acquire(login);
+        try {
+            var identity = accounts.verifyCredentials(login, (String) authentication.getCredentials())
+                .orElseThrow(() -> new BadCredentialsException("Invalid login or password"));
+            attempts.succeeded(login);
+            return UsernamePasswordAuthenticationToken.authenticated(identity.login(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_" + identity.role().name())));
+        } finally {
+            attempts.release();
+        }
     }
     @Override public boolean supports(Class<?> type) {
         return UsernamePasswordAuthenticationToken.class.isAssignableFrom(type);

@@ -107,3 +107,30 @@ disposable database, provisions an explicitly supplied presentation HR identity,
 the admin, and passes an HR session/CSRF token to Java Faker before opening the UI. It never
 prints credentials. PRESENTATION_LOGIN/PRESENTATION_PASSWORD are required. Existing seed
 opt-in, empty-database checks, deterministic names/example.com emails and cleanup remain.
+
+## November 7 — Single-instance login admission controls
+
+The authentication provider now reserves admission before password verification and releases
+its in-flight slot in a finally block, including unexpected persistence failures. A normalized
+login gets at most five admitted checks in a fixed 60-second window; a successful sign-in
+clears that login's counter. Denied attempts do not extend the window. Counters are shared
+across sessions, and unknown and known accounts follow the same rules and generic HTTP 401
+response. The UI suggests checking credentials or waiting a minute without exposing whether
+an account exists or which limit was reached.
+
+The guard synchronizes admission and caps concurrent password checks at 16. It retains at
+most 1,024 bounded login keys, purging expired entries during admission. Overlong identifiers
+share an invalid-identifier bucket. No passwords, tokens or forwarded headers are retained.
+At capacity, new keys fail closed; existing keys still obey their limits. Unit tests cover
+concurrent admission, expiry boundaries, capacity reclamation and release on failure. API,
+persistence integration and real-browser tests cover lockout across fresh sessions, generic
+failures, recovery after expiry and an independent account remaining usable. Browser tests
+use unique synthetic throttle accounts per viewport and do not weaken limits.
+
+This is an initial single-process abuse control, not distributed brute-force protection.
+Counters reset on process restart; multiple instances require a shared atomic limiter and
+trusted edge/source controls. An attacker can temporarily deny a targeted login or exhaust
+admission capacity; there is no permanent account lock or external notification. Deployment
+requires capacity tuning, load/abuse testing, trusted-proxy design, alerting and shared-state
+availability decisions. Safe audit events, ownership scope, account lifecycle/revocation,
+reset workflows and their acceptance gates remain unfinished. Keep PR22 unmerged.

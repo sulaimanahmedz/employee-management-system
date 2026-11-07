@@ -4,6 +4,7 @@ import com.ems.identity.dto.AccountIdentity;
 import com.ems.identity.entity.AccountRole;
 import com.ems.identity.repository.AccountRepository;
 import com.ems.identity.service.AccountService;
+import com.ems.identity.service.LoginAttemptService;
 import com.ems.identity.service.AccountBootstrapService;
 import com.ems.identity.service.AccountAuthenticationProvider;
 import java.util.Optional;
@@ -17,7 +18,7 @@ import static org.mockito.Mockito.*;
 class SessionServicesTest {
     @Test void providerReturnsNoCredentialsAndRejectsInvalidCredentials() {
         var accounts = mock(AccountService.class);
-        var provider = new AccountAuthenticationProvider(accounts);
+        var provider = new AccountAuthenticationProvider(accounts, new LoginAttemptService());
         assertTrue(provider.supports(UsernamePasswordAuthenticationToken.class));
         assertFalse(provider.supports(TestingAuthenticationToken.class));
         when(accounts.verifyCredentials("synthetic", "password")).thenReturn(Optional.of(new AccountIdentity(1L, "synthetic", AccountRole.HR)));

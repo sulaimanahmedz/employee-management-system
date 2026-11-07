@@ -29,6 +29,16 @@ class SessionApiTest {
         repository.deleteAll();
         for (AccountRole role : AccountRole.values()) accounts.provision("test-" + role.name().toLowerCase(), PASSWORD, role);
     }
+    @Test void loginLimitAppliesAcrossSessionsWithoutRevealingAccountExistence() throws Exception {
+        accounts.provision("synthetic-limited", PASSWORD, AccountRole.HR);
+        for (String name : new String[]{"synthetic-limited", "synthetic-absent"}) {
+            for (int i = 0; i < 5; i++) mvc.perform(post("/api/v1/auth/login").with(csrf())
+                .param("username", name).param("password", "wrong")).andExpect(status().isUnauthorized());
+            mvc.perform(post("/api/v1/auth/login").with(csrf()).session(new MockHttpSession())
+                .param("username", " " + name.toUpperCase() + " ").param("password", PASSWORD))
+                .andExpect(status().isUnauthorized()).andExpect(content().string(""));
+        }
+    }
     private MockHttpSession login(String name) throws Exception {
         var tokenResult = mvc.perform(get("/api/v1/auth/csrf")).andExpect(status().isOk()).andReturn();
         var token = json.readTree(tokenResult.getResponse().getContentAsString());

@@ -1,0 +1,32 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import AuthShell from '../../../src/features/identity/AuthShell';
+import { setCsrfToken } from '../../../src/lib/api';
+
+afterEach(() => { cleanup(); setCsrfToken(undefined); vi.unstubAllGlobals(); });
+it('keeps rejected HTTP logins generic, clears passwords and permits an independent account to sign in', async () => {
+  let signedIn = false;
+  const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+    if (url.endsWith('/csrf')) return Response.json({headerName:'X-CSRF-TOKEN',token:'synthetic'});
+    if (url.endsWith('/session')) return signedIn ? Response.json({login:'other-hr',authorities:['ROLE_HR']}) : new Response(null,{status:401});
+    if (url.endsWith('/login')) {
+      signedIn = (options!.body as URLSearchParams).get('username') === 'other-hr';
+      return new Response(null,{status:signedIn ? 204 : 401});
+    }
+    return Response.json({items:[],page:0,size:10,totalPages:0,totalElements:0,totalEmployees:0,activeEmployees:0,departments:0});
+  });
+  vi.stubGlobal('fetch',fetcher); const user=userEvent.setup(); render(<AuthShell />);
+  await screen.findByRole('heading',{name:'Sign in'});
+  await user.type(screen.getByLabelText('Login'),'limited-user');
+  await user.type(screen.getByLabelText('Password'),'synthetic-password');
+  await user.click(screen.getByRole('button',{name:'Sign in'}));
+  expect((await screen.findByRole('alert')).textContent).toContain('wait a minute before retrying');
+  expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
+  expect(screen.queryByRole('heading',{name:'Your people, connected.'})).toBeNull();
+  await user.clear(screen.getByLabelText('Login')); await user.type(screen.getByLabelText('Login'),'other-hr');
+  await user.type(screen.getByLabelText('Password'),'synthetic-password');
+  await user.click(screen.getByRole('button',{name:'Sign in'}));
+  await screen.findByRole('heading',{name:'Your people, connected.'});
+  expect(fetcher).toHaveBeenCalledWith('/api/v1/auth/login',expect.objectContaining({headers:expect.objectContaining({'X-CSRF-TOKEN':'synthetic'})}));
+});

@@ -10,5 +10,9 @@ export default async function setup() {
       const created = await client.post('/api/v1/admin/accounts', { data: { login: `synthetic-${role.toLowerCase()}`, password: process.env.EMS_E2E_PASSWORD, role }, headers: { [token.headerName]: token.token } });
       if (created.status() !== 201) throw new Error('Synthetic account provisioning failed');
     }
+    for (const viewport of ['small-phone', 'iphone-size', 'android-size', 'tablet', 'desktop']) {
+      const created = await client.post('/api/v1/admin/accounts', { data: { login: `throttle-${viewport}`, password: process.env.EMS_E2E_PASSWORD, role: 'HR' }, headers: { [token.headerName]: token.token } });
+      if (created.status() !== 201) throw new Error('Synthetic throttle account provisioning failed');
+    }
   } finally { await client.dispose(); }
 }

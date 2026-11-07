@@ -59,3 +59,9 @@ to Secure/HttpOnly/SameSite Strict. Existing HTTP tests use authenticated HR fix
 CSRF through the real filter chain; dedicated identity API/E2E tests use actual login.
 No architecture or coverage guardrails are relaxed. See the authentication plan for the
 remaining abuse-control, revocation, reset and scoped-authorization gates before merge.
+
+LoginAttemptService is an identity service owning synchronized, bounded in-memory login
+admission. AccountAuthenticationProvider reserves before credential verification and releases
+in finally; successful credentials reset only their normalized login counter. No controller,
+repository or entity responsibilities are moved. This single-instance limiter is not a
+replacement for distributed controls or security auditing; see the authentication plan.

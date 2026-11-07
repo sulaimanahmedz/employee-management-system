@@ -271,3 +271,8 @@ HR account. See [the permission matrix and remaining gates](docs/authentication-
 
 Presentation runs require explicit `PRESENTATION_LOGIN` and `PRESENTATION_PASSWORD`; the
 launcher uses a disposable database and seeds through authenticated requests before the UI.
+
+The authentication branch now limits login attempts per normalized login for one minute,
+with bounded memory and concurrent password-check admission. Failed and limited attempts
+use the same message. This initial limiter is process-local; distributed controls, security
+auditing and the remaining account lifecycle/ownership work are still required before merge.

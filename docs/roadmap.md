@@ -257,3 +257,12 @@ The current unauthenticated development application is not enterprise-ready.
   acceptance tests remain merge gates. No merge or enterprise readiness is claimed.
 - Fixed presentation startup immediately after browser teardown: port preflight permits
   closed TIME_WAIT sockets while still refusing live listeners; failures retain launcher diagnostics.
+
+### November 7 — Login abuse admission controls (PR22, unmerged)
+- Added five-attempt/60-second per-login admission, a 16-check concurrency cap and a
+  1,024-key memory bound. Fresh sessions do not reset limits; successful login resets its key.
+- Kept generic 401 responses and added neutral retry guidance to the login form.
+- Added unit concurrency/capacity/expiry tests, real credential/persistence integration,
+  API session-isolation checks and a browser throttle scenario at five viewport widths.
+- Distributed controls and safe audit, ownership, account lifecycle/revocation and reset
+  gates remain pending. Validation commands, coverage and source SHAs are recorded in PR22.

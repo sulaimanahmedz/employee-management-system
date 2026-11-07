@@ -24,7 +24,7 @@ it('signs in with CSRF, clears the password after rejection and logs out', async
   await user.type(screen.getByLabelText('Login'), 'synthetic');
   await user.type(screen.getByLabelText('Password'), 'invalid-password'); state.loginStatus = 401;
   await user.click(screen.getByRole('button', {name:'Sign in'}));
-  expect((await screen.findByRole('alert')).textContent).toContain('Unable to sign in');
+  expect((await screen.findByRole('alert')).textContent).toContain('wait a minute before retrying');
   expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
   state.loginStatus = 204; await user.type(screen.getByLabelText('Password'), 'valid-synthetic-password');
   await user.click(screen.getByRole('button', {name:'Sign in'}));
