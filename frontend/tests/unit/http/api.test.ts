@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { api } from '../../../src/lib/api';
+import { api, setCsrfToken } from '../../../src/lib/api';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -28,4 +28,14 @@ it('handles non-JSON error responses and missing detail', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status: 502 })));
     await expect(api('/example')).rejects.toThrow('Request failed (502)');
   }
+});
+
+it('sends the session CSRF token and announces unauthorized responses', async () => {
+  setCsrfToken({headerName:'X-CSRF-TOKEN',token:'synthetic-token'});
+  const listener = vi.fn(); window.addEventListener('session-expired',listener);
+  const fetcher = vi.fn().mockResolvedValue(new Response(null,{status:401})); vi.stubGlobal('fetch',fetcher);
+  await expect(api('/protected',{method:'POST'})).rejects.toThrow('401');
+  expect(listener).toHaveBeenCalledOnce();
+  expect(fetcher).toHaveBeenCalledWith('/protected',expect.objectContaining({headers:expect.objectContaining({'X-CSRF-TOKEN':'synthetic-token'})}));
+  window.removeEventListener('session-expired',listener); setCsrfToken(undefined);
 });

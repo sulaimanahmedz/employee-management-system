@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/auth-fixture';
 import { employee } from '../support/employees';
 
 test.describe('Document register', () => {

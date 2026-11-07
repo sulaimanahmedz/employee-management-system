@@ -253,3 +253,26 @@ The mobile-layout feature branch places each document record's Edit/Remove contr
 Playwright has **4 distinct E2E scenarios in 4 named suites**, executed at 5 Chromium viewport profiles (320, 390, 412, 768 and 1440 pixels): **20 executions**. These cover directory form/filter fit, document action placement/edit/removal, profile-save section uniqueness, and onboarding lifecycle/validation. Browser emulation is not proof of compatibility with every physical device or browser.
 
 See [test organization](docs/test-organization.md) for separate unit, API, integration, architecture and E2E locations. The profile duplicate-section bug is fixed with distinct feature component keys. Coverage gates remain unchanged; feature PRs stay unmerged until all required gates pass.
+
+### Authentication branch: local setup and limitations
+
+The unmerged `feature/auth-accounts` branch now has login/logout, CSRF-protected server
+sessions, an HR-only employee workspace and ADMIN-only account provisioning API. Main
+remains unchanged. Full role scopes, account lifecycle, reset, abuse controls and audit
+requirements are unfinished; do not deploy this branch.
+
+Supply explicit `EMS_BOOTSTRAP_LOGIN` and `EMS_BOOTSTRAP_PASSWORD` through your local
+secret environment to initialize an ADMIN in an empty account store. There are no default
+credentials. For local HTTP only, bind `SERVER_ADDRESS=127.0.0.1` and set
+`SESSION_COOKIE_SECURE=false`; keep the default Secure cookies for HTTPS. Remove bootstrap
+secrets after initial setup. Sign in through the UI; ADMIN cannot access the HR directory.
+Use the authenticated, CSRF-protected `POST /api/v1/admin/accounts` endpoint to provision an
+HR account. See [the permission matrix and remaining gates](docs/authentication-plan.md).
+
+Presentation runs require explicit `PRESENTATION_LOGIN` and `PRESENTATION_PASSWORD`; the
+launcher uses a disposable database and seeds through authenticated requests before the UI.
+
+The authentication branch now limits login attempts per normalized login for one minute,
+with bounded memory and concurrent password-check admission. Failed and limited attempts
+use the same message. This initial limiter is process-local; distributed controls, security
+auditing and the remaining account lifecycle/ownership work are still required before merge.

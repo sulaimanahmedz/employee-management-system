@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/auth-fixture';
 
 test.describe('Onboarding checklist', () => {
 test('adds, edits and completes a task through the real application', async ({ page, request }) => {

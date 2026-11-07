@@ -232,3 +232,37 @@ The current unauthenticated development application is not enterprise-ready.
 - Integrated that main into PR20, preserving both roadmap histories and moving all frontend tests into tests/unit or tests/integration. Six feature groups now contain ten E2E scenarios, each run once by five viewport projects (50 executions).
 - Addressed issue #21 with a dedicated document filter-action row: 12px spacing, at least 44px controls, equal full-width phone buttons. Added geometric browser assertions alongside long-name wrapping/edit/remove coverage.
 - PR20 requires fresh builds, coverage, architecture, real-backend browser and isolated Faker startup checks against the integrated tree before merge. Final commands/results and SHAs are recorded in PR20. Authentication remains next; the application is not enterprise-ready.
+
+### November 5 — Authentication credential foundation (unmerged)
+- Added the identity feature with immutable account persistence, normalized unique logins,
+  four stored roles, salted BCrypt cost-12 hashing and credential-free identity projection.
+- Added focused unit and database integration tests for valid/invalid credentials,
+  missing accounts, Unicode/byte limits, duplicate logins and role round trips.
+- No public account endpoint, session, bootstrap credential or authorization is enabled.
+  Existing APIs remain unauthenticated. Continue this branch with secured sessions,
+  protected provisioning, scoped permissions and React flows before merge.
+- Build, coverage and existing browser regression results are recorded in the PR;
+  authentication-specific API/frontend/E2E gates remain pending. This is not a completed
+  authentication feature or enterprise readiness claim.
+
+### November 6 — Authenticated sessions and initial role gate (PR22, unmerged)
+- Added Spring Security login/logout, server sessions, CSRF, secure cookie defaults,
+  session identity and protected ADMIN account provisioning with explicit empty-store bootstrap.
+- Added React login/retry/logout/expiry/access-denied flows. HR can access employee APIs;
+  ADMIN has no HR bypass, and MANAGER/EMPLOYEE business access is denied pending linkage.
+- Added unit/API/integration and real-backend browser scenarios; authenticated existing
+  business fixtures without disabling security. Full validation results are recorded in PR22.
+- Adapted Java Faker presentation startup to disposable authenticated admin/HR sessions.
+- Login abuse/audit, scoped ownership, account lifecycle/revocation/reset and their full
+  acceptance tests remain merge gates. No merge or enterprise readiness is claimed.
+- Fixed presentation startup immediately after browser teardown: port preflight permits
+  closed TIME_WAIT sockets while still refusing live listeners; failures retain launcher diagnostics.
+
+### November 7 — Login abuse admission controls (PR22, unmerged)
+- Added five-attempt/60-second per-login admission, a 16-check concurrency cap and a
+  1,024-key memory bound. Fresh sessions do not reset limits; successful login resets its key.
+- Kept generic 401 responses and added neutral retry guidance to the login form.
+- Added unit concurrency/capacity/expiry tests, real credential/persistence integration,
+  API session-isolation checks and a browser throttle scenario at five viewport widths.
+- Distributed controls and safe audit, ownership, account lifecycle/revocation and reset
+  gates remain pending. Validation commands, coverage and source SHAs are recorded in PR22.
