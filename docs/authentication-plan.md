@@ -134,3 +134,18 @@ admission capacity; there is no permanent account lock or external notification.
 requires capacity tuning, load/abuse testing, trusted-proxy design, alerting and shared-state
 availability decisions. Safe audit events, ownership scope, account lifecycle/revocation,
 reset workflows and their acceptance gates remain unfinished. Keep PR22 unmerged.
+
+## November 8 — Session recovery acceptance
+
+Passwords now clear after transport failures, including failure to retrieve CSRF, in addition
+to HTTP login rejection. Unit and HTTP-fixture integration tests cover both request stages.
+The real browser suite toggles browser connectivity without mocking API responses, then
+signs in against the real backend. Another scenario signs out in a second tab, verifies the
+first tab removes employee content on its next API 401, and signs in with fresh CSRF.
+This is request-triggered recovery, not immediate cross-tab logout propagation.
+
+A dedicated embedded-Tomcat integration test checks the configured 1,800-second inactivity
+interval, shortens only the synthetic session to one second, and waits for genuine container
+expiry. It verifies authentication and old CSRF rejection, followed by successful fresh login.
+Production timeout configuration is unchanged. These tests do not establish password/role
+change revocation or reset-token lifecycle; those and safe audit/ownership remain incomplete.

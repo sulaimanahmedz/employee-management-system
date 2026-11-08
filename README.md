@@ -276,3 +276,11 @@ The authentication branch now limits login attempts per normalized login for one
 with bounded memory and concurrent password-check admission. Failed and limited attempts
 use the same message. This initial limiter is process-local; distributed controls, security
 auditing and the remaining account lifecycle/ownership work are still required before merge.
+
+### Authentication recovery validation (unmerged PR22)
+
+A failed login transport clears the password; re-enter it after restoring connectivity.
+Session expiry removes the workspace when the next API request returns 401. A logout in
+another tab is detected the same way; immediate cross-tab notification is not implemented.
+Identity integration tests exercise actual container inactivity expiry and stale CSRF rejection;
+`e2e/identity/recovery.spec.ts` covers connection recovery and two-tab logout against the real API.

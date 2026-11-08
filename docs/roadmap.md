@@ -266,3 +266,15 @@ The current unauthenticated development application is not enterprise-ready.
   API session-isolation checks and a browser throttle scenario at five viewport widths.
 - Distributed controls and safe audit, ownership, account lifecycle/revocation and reset
   gates remain pending. Validation commands, coverage and source SHAs are recorded in PR22.
+
+### November 8 — Credential cleanup and session recovery (PR22, unmerged)
+- Clear the transient password after failed CSRF retrieval or login transport, as well as
+  after HTTP rejection. Users explicitly re-enter credentials when connectivity returns.
+- Add frontend unit/integration and real-backend browser connection-loss/recovery coverage.
+- Add real-container inactivity expiry coverage: verify the 30-minute default, shorten only
+  one synthetic test session, reject expired authentication/CSRF and permit fresh login.
+- Add a two-tab browser logout/re-authentication scenario at all five viewport widths.
+  Stale content disappears on the next API request; immediate cross-tab notification is not implemented.
+- No backend production configuration or permission changes. Audit, scoped ownership,
+  account lifecycle/revocation and reset remain required before merging authentication.
+  Actual validation results and source SHAs are recorded in PR22.

@@ -62,4 +62,5 @@ it('reports failed login transport and allows another attempt', async () => {
   await userEvent.type(screen.getByLabelText('Login'),'synthetic'); await userEvent.type(screen.getByLabelText('Password'),'synthetic-password');
   state.csrfOffline=true; await userEvent.click(screen.getByRole('button',{name:'Sign in'}));
   expect((await screen.findByRole('alert')).textContent).toContain('Cannot reach');
+  expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
 });

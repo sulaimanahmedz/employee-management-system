@@ -46,7 +46,7 @@ export default function AuthShell() {
       if (!response.ok) { setError('Unable to sign in. Check your login and password, or wait a minute before retrying.'); return; }
       await loadSession();
     } catch { setError('Cannot reach the server. Please retry.'); }
-    finally { setBusy(false); }
+    finally { setPassword(''); setBusy(false); }
   }
   async function signOut() {
     setBusy(true); setError('');
