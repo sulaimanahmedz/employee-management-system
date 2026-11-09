@@ -18,7 +18,7 @@ test.describe('Session and connection recovery', () => {
     await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
   });
 
-  test('removes a stale workspace after another tab signs out and obtains fresh CSRF on reauthentication', async ({ page, context }) => {
+  test('immediately removes a stale workspace after another tab signs out and obtains fresh CSRF on reauthentication', async ({ page, context }) => {
     await page.goto('/');
     await page.getByLabel('Login', { exact: true }).fill('synthetic-hr');
     await page.getByLabel('Password', { exact: true }).fill(process.env.EMS_E2E_PASSWORD!);
@@ -29,7 +29,6 @@ test.describe('Session and connection recovery', () => {
       await otherTab.goto('/');
       await otherTab.getByRole('button', { name: 'Sign out' }).click();
       await expect(otherTab.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
-      await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
       await expect(page.getByRole('alert')).toContainText('Your session has expired');
       await expect(page.getByRole('heading', { name: 'Your people, connected.' })).toHaveCount(0);
       await expect(page.getByLabel('Password', { exact: true })).toHaveValue('');
@@ -41,4 +40,20 @@ test.describe('Session and connection recovery', () => {
       await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
     } finally { await otherTab.close(); }
   });
+});
+
+
+test('server logout still succeeds when browser storage is unavailable', async ({ page, context }) => {
+  await context.addInitScript(() => {
+    Storage.prototype.setItem = () => { throw new DOMException('Storage disabled', 'SecurityError'); };
+  });
+  await page.goto('/');
+  await page.getByLabel('Login', { exact: true }).fill('synthetic-hr');
+  await page.getByLabel('Password', { exact: true }).fill(process.env.EMS_E2E_PASSWORD!);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Your people, connected.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  expect((await context.request.get('/api/v1/employees')).status()).toBe(401);
 });

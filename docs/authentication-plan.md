@@ -149,3 +149,15 @@ interval, shortens only the synthetic session to one second, and waits for genui
 expiry. It verifies authentication and old CSRF rejection, followed by successful fresh login.
 Production timeout configuration is unchanged. These tests do not establish password/role
 change revocation or reset-token lifecycle; those and safe audit/ownership remain incomplete.
+
+## November 9 — Cross-tab sign-out
+
+The November 8 request-triggered limitation is now supplemented by a best-effort browser
+storage notification after successful server logout. Other same-origin tabs immediately
+clear identity, password and CSRF state when the event is delivered. An opaque random marker
+is the only stored value; there are no identities, passwords or session tokens in storage.
+A generation guard ignores late session-check results/errors after logout notification.
+Failed logout does not publish; storage-denied browsers still complete server logout and
+retain API-401 recovery in other tabs. Unrelated storage updates and key removal are ignored;
+listeners detach when the shell unmounts. Suspended tabs/browser storage restrictions can
+still delay or prevent notifications. This does not implement account-change revocation.

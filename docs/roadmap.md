@@ -278,3 +278,14 @@ The current unauthenticated development application is not enterprise-ready.
 - No backend production configuration or permission changes. Audit, scoped ownership,
   account lifecycle/revocation and reset remain required before merging authentication.
   Actual validation results and source SHAs are recorded in PR22.
+
+### November 9 — Cross-tab sign-out (PR22, unmerged)
+- Successful server logout now sends an opaque same-origin notification so other tabs
+  remove their workspace without waiting for a business API request.
+- Late session-check responses/errors cannot restore identity or replace sign-out feedback.
+- Disabled storage does not turn a successful server logout into a UI failure; API 401
+  recovery remains the fallback. Failed server logout does not publish a notification.
+- Added unit, frontend integration and real-backend browser coverage, including storage
+  failure. No backend permission/session configuration changes or dependency upgrades.
+- Full validation and exact source/base SHAs are recorded in PR22. Audit, ownership,
+  account lifecycle/revocation and reset remain authentication merge blockers.

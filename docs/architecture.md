@@ -65,3 +65,10 @@ admission. AccountAuthenticationProvider reserves before credential verification
 in finally; successful credentials reset only their normalized login counter. No controller,
 repository or entity responsibilities are moved. This single-instance limiter is not a
 replacement for distributed controls or security auditing; see the authentication plan.
+
+Cross-tab sign-out is a frontend identity concern: sessionEvents publishes only a random
+notification marker in localStorage, never credentials, identity or session/CSRF tokens.
+The subscriber clears identity/password/CSRF state; a session generation guard rejects
+late session-check responses after sign-out. Server logout remains authoritative and
+storage failure cannot undo it. This is best-effort same-origin browser notification,
+not server-side password/role-change revocation or a distributed session store.

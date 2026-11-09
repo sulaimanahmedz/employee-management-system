@@ -1,9 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import App from '../../App';
 import { api, setCsrfToken } from '../../lib/api';
+import { announceSignOut, listenForSignOut } from './sessionEvents';
 
 type Identity = { login: string; authorities: string[] };
 export default function AuthShell() {
+  const sessionVersion = useRef(0);
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -17,21 +19,23 @@ export default function AuthShell() {
     return token;
   }
   async function loadSession() {
+    const version = sessionVersion.current;
     setLoading(true); setError('');
     try {
       await refreshCsrf();
       const response = await fetch('/api/v1/auth/session');
-      if (response.status === 401) setIdentity(null);
-      else if (response.ok) setIdentity(await response.json());
-      else throw new Error('Session unavailable');
-    } catch { setError('Cannot check your session. Please retry.'); }
+      if (!response.ok && response.status !== 401) throw new Error('Session unavailable');
+      const nextIdentity = response.status === 401 ? null : await response.json();
+      if (version === sessionVersion.current) setIdentity(nextIdentity);
+    } catch { if (version === sessionVersion.current) setError('Cannot check your session. Please retry.'); }
     finally { setLoading(false); }
   }
   useEffect(() => {
     void loadSession();
-    const expire = () => { setIdentity(null); setPassword(''); setCsrfToken(undefined); setError('Your session has expired. Sign in again.'); };
+    const expire = () => { sessionVersion.current++; setLoading(false); setIdentity(null); setPassword(''); setCsrfToken(undefined); setError('Your session has expired. Sign in again.'); };
     window.addEventListener('session-expired', expire);
-    return () => window.removeEventListener('session-expired', expire);
+    const stopListening = listenForSignOut(expire);
+    return () => { window.removeEventListener('session-expired', expire); stopListening(); };
   }, []);
 
   async function signIn(event: FormEvent) {
@@ -50,7 +54,7 @@ export default function AuthShell() {
   }
   async function signOut() {
     setBusy(true); setError('');
-    try { await api('/api/v1/auth/logout', { method: 'POST' }); setIdentity(null); setPassword(''); await refreshCsrf(); }
+    try { await api('/api/v1/auth/logout', { method: 'POST' }); sessionVersion.current++; announceSignOut(); setIdentity(null); setPassword(''); await refreshCsrf(); }
     catch { setError('Sign out failed. Please retry.'); }
     finally { setBusy(false); }
   }

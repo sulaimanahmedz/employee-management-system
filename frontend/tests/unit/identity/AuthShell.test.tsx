@@ -50,10 +50,12 @@ it('recovers from session HTTP errors and network errors', async () => {
   await screen.findByRole('heading', {name:'Employee workspace'});
 });
 it('retains the signed-in screen when logout fails and permits retry', async () => {
+  const published = vi.spyOn(Storage.prototype, 'setItem');
   const {state} = server(); state.role='ROLE_HR'; state.logoutStatus=500; render(<AuthShell />);
   await screen.findByRole('heading', {name:'Employee workspace'});
   await userEvent.click(screen.getByRole('button',{name:'Sign out'}));
   expect((await screen.findByRole('alert')).textContent).toContain('Sign out failed');
+  expect(published).not.toHaveBeenCalled();
   state.logoutStatus=204; await userEvent.click(screen.getByRole('button',{name:'Sign out'}));
   await screen.findByRole('heading', {name:'Sign in'});
 });
@@ -63,4 +65,26 @@ it('reports failed login transport and allows another attempt', async () => {
   state.csrfOffline=true; await userEvent.click(screen.getByRole('button',{name:'Sign in'}));
   expect((await screen.findByRole('alert')).textContent).toContain('Cannot reach');
   expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
+});
+
+it.each(['success', 'failure'])('ignores a late session-check %s after another tab signs out', async (outcome) => {
+  let resolve!: (value: Response) => void;
+  let reject!: (reason: Error) => void;
+  const pending = new Promise<Response>((yes,no) => { resolve=yes; reject=no; });
+  const requested = vi.fn();
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    if (url.endsWith('/csrf')) return Response.json({headerName:'X-CSRF-TOKEN',token:'synthetic'});
+    requested(); return pending;
+  }));
+  render(<AuthShell />);
+  await vi.waitFor(() => expect(requested).toHaveBeenCalled());
+  act(() => window.dispatchEvent(new StorageEvent('storage',{key:'ems-sign-out',newValue:'marker'})));
+  await screen.findByRole('heading',{name:'Sign in'});
+  await act(async () => {
+    if (outcome === 'success') resolve(Response.json({login:'synthetic',authorities:['ROLE_HR']}));
+    else reject(new Error('Late network failure'));
+    await pending.catch(() => undefined);
+  });
+  expect(screen.queryByRole('heading',{name:'Employee workspace'})).toBeNull();
+  expect(screen.getByRole('alert').textContent).toContain('session has expired');
 });

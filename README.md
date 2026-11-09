@@ -280,7 +280,8 @@ auditing and the remaining account lifecycle/ownership work are still required b
 ### Authentication recovery validation (unmerged PR22)
 
 A failed login transport clears the password; re-enter it after restoring connectivity.
-Session expiry removes the workspace when the next API request returns 401. A logout in
-another tab is detected the same way; immediate cross-tab notification is not implemented.
+Session expiry removes the workspace when the next API request returns 401. Successful logout now notifies other same-origin tabs using an opaque storage marker.
+Those tabs immediately clear the workspace when the browser delivers the event. If storage
+is disabled, server logout still succeeds and other tabs recover on the next API 401.
 Identity integration tests exercise actual container inactivity expiry and stale CSRF rejection;
 `e2e/identity/recovery.spec.ts` covers connection recovery and two-tab logout against the real API.
