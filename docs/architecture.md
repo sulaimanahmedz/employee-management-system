@@ -72,3 +72,9 @@ The subscriber clears identity/password/CSRF state; a session generation guard r
 late session-check responses after sign-out. Server logout remains authoritative and
 storage failure cannot undo it. This is best-effort same-origin browser notification,
 not server-side password/role-change revocation or a distributed session store.
+
+AccountProvisioning is a focused React identity component using the shared CSRF-aware HTTP
+client. AuthShell selects it for ADMIN, while HR retains the employee workspace and other
+roles remain denied business access. Backend authorization is unchanged and authoritative;
+the existing AccountController delegates to AccountService. Creation defaults to EMPLOYEE,
+passwords clear on both success/failure, and a ref guards duplicate pending submissions.

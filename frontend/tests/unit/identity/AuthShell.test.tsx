@@ -88,3 +88,9 @@ it.each(['success', 'failure'])('ignores a late session-check %s after another t
   expect(screen.queryByRole('heading',{name:'Employee workspace'})).toBeNull();
   expect(screen.getByRole('alert').textContent).toContain('session has expired');
 });
+
+it('shows account creation only for an administrator without employee workspace access', async () => {
+  const {state} = server(); state.role='ROLE_ADMIN'; render(<AuthShell />);
+  await screen.findByRole('heading',{name:'Create account'});
+  expect(screen.queryByRole('heading',{name:'Employee workspace'})).toBeNull();
+});

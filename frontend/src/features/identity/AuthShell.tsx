@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import App from '../../App';
+import AccountProvisioning from './AccountProvisioning';
 import { api, setCsrfToken } from '../../lib/api';
 import { announceSignOut, listenForSignOut } from './sessionEvents';
 
@@ -63,7 +64,7 @@ export default function AuthShell() {
     {error && <div className="auth-panel" role="alert">{error}<button type="button" disabled={busy} onClick={() => void loadSession()}>Retry session</button></div>}
     {identity ? <>
       <header className="auth-panel"><span>Signed in as {identity.login}</span><button disabled={busy} onClick={() => void signOut()}>Sign out</button></header>
-      {identity.authorities.includes('ROLE_HR') ? <App /> : <main className="auth-panel"><h1>Access denied</h1><p>Your account does not have access to the employee directory. Scoped access and account administration screens are not yet available.</p></main>}
+      {identity.authorities.includes('ROLE_HR') ? <App /> : identity.authorities.includes('ROLE_ADMIN') ? <AccountProvisioning /> : <main className="auth-panel"><h1>Access denied</h1><p>Your account does not have access to the employee directory. Scoped employee access is not yet available.</p></main>}
     </> : <main className="auth-panel"><h1>Sign in</h1><p>Use your provisioned account. Public registration is not available.</p>
       <form onSubmit={event => void signIn(event)}>
         <label>Login<input autoComplete="username" required maxLength={64} value={login} onChange={event => setLogin(event.target.value)} /></label>

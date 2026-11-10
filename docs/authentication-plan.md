@@ -161,3 +161,17 @@ Failed logout does not publish; storage-denied browsers still complete server lo
 retain API-401 recovery in other tabs. Unrelated storage updates and key removal are ignored;
 listeners detach when the shell unmounts. Suspended tabs/browser storage restrictions can
 still delay or prevent notifications. This does not implement account-change revocation.
+
+## November 10 — ADMIN provisioning screen
+
+ADMIN now sees Create account, backed by the existing CSRF-protected POST endpoint. The
+form supports the four roles, defaults to EMPLOYEE, explains the current restricted scopes,
+shows API validation/conflict failures and clears its password after every submission.
+Successful creation returns only identity/role; no credential is displayed, persisted in
+browser storage or sent externally. Non-secret failed drafts are retained for correction.
+A pending request disables inputs and duplicate submission. The server remains the authority
+for password byte limits, uniqueness, role authorization and normalization. Tests verify
+all assigned roles round-trip through actual login and a new EMPLOYEE cannot provision ADMIN.
+This is creation only: account list/edit/deactivation, profile/password changes and reset
+are still pending alongside audit, ownership scope and session revocation. No enterprise
+readiness or completed authentication claim is made.

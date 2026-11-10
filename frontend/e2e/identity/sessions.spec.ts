@@ -26,7 +26,7 @@ test.describe('Authenticated sessions and least-privilege access', () => {
       await page.getByLabel('Login', { exact: true }).fill(`synthetic-${role}`);
       await page.getByLabel('Password', { exact: true }).fill(process.env.EMS_E2E_PASSWORD!);
       await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'Access denied' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: role === 'admin' ? 'Create account' : 'Access denied' })).toBeVisible();
       expect((await page.context().request.get('/api/v1/employees/1/documents')).status()).toBe(403);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
       await page.getByRole('button', { name: 'Sign out' }).click();

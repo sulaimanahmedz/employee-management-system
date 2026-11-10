@@ -289,3 +289,14 @@ The current unauthenticated development application is not enterprise-ready.
   failure. No backend permission/session configuration changes or dependency upgrades.
 - Full validation and exact source/base SHAs are recorded in PR22. Audit, ownership,
   account lifecycle/revocation and reset remain authentication merge blockers.
+
+### November 10 — Administrative account creation screen (PR22, unmerged)
+- ADMIN now has a responsive account-creation screen using the existing protected API,
+  with EMPLOYEE as the default role and explicit role selection.
+- Show server validation/conflict feedback, retain non-secret inputs after failure,
+  clear passwords after every submission and prevent duplicate pending submissions.
+- Add unit/frontend integration, assigned-role backend API and real-backend browser tests
+  for creation, short-password rejection, duplicates, new-account login and denied escalation.
+- No public registration, employee-data bypass, invitations or external messages.
+  Account editing/deactivation, password changes, reset, auditing and scoped ownership
+  remain unfinished; exact validation and source SHAs are recorded in PR22.

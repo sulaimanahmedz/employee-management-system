@@ -63,3 +63,4 @@ button, select, input { min-height: 44px; }
 .auth-panel form, .auth-panel label { display: grid; gap: 12px; min-width: 0; }
 .auth-panel input { width: 100%; min-width: 0; box-sizing: border-box; font-size: 16px; min-height: 44px; }
 .auth-panel button { min-height: 44px; margin-top: 12px; }
+.account-fields{border:0;padding:0;margin:0;min-width:0;display:grid;gap:12px}.account-fields select{width:100%;min-height:44px;font-size:16px}.account-fields p{margin:0;overflow-wrap:anywhere}

@@ -95,4 +95,18 @@ class SessionApiTest {
         mvc.perform(post("/api/v1/admin/accounts").session(session).with(csrf()).contentType("application/json").content("{}"))
             .andExpect(status().isBadRequest());
     }
+    @Test void provisionedAccountsAuthenticateWithExactlyTheirAssignedRole() throws Exception {
+        var admin = login("test-admin");
+        for (AccountRole role : AccountRole.values()) {
+            String name = "provisioned-" + role.name().toLowerCase();
+            String body = json.writeValueAsString(java.util.Map.of("login", name, "password", PASSWORD, "role", role.name()));
+            mvc.perform(post("/api/v1/admin/accounts").session(admin).with(csrf()).contentType("application/json").content(body))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.role").value(role.name()))
+                .andExpect(jsonPath("$.password").doesNotExist()).andExpect(jsonPath("$.passwordHash").doesNotExist());
+            var created = login(name);
+            mvc.perform(get("/api/v1/auth/session").session(created)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.authorities.length()").value(1))
+                .andExpect(jsonPath("$.authorities[0]").value("ROLE_" + role.name()));
+        }
+    }
 }

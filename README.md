@@ -285,3 +285,11 @@ Those tabs immediately clear the workspace when the browser delivers the event. 
 is disabled, server logout still succeeds and other tabs recover on the next API 401.
 Identity integration tests exercise actual container inactivity expiry and stale CSRF rejection;
 `e2e/identity/recovery.spec.ts` covers connection recovery and two-tab logout against the real API.
+
+### Create an account (authentication branch, unmerged)
+
+An ADMIN now sees **Create account** after sign-in. Enter the login, initial password and
+explicit role; EMPLOYEE is selected by default. Validation/conflict errors preserve login
+and role while clearing the password. The server enforces authorization and password rules.
+No invitation or password is sent. This screen creates accounts only; account editing,
+deactivation, password changes and recovery remain unfinished. ADMIN has no HR-data bypass.
