@@ -28,3 +28,20 @@ it('sends authenticated provisioning through the shared client, preserves confli
   expect((await screen.findByRole('status')).textContent).toContain('synthetic-user with role MANAGER');
   expect(screen.queryByText('Synthetic secure password!')).toBeNull();
 });
+
+it('removes administration and credentials when provisioning discovers an expired session', async () => {
+  vi.stubGlobal('fetch',vi.fn(async (url:string) => {
+    if(url.endsWith('/csrf')) return Response.json({headerName:'X-CSRF-TOKEN',token:'synthetic-csrf'});
+    if(url.endsWith('/session')) return Response.json({login:'synthetic-admin',authorities:['ROLE_ADMIN']});
+    return new Response(null,{status:401});
+  }));
+  render(<AuthShell />); const user=userEvent.setup();
+  await screen.findByRole('heading',{name:'Create account'});
+  await user.type(screen.getByLabelText('Account login'),'synthetic-expired');
+  await user.type(screen.getByLabelText('Initial password'),'Synthetic secure password!');
+  await user.click(screen.getByRole('button',{name:'Create account'}));
+  await screen.findByRole('heading',{name:'Sign in'});
+  expect(screen.queryByLabelText('Initial password')).toBeNull();
+  expect(screen.queryByRole('heading',{name:'Create account'})).toBeNull();
+  expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
+});

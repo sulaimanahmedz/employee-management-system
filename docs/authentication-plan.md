@@ -175,3 +175,12 @@ all assigned roles round-trip through actual login and a new EMPLOYEE cannot pro
 This is creation only: account list/edit/deactivation, profile/password changes and reset
 are still pending alongside audit, ownership scope and session revocation. No enterprise
 readiness or completed authentication claim is made.
+
+## November 11 — Provisioning role acceptance
+
+Real browser tests now select ADMIN, HR and MANAGER in the creation form and sign in as
+those new identities. Together with the existing EMPLOYEE flow, all four selections are
+covered through actual provisioning and authentication. Tests assert exactly one assigned
+role, HR-only employee API access and denied HR/manager provisioning despite valid CSRF.
+Frontend integration also removes the creation form and password when its POST receives401.
+No account update/revocation/reset behavior is implied by these creation-only tests.

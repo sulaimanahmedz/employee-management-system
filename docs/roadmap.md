@@ -300,3 +300,13 @@ The current unauthenticated development application is not enterprise-ready.
 - No public registration, employee-data bypass, invitations or external messages.
   Account editing/deactivation, password changes, reset, auditing and scoped ownership
   remain unfinished; exact validation and source SHAs are recorded in PR22.
+
+### November 11 — Complete provisioning role acceptance (PR22, unmerged)
+- Added browser provisioning/login cases for ADMIN, HR and MANAGER, complementing the
+  existing EMPLOYEE scenario. Assert the single assigned authority, permitted workspace,
+  employee-route boundaries and denied administrative escalation with valid CSRF.
+- Added explicit least-privilege role-selection unit cases and expired-session provisioning
+  integration coverage that removes administration and credentials.
+- No production behavior or dependencies changed. This completes additional acceptance
+  coverage for the creation screen; account lifecycle, audit, ownership and reset remain pending.
+- November 10 validation and fresh committed-source results are recorded in PR22.

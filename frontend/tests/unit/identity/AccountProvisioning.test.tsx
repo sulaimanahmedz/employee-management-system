@@ -40,3 +40,13 @@ it.each([new Error('Account login is unavailable'), null])('retains non-secret i
   await user.click(screen.getByRole('button',{name:'Create account'}));
   await screen.findByRole('status'); expect(screen.queryByRole('alert')).toBeNull();
 });
+
+it.each(['EMPLOYEE', 'MANAGER'])('submits the explicit %s selection without changing privileges', async role => {
+  vi.mocked(api).mockResolvedValue({id:4,login:'synthetic-new',role});
+  render(<AccountProvisioning />); const user=await fill();
+  await user.selectOptions(screen.getByLabelText('Account role'),role);
+  await user.click(screen.getByRole('button',{name:'Create account'}));
+  await screen.findByRole('status');
+  const request=vi.mocked(api).mock.calls[0][1]!;
+  expect(JSON.parse(request.body as string)).toEqual({login:'synthetic-new',password:'Synthetic secure password!',role});
+});
