@@ -2,6 +2,9 @@ package com.ems.identity.controller;
 
 import com.ems.identity.dto.AccountIdentity;
 import com.ems.identity.dto.AccountInput;
+import com.ems.identity.dto.AccountPage;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import com.ems.identity.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -26,6 +29,10 @@ public class AccountController {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail duplicate(DataIntegrityViolationException exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Account login is unavailable");
+    }
+    @GetMapping
+    public AccountPage list(@RequestParam(defaultValue = "0") int page) {
+        return accounts.list(page);
     }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public AccountIdentity create(@Valid @RequestBody AccountInput input) {

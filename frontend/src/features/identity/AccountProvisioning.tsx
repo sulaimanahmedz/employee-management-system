@@ -1,4 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
+import AccountDirectory from './AccountDirectory';
 import { api } from '../../lib/api';
 
 type Role = 'ADMIN' | 'HR' | 'MANAGER' | 'EMPLOYEE';
@@ -43,5 +44,6 @@ export default function AccountProvisioning() {
         <button type="submit">{busy ? 'Creating account…' : 'Create account'}</button>
       </fieldset>
     </form>
+    <AccountDirectory />
   </main>;
 }

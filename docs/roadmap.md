@@ -310,3 +310,14 @@ The current unauthenticated development application is not enterprise-ready.
 - No production behavior or dependencies changed. This completes additional acceptance
   coverage for the creation screen; account lifecycle, audit, ownership and reset remain pending.
 - November 10 validation and fresh committed-source results are recorded in PR22.
+
+### November 12 — Administrative account directory (PR22, unmerged)
+- Add ADMIN-only, ten-row paginated account review (ID/login/role), stable ID ordering
+  and invalid-offset rejection. No credential fields are serialized.
+- Add an on-demand responsive directory, Previous/Next and refresh, with stale-result
+  removal on failure and session-expiry cleanup through the shared client.
+- Add feature-owned unit/API/persistence/frontend integration and real-backend E2E
+  tests for pagination, permission boundaries, invalid pages and connectivity recovery.
+- Validation commands, exact committed source and coverage results are recorded in PR22.
+  Auditing, scoped ownership, account mutation/revocation and password/reset lifecycle
+  remain required; this increment does not complete authentication or enable deployment.

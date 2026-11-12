@@ -62,4 +62,20 @@ class AccountServiceTest {
         when(passwords.matches("accidental-match", "dummy-hash")).thenReturn(true);
         assertTrue(service.verifyCredentials("missing", "accidental-match").isEmpty());
     }
+    @Test void listsOnlyIdentityFieldsInBoundedIdOrderAndRejectsInvalidOffsets() {
+        var page = org.springframework.data.domain.PageRequest.of(1, 10, org.springframework.data.domain.Sort.by("id").ascending());
+        when(accounts.findAll(page)).thenReturn(new org.springframework.data.domain.PageImpl<>(
+            java.util.List.of(new Account("synthetic-list", "secret-hash", AccountRole.HR)), page, 11));
+        var result = service.list(1);
+        assertEquals(1, result.page());
+        assertEquals(2, result.totalPages());
+        assertEquals(11, result.totalElements());
+        assertEquals("synthetic-list", result.items().get(0).login());
+        assertEquals(AccountRole.HR, result.items().get(0).role());
+        assertFalse(result.toString().contains("secret-hash"));
+        assertThrows(IllegalArgumentException.class, () -> service.list(-1));
+        assertThrows(IllegalArgumentException.class, () -> service.list(Integer.MAX_VALUE / 10 + 1));
+        verify(accounts).findAll(page);
+        verifyNoMoreInteractions(accounts);
+    }
 }

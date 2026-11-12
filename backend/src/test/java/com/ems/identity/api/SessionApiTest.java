@@ -109,4 +109,29 @@ class SessionApiTest {
                 .andExpect(jsonPath("$.authorities[0]").value("ROLE_" + role.name()));
         }
     }
+    @Test void accountDirectoryIsAdminOnlyBoundedAndNeverSerializesCredentials() throws Exception {
+        mvc.perform(get("/api/v1/admin/accounts")).andExpect(status().isUnauthorized());
+        for (AccountRole role : AccountRole.values()) {
+            var session = login("test-" + role.name().toLowerCase());
+            var response = mvc.perform(get("/api/v1/admin/accounts").session(session))
+                .andExpect(status().is(role == AccountRole.ADMIN ? 200 : 403)).andReturn();
+            if (role == AccountRole.ADMIN) {
+                var body = json.readTree(response.getResponse().getContentAsString());
+                assertEquals(4, body.get("items").size());
+                assertEquals(4, body.get("totalElements").asInt());
+                assertEquals(0, body.get("page").asInt());
+                assertEquals(1, body.get("totalPages").asInt());
+                for (var item : body.get("items")) {
+                    var fields = new java.util.HashSet<String>();
+                    item.fieldNames().forEachRemaining(fields::add);
+                    assertEquals(java.util.Set.of("id", "login", "role"), fields);
+                }
+                for (String page : new String[]{"-1", "214748365", "2147483648", "invalid"}) {
+                    mvc.perform(get("/api/v1/admin/accounts").param("page", page).session(session)).andExpect(status().isBadRequest());
+                }
+                mvc.perform(get("/api/v1/admin/accounts?page=1").session(session)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.items.length()").value(0));
+            }
+        }
+    }
 }

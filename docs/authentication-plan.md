@@ -184,3 +184,11 @@ covered through actual provisioning and authentication. Tests assert exactly one
 role, HR-only employee API access and denied HR/manager provisioning despite valid CSRF.
 Frontend integration also removes the creation form and password when its POST receives401.
 No account update/revocation/reset behavior is implied by these creation-only tests.
+
+### Account directory increment — November 12 (unmerged)
+ADMIN can review account identities through GET /api/v1/admin/accounts and the on-demand
+UI directory. Ten-row pages use ascending unique IDs; nonnegative offsets must fit a signed
+integer. Responses explicitly contain ID/login/role only. No HR/manager/employee read
+permission is added. Refresh restarts at page zero; concurrent provisioning can change
+totals between requests, so pagination is not a snapshot. Account mutation, revocation,
+password/reset lifecycle, audit and ownership gates remain unfinished.

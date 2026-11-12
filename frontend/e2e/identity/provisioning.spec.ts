@@ -33,6 +33,7 @@ test.describe('Administrative account provisioning', () => {
       const csrf=await (await other.request.get('/api/v1/auth/csrf')).json();
       const forbidden=await other.request.post('/api/v1/admin/accounts',{headers:{[csrf.headerName]:csrf.token},data:{login:'escalation-attempt',password:process.env.EMS_E2E_PASSWORD!,role:'ADMIN'}});
       expect(forbidden.status()).toBe(403);
+      expect((await other.request.get('/api/v1/admin/accounts')).status()).toBe(403);
       await member.getByRole('button',{name:'Sign out'}).click();
     } finally {await other.close();}
     await page.getByRole('button',{name:'Sign out'}).click();

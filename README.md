@@ -293,3 +293,12 @@ explicit role; EMPLOYEE is selected by default. Validation/conflict errors prese
 and role while clearing the password. The server enforces authorization and password rules.
 No invitation or password is sent. This screen creates accounts only; account editing,
 deactivation, password changes and recovery remain unfinished. ADMIN has no HR-data bypass.
+
+### Review provisioned accounts (authentication branch, unmerged)
+ADMIN can select **View accounts** to load a directory of account IDs, logins and roles.
+Results use ten-row pages in ascending ID order. Previous/Next navigate; View accounts
+refreshes page zero, including accounts created since the last read. Failed reads remove
+stale results and permit retry. No passwords or password hashes are returned.
+`GET /api/v1/admin/accounts?page=0` is ADMIN-only; page must be nonnegative with a
+signed-integer ten-row offset. Other roles receive 403 and anonymous clients receive 401.
+This is read-only review; editing, deactivation and recovery remain unfinished.

@@ -49,4 +49,20 @@ class AccountPersistenceIntegrationTest {
         assertThrows(DataIntegrityViolationException.class,
             () -> accounts.saveAndFlush(new Account("synthetic.login", "another-value", AccountRole.EMPLOYEE)));
     }
+    @Test void directoryPagesPersistedIdentitiesWithoutOverlapOrCredentials() {
+        var ids = new java.util.ArrayList<Long>();
+        for (int i = 0; i < 12; i++) {
+            ids.add(accounts.saveAndFlush(new Account("synthetic-page-" + i, "not-a-real-hash", AccountRole.EMPLOYEE)).getId());
+        }
+        entityManager.clear();
+        var first = service.list(0);
+        var second = service.list(1);
+        assertEquals(ids.subList(0, 10), first.items().stream().map(com.ems.identity.dto.AccountIdentity::id).toList());
+        assertEquals(ids.subList(10, 12), second.items().stream().map(com.ems.identity.dto.AccountIdentity::id).toList());
+        assertEquals(12, first.totalElements());
+        assertEquals(2, second.totalPages());
+        assertTrue(service.list(2).items().isEmpty());
+        assertTrue(service.list(Integer.MAX_VALUE / 10).items().isEmpty());
+        assertFalse(first.toString().contains("not-a-real-hash"));
+    }
 }

@@ -78,3 +78,10 @@ client. AuthShell selects it for ADMIN, while HR retains the employee workspace 
 roles remain denied business access. Backend authorization is unchanged and authoritative;
 the existing AccountController delegates to AccountService. Creation defaults to EMPLOYEE,
 passwords clear on both success/failure, and a ref guards duplicate pending submissions.
+
+The identity account directory delegates HTTP pagination to AccountService, which validates
+a bounded ten-row offset and requests repository pages ordered by unique ID. AccountPage
+contains only AccountIdentity DTOs; persistence entities/hashes never leave the service.
+The existing ADMIN route rule protects reads as well as provisioning. AccountDirectory
+loads on demand, aborts on unmount and ignores late responses. No permission bypass,
+new schema, dependency, or transaction/locking changes are introduced.

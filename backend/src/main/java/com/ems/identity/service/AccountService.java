@@ -1,6 +1,9 @@
 package com.ems.identity.service;
 
 import com.ems.identity.dto.AccountIdentity;
+import com.ems.identity.dto.AccountPage;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import com.ems.identity.entity.Account;
 import com.ems.identity.entity.AccountRole;
 import com.ems.identity.repository.AccountRepository;
@@ -34,6 +37,16 @@ public class AccountService {
         Objects.requireNonNull(role, "Account role is required");
         var saved = accounts.saveAndFlush(new Account(normalized, passwords.hash(password), role));
         return identity(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public AccountPage list(int page) {
+        if (page < 0 || page > Integer.MAX_VALUE / 10) {
+            throw new IllegalArgumentException("Account page must be nonnegative and its offset fit a signed integer");
+        }
+        var result = accounts.findAll(PageRequest.of(page, 10, Sort.by("id").ascending()));
+        return new AccountPage(result.map(AccountService::identity).getContent(), page,
+            result.getTotalPages(), result.getTotalElements());
     }
 
     @Transactional(readOnly = true)
