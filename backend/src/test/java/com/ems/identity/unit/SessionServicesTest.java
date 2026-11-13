@@ -7,6 +7,7 @@ import com.ems.identity.service.AccountService;
 import com.ems.identity.service.LoginAttemptService;
 import com.ems.identity.service.AccountBootstrapService;
 import com.ems.identity.service.AccountAuthenticationProvider;
+import com.ems.identity.service.AuthenticationAuditService;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -18,7 +19,7 @@ import static org.mockito.Mockito.*;
 class SessionServicesTest {
     @Test void providerReturnsNoCredentialsAndRejectsInvalidCredentials() {
         var accounts = mock(AccountService.class);
-        var provider = new AccountAuthenticationProvider(accounts, new LoginAttemptService());
+        var provider = new AccountAuthenticationProvider(accounts, new LoginAttemptService(), new AuthenticationAuditService());
         assertTrue(provider.supports(UsernamePasswordAuthenticationToken.class));
         assertFalse(provider.supports(TestingAuthenticationToken.class));
         when(accounts.verifyCredentials("synthetic", "password")).thenReturn(Optional.of(new AccountIdentity(1L, "synthetic", AccountRole.HR)));

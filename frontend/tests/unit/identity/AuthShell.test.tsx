@@ -94,3 +94,19 @@ it('shows account creation only for an administrator without employee workspace 
   await screen.findByRole('heading',{name:'Create account'});
   expect(screen.queryByRole('heading',{name:'Employee workspace'})).toBeNull();
 });
+it('never renders server verification diagnostics from a failed login', async () => {
+  vi.stubGlobal('fetch',vi.fn(async(url:string)=>{
+    if(url.endsWith('/csrf'))return Response.json({headerName:'X-CSRF-TOKEN',token:'synthetic'});
+    if(url.endsWith('/session'))return new Response(null,{status:401});
+    return Response.json({detail:'private-diagnostic AUTH_VERIFICATION_UNAVAILABLE'},{status:500});
+  }));
+  render(<AuthShell/>);const user=userEvent.setup();
+  await screen.findByRole('heading',{name:'Sign in'});
+  await user.type(screen.getByLabelText('Login'),'synthetic-user');
+  await user.type(screen.getByLabelText('Password'),'synthetic-secret');
+  await user.click(screen.getByRole('button',{name:'Sign in'}));
+  expect((await screen.findByRole('alert')).textContent).toContain('Unable to sign in');
+  expect(document.body.textContent).not.toContain('private-diagnostic');
+  expect(document.body.textContent).not.toContain('AUTH_VERIFICATION_UNAVAILABLE');
+  expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
+});

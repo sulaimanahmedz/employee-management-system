@@ -321,3 +321,21 @@ The current unauthenticated development application is not enterprise-ready.
 - Validation commands, exact committed source and coverage results are recorded in PR22.
   Auditing, scoped ownership, account mutation/revocation and password/reset lifecycle
   remain required; this increment does not complete authentication or enable deployment.
+
+### November 13 — Credential verification audit foundation (PR22, unmerged)
+Credential verification now emits timestamped application-log records with fixed event codes:
+AUTH_CREDENTIALS_ACCEPTED (persisted numeric account ID only), AUTH_CREDENTIALS_REJECTED
+(including limiter rejection), and AUTH_VERIFICATION_UNAVAILABLE (unexpected verification
+failure). No submitted login, password, token, header or exception message/stack is supplied
+to this audit logger. Unknown and known-account rejection keep identical generic HTTP errors.
+Accepted credentials do not prove that a session was subsequently established. CSRF rejection
+occurs before the provider and is outside this increment; logout, authorization and account
+mutation auditing remain pending.
+These are application logs, not durable/tamper-evident audit storage. Configure access,
+retention, collection, volume controls and failure monitoring before production; rejected
+records deliberately cannot correlate a submitted identity. No audit retrieval endpoint or
+browser disclosure is introduced. Full identity readiness remains blocked by scoped ownership,
+account lifecycle/revocation/reset and the remaining audit/operational requirements.
+Unit/API/persistence collaboration tests verify outcomes and secret-free records; frontend
+unit/integration and real-backend browser tests verify generic errors and successful recovery.
+Executed validation and exact head/base SHAs are recorded in PR22.

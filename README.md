@@ -302,3 +302,10 @@ stale results and permit retry. No passwords or password hashes are returned.
 `GET /api/v1/admin/accounts?page=0` is ADMIN-only; page must be nonnegative with a
 signed-integer ten-row offset. Other roles receive 403 and anonymous clients receive 401.
 This is read-only review; editing, deactivation and recovery remain unfinished.
+
+### Credential verification audit records (authentication branch, unmerged)
+The identity audit logger emits fixed credential accepted/rejected/unavailable event codes.
+Only successful verification includes the stored numeric account ID; submitted logins,
+passwords, tokens and exception details are omitted. HTTP login errors remain generic.
+These application logs do not establish durable compliance auditing or session creation;
+see docs/authentication-plan.md for event scope and production collection/retention gaps.

@@ -85,3 +85,11 @@ contains only AccountIdentity DTOs; persistence entities/hashes never leave the 
 The existing ADMIN route rule protects reads as well as provisioning. AccountDirectory
 loads on demand, aborts on unmount and ignores late responses. No permission bypass,
 new schema, dependency, or transaction/locking changes are introduced.
+
+AuthenticationAuditService is a focused identity service. AccountAuthenticationProvider
+records credential outcomes through constructor injection, including admission rejection,
+while preserving release-in-finally and rethrowing the original failure. Only fixed event
+codes and the persisted numeric success identity reach its logger; no HTTP strings or
+exceptions cross that interface. It changes no repository, transaction or role boundaries.
+Application-log records are an initial audit sink; durability and broader event coverage
+remain requirements described in the authentication plan.

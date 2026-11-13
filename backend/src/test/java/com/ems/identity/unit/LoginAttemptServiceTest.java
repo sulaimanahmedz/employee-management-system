@@ -3,6 +3,7 @@ package com.ems.identity.unit;
 import com.ems.identity.service.LoginAttemptService;
 import com.ems.identity.service.AccountService;
 import com.ems.identity.service.AccountAuthenticationProvider;
+import com.ems.identity.service.AuthenticationAuditService;
 import java.time.Clock;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -66,7 +67,7 @@ class LoginAttemptServiceTest {
     @Test void providerSkipsHashWorkWhenLimitedAndReleasesOnUnexpectedFailure() {
         var accounts = mock(AccountService.class);
         var guard = new LoginAttemptService();
-        var provider = new AccountAuthenticationProvider(accounts, guard);
+        var provider = new AccountAuthenticationProvider(accounts, guard, new AuthenticationAuditService());
         when(accounts.verifyCredentials("missing", "wrong")).thenReturn(Optional.empty());
         for (int i = 0; i < 6; i++) assertThrows(BadCredentialsException.class,
             () -> provider.authenticate(UsernamePasswordAuthenticationToken.unauthenticated("missing", "wrong")));

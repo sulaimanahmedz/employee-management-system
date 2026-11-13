@@ -54,3 +54,26 @@ it.each(['csrf', 'login'])('clears the password on %s transport failure and reco
   await user.click(screen.getByRole('button',{name:'Sign in'}));
   await screen.findByRole('heading',{name:'Your people, connected.'});
 });
+it('recovers from a verification server error without disclosing its diagnostic body',async()=>{
+  let available=false;let signedIn=false;
+  vi.stubGlobal('fetch',vi.fn(async(url:string)=>{
+    if(url.endsWith('/csrf'))return Response.json({headerName:'X-CSRF-TOKEN',token:'synthetic-audit'});
+    if(url.endsWith('/session'))return signedIn?Response.json({login:'synthetic-hr',authorities:['ROLE_HR']}):new Response(null,{status:401});
+    if(url.endsWith('/login')){
+      if(!available)return Response.json({detail:'internal-verification-detail'},{status:500});
+      signedIn=true;return new Response(null,{status:204});
+    }
+    return Response.json({items:[],page:0,size:10,totalPages:0,totalElements:0,totalEmployees:0,activeEmployees:0,departments:0});
+  }));
+  render(<AuthShell/>);const user=userEvent.setup();
+  await screen.findByRole('heading',{name:'Sign in'});
+  await user.type(screen.getByLabelText('Login'),'synthetic-hr');
+  await user.type(screen.getByLabelText('Password'),'synthetic-secret');
+  await user.click(screen.getByRole('button',{name:'Sign in'}));
+  await screen.findByRole('alert');
+  expect(document.body.textContent).not.toContain('internal-verification-detail');
+  expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
+  available=true;await user.type(screen.getByLabelText('Password'),'synthetic-secret');
+  await user.click(screen.getByRole('button',{name:'Sign in'}));
+  await screen.findByRole('heading',{name:'Your people, connected.'});
+});
