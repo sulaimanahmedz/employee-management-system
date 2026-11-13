@@ -210,3 +210,8 @@ account lifecycle/revocation/reset and the remaining audit/operational requireme
 Unit/API/persistence collaboration tests verify outcomes and secret-free records; frontend
 unit/integration and real-backend browser tests verify generic errors and successful recovery.
 Executed validation and exact head/base SHAs are recorded in PR22.
+
+Audit API validation exposed duplicate failed verification through local/parent authentication
+managers. The security chain now uses a dedicated ProviderManager with no parent fallback,
+so each HTTP login attempts credentials once. Regression tests assert one audit record per
+request and successful correct credentials after four failures (the fifth admitted attempt).

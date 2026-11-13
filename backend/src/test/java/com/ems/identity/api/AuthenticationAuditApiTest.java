@@ -48,6 +48,15 @@ class AuthenticationAuditApiTest {
             mvc.perform(post("/api/v1/auth/login").param("username", "synthetic-audit").param("password", "secret"))
                 .andExpect(status().isForbidden());
             assertEquals(8, appender.list.size(), "CSRF rejection occurs before credential verification and is outside this audit scope");
+            var recovery = accounts.provision("synthetic-audit-recovery", "Synthetic recovery password!", AccountRole.HR);
+            for (int i = 0; i < 4; i++) {
+                mvc.perform(post("/api/v1/auth/login").with(csrf()).param("username", "synthetic-audit-recovery")
+                    .param("password", "wrong")).andExpect(status().isUnauthorized());
+            }
+            mvc.perform(post("/api/v1/auth/login").with(csrf()).param("username", "synthetic-audit-recovery")
+                .param("password", "Synthetic recovery password!")).andExpect(status().isNoContent());
+            assertEquals(13, appender.list.size(), "Each HTTP credential attempt must invoke the provider exactly once");
+            assertEquals("event=AUTH_CREDENTIALS_ACCEPTED account_id=" + recovery.id(), appender.list.get(12).getFormattedMessage());
         } finally { logger.detachAppender(appender); appender.stop(); repository.deleteAll(); }
     }
 }

@@ -12,6 +12,13 @@ test.describe('Credential audit privacy boundary',()=>{
     await expect(page.getByLabel('Password',{exact:true})).toHaveValue('');
     await expect(page.locator('body')).not.toContainText('AUTH_CREDENTIALS');
     await page.getByLabel('Login',{exact:true}).fill('synthetic-hr');
+    for(let i=0;i<4;i++){
+      await page.getByLabel('Password',{exact:true}).fill('incorrect-synthetic-password');
+      const failed=page.waitForResponse(response=>response.url().endsWith('/api/v1/auth/login'));
+      await page.getByRole('button',{name:'Sign in',exact:true}).click();
+      expect((await failed).status()).toBe(401);
+      await expect(page.getByLabel('Password',{exact:true})).toHaveValue('');
+    }
     await page.getByLabel('Password',{exact:true}).fill(process.env.EMS_E2E_PASSWORD!);
     await page.getByRole('button',{name:'Sign in',exact:true}).click();
     await expect(page.getByRole('heading',{name:'Your people, connected.'})).toBeVisible();

@@ -93,3 +93,8 @@ codes and the persisted numeric success identity reach its logger; no HTTP strin
 exceptions cross that interface. It changes no repository, transaction or role boundaries.
 Application-log records are an initial audit sink; durability and broader event coverage
 remain requirements described in the authentication plan.
+
+Audit API validation exposed duplicate failed verification through local/parent authentication
+managers. The security chain now uses a dedicated ProviderManager with no parent fallback,
+so each HTTP login attempts credentials once. Regression tests assert one audit record per
+request and successful correct credentials after four failures (the fifth admitted attempt).
