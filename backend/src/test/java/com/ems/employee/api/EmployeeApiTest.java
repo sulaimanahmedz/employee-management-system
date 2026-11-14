@@ -1,5 +1,11 @@
 package com.ems.employee.api;
 
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+
 import com.ems.employee.repository.EmployeeRepository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +24,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class EmployeeApiTest {
     @Autowired MockMvc mvc;
+    @Autowired WebApplicationContext webContext;
+    @BeforeEach void authenticateHrFixture() {
+        mvc = MockMvcBuilders.webAppContextSetup(webContext).apply(springSecurity())
+            .defaultRequest(get("/").with(user("synthetic-hr").roles("HR")).with(csrf())).build();
+    }
+
     @Autowired ObjectMapper json;
     @Autowired EmployeeRepository repository;
     @BeforeEach void clean() { repository.deleteAll(); }

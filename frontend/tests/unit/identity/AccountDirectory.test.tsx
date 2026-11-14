@@ -1,0 +1,46 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import { act, cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import AccountDirectory from '../../../src/features/identity/AccountDirectory';
+import { api } from '../../../src/lib/api';
+vi.mock('../../../src/lib/api', () => ({ api: vi.fn() }));
+afterEach(() => { cleanup(); vi.resetAllMocks(); });
+const first = {items:[{id:1,login:'synthetic-first',role:'HR'}],page:0,totalPages:2,totalElements:11};
+it('loads on demand, pages both ways and refreshes from page zero', async () => {
+  vi.mocked(api).mockResolvedValueOnce(first).mockResolvedValueOnce({...first,page:1,items:[{id:11,login:'synthetic-last',role:'EMPLOYEE'}]}).mockResolvedValueOnce(first).mockResolvedValueOnce({...first,items:[],totalElements:0,totalPages:0});
+  render(<AccountDirectory />); const user=userEvent.setup(); expect(api).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button',{name:'View accounts'}));
+  await screen.findByText('synthetic-first');
+  expect((screen.getByRole('button',{name:'Previous accounts'}) as HTMLButtonElement).disabled).toBe(true);
+  await user.click(screen.getByRole('button',{name:'Next accounts'}));
+  await screen.findByText('synthetic-last');
+  expect((screen.getByRole('button',{name:'Next accounts'}) as HTMLButtonElement).disabled).toBe(true);
+  await user.click(screen.getByRole('button',{name:'Previous accounts'}));
+  await screen.findByText('synthetic-first');
+  await user.click(screen.getByRole('button',{name:'View accounts'}));
+  await screen.findByText('No accounts on this page. Select View accounts to refresh.');
+  expect(screen.getByText('0 accounts · Page 1 of 1')).toBeTruthy();
+  expect(vi.mocked(api).mock.calls.map(call=>call[0])).toEqual([0,1,0,0].map(page=>`/api/v1/admin/accounts?page=${page}`));
+});
+it('disables loading controls and recovers from failure', async () => {
+  let reject!: (error:Error)=>void;
+  vi.mocked(api).mockReturnValueOnce(new Promise((_resolve,no)=>{reject=no;})).mockResolvedValueOnce(first);
+  render(<AccountDirectory />); const user=userEvent.setup();
+  await user.click(screen.getByRole('button',{name:'View accounts'}));
+  expect(screen.getByRole('status').textContent).toBe('Loading accounts…');
+  expect((screen.getByRole('button',{name:'View accounts'}) as HTMLButtonElement).disabled).toBe(true);
+  await act(async()=>reject(new Error('network')));
+  expect(screen.getByRole('alert').textContent).toContain('Unable to load accounts');
+  await user.click(screen.getByRole('button',{name:'View accounts'}));
+  await screen.findByText('synthetic-first'); expect(screen.queryByRole('alert')).toBeNull();
+});
+it.each([true,false])('aborts on unmount and ignores late completion (success=%s)', async success => {
+  let resolve!: (value:unknown)=>void; let reject!: (error:Error)=>void;
+  vi.mocked(api).mockReturnValue(new Promise((yes,no)=>{resolve=yes;reject=no;}));
+  const view=render(<AccountDirectory />); const user=userEvent.setup();
+  await user.click(screen.getByRole('button',{name:'View accounts'}));
+  const signal=vi.mocked(api).mock.calls[0][1]!.signal!;
+  view.unmount(); expect(signal.aborted).toBe(true);
+  await act(async()=>{if(success)resolve(first);else reject(new Error('aborted'));});
+  expect(screen.queryByText('synthetic-first')).toBeNull(); expect(screen.queryByRole('alert')).toBeNull();
+});

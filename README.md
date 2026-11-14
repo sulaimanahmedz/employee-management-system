@@ -253,3 +253,69 @@ The mobile-layout feature branch places each document record's Edit/Remove contr
 Playwright has **4 distinct E2E scenarios in 4 named suites**, executed at 5 Chromium viewport profiles (320, 390, 412, 768 and 1440 pixels): **20 executions**. These cover directory form/filter fit, document action placement/edit/removal, profile-save section uniqueness, and onboarding lifecycle/validation. Browser emulation is not proof of compatibility with every physical device or browser.
 
 See [test organization](docs/test-organization.md) for separate unit, API, integration, architecture and E2E locations. The profile duplicate-section bug is fixed with distinct feature component keys. Coverage gates remain unchanged; feature PRs stay unmerged until all required gates pass.
+
+### Authentication branch: local setup and limitations
+
+The unmerged `feature/auth-accounts` branch now has login/logout, CSRF-protected server
+sessions, an HR-only employee workspace and ADMIN-only account provisioning API. Main
+remains unchanged. Full role scopes, account lifecycle, reset, abuse controls and audit
+requirements are unfinished; do not deploy this branch.
+
+Supply explicit `EMS_BOOTSTRAP_LOGIN` and `EMS_BOOTSTRAP_PASSWORD` through your local
+secret environment to initialize an ADMIN in an empty account store. There are no default
+credentials. For local HTTP only, bind `SERVER_ADDRESS=127.0.0.1` and set
+`SESSION_COOKIE_SECURE=false`; keep the default Secure cookies for HTTPS. Remove bootstrap
+secrets after initial setup. Sign in through the UI; ADMIN cannot access the HR directory.
+Use the authenticated, CSRF-protected `POST /api/v1/admin/accounts` endpoint to provision an
+HR account. See [the permission matrix and remaining gates](docs/authentication-plan.md).
+
+Presentation runs require explicit `PRESENTATION_LOGIN` and `PRESENTATION_PASSWORD`; the
+launcher uses a disposable database and seeds through authenticated requests before the UI.
+
+The authentication branch now limits login attempts per normalized login for one minute,
+with bounded memory and concurrent password-check admission. Failed and limited attempts
+use the same message. This initial limiter is process-local; distributed controls, security
+auditing and the remaining account lifecycle/ownership work are still required before merge.
+
+### Authentication recovery validation (unmerged PR22)
+
+A failed login transport clears the password; re-enter it after restoring connectivity.
+Session expiry removes the workspace when the next API request returns 401. Successful logout now notifies other same-origin tabs using an opaque storage marker.
+Those tabs immediately clear the workspace when the browser delivers the event. If storage
+is disabled, server logout still succeeds and other tabs recover on the next API 401.
+Identity integration tests exercise actual container inactivity expiry and stale CSRF rejection;
+`e2e/identity/recovery.spec.ts` covers connection recovery and two-tab logout against the real API.
+
+### Create an account (authentication branch, unmerged)
+
+An ADMIN now sees **Create account** after sign-in. Enter the login, initial password and
+explicit role; EMPLOYEE is selected by default. Validation/conflict errors preserve login
+and role while clearing the password. The server enforces authorization and password rules.
+No invitation or password is sent. This screen creates accounts only; account editing,
+deactivation, password changes and recovery remain unfinished. ADMIN has no HR-data bypass.
+
+### Review provisioned accounts (authentication branch, unmerged)
+ADMIN can select **View accounts** to load a directory of account IDs, logins and roles.
+Results use ten-row pages in ascending ID order. Previous/Next navigate; View accounts
+refreshes page zero, including accounts created since the last read. Failed reads remove
+stale results and permit retry. No passwords or password hashes are returned.
+`GET /api/v1/admin/accounts?page=0` is ADMIN-only; page must be nonnegative with a
+signed-integer ten-row offset. Other roles receive 403 and anonymous clients receive 401.
+This is read-only review; editing, deactivation and recovery remain unfinished.
+
+### Credential verification audit records (authentication branch, unmerged)
+The identity audit logger emits fixed credential accepted/rejected/unavailable event codes.
+Only successful verification includes the stored numeric account ID; submitted logins,
+passwords, tokens and exception details are omitted. HTTP login errors remain generic.
+These application logs do not establish durable compliance auditing or session creation;
+see docs/authentication-plan.md for event scope and production collection/retention gaps.
+
+### November 14 — Read-only authenticated account profile (PR22, unmerged)
+All four authenticated roles can select View my account to read their stored account ID,
+login and assigned role. GET /api/v1/auth/profile resolves only the authenticated principal;
+query parameters cannot select another account. Passwords/hashes are never returned.
+Anonymous or no-longer-stored identities receive401. The UI clears stale data on failed
+refresh, ignores late unmounted responses and removes the profile on session expiry/logout.
+This account identity view does not expose employee records or enable scoped employee/team
+access. Account mutation, password changes, revocation, reset and complete audit infrastructure
+remain unfinished. Exact validation results and source/base SHAs are recorded in PR22.

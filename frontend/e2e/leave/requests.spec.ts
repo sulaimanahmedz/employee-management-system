@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/auth-fixture';
 import { createProfileEmployee } from '../support/profile-fixtures';
 
 test.describe('Leave requests and overlap recovery', () => {

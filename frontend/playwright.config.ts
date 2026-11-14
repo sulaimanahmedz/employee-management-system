@@ -1,6 +1,9 @@
+import { randomBytes } from 'node:crypto';
+process.env.EMS_E2E_PASSWORD ??= randomBytes(24).toString('hex');
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
+  globalSetup: './e2e/support/auth-setup.ts',
   testDir: './e2e',
   workers: 1,
   projects: [
@@ -15,7 +18,7 @@ export default defineConfig({
     {
       command: 'java -jar ../backend/target/employee-management-api-0.1.0-SNAPSHOT.jar',
       url: 'http://127.0.0.1:8080/actuator/health',
-      env: { DB_URL: 'jdbc:h2:mem:playwright;DB_CLOSE_DELAY=-1', PORT: '8080' },
+      env: { DB_URL: 'jdbc:h2:mem:playwright;DB_CLOSE_DELAY=-1', PORT: '8080', SESSION_COOKIE_SECURE: 'false', EMS_BOOTSTRAP_LOGIN: 'synthetic-admin', EMS_BOOTSTRAP_PASSWORD: process.env.EMS_E2E_PASSWORD! },
       reuseExistingServer: false,
       timeout: 90000,
     },

@@ -13,6 +13,13 @@ spring:
     problemdetails:
       enabled: true
 server:
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: strict
   port: ${PORT:8080}
 management:
   endpoints:

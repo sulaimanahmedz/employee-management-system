@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/auth-fixture';
 import { createProfileEmployee } from '../support/profile-fixtures';
 test.describe('Directory search and navigation', () => {
     test(`filters synthetic records and preserves search on profile return`, async ({ page, request }) => {

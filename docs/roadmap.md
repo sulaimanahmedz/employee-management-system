@@ -232,3 +232,125 @@ The current unauthenticated development application is not enterprise-ready.
 - Integrated that main into PR20, preserving both roadmap histories and moving all frontend tests into tests/unit or tests/integration. Six feature groups now contain ten E2E scenarios, each run once by five viewport projects (50 executions).
 - Addressed issue #21 with a dedicated document filter-action row: 12px spacing, at least 44px controls, equal full-width phone buttons. Added geometric browser assertions alongside long-name wrapping/edit/remove coverage.
 - PR20 requires fresh builds, coverage, architecture, real-backend browser and isolated Faker startup checks against the integrated tree before merge. Final commands/results and SHAs are recorded in PR20. Authentication remains next; the application is not enterprise-ready.
+
+### November 5 — Authentication credential foundation (unmerged)
+- Added the identity feature with immutable account persistence, normalized unique logins,
+  four stored roles, salted BCrypt cost-12 hashing and credential-free identity projection.
+- Added focused unit and database integration tests for valid/invalid credentials,
+  missing accounts, Unicode/byte limits, duplicate logins and role round trips.
+- No public account endpoint, session, bootstrap credential or authorization is enabled.
+  Existing APIs remain unauthenticated. Continue this branch with secured sessions,
+  protected provisioning, scoped permissions and React flows before merge.
+- Build, coverage and existing browser regression results are recorded in the PR;
+  authentication-specific API/frontend/E2E gates remain pending. This is not a completed
+  authentication feature or enterprise readiness claim.
+
+### November 6 — Authenticated sessions and initial role gate (PR22, unmerged)
+- Added Spring Security login/logout, server sessions, CSRF, secure cookie defaults,
+  session identity and protected ADMIN account provisioning with explicit empty-store bootstrap.
+- Added React login/retry/logout/expiry/access-denied flows. HR can access employee APIs;
+  ADMIN has no HR bypass, and MANAGER/EMPLOYEE business access is denied pending linkage.
+- Added unit/API/integration and real-backend browser scenarios; authenticated existing
+  business fixtures without disabling security. Full validation results are recorded in PR22.
+- Adapted Java Faker presentation startup to disposable authenticated admin/HR sessions.
+- Login abuse/audit, scoped ownership, account lifecycle/revocation/reset and their full
+  acceptance tests remain merge gates. No merge or enterprise readiness is claimed.
+- Fixed presentation startup immediately after browser teardown: port preflight permits
+  closed TIME_WAIT sockets while still refusing live listeners; failures retain launcher diagnostics.
+
+### November 7 — Login abuse admission controls (PR22, unmerged)
+- Added five-attempt/60-second per-login admission, a 16-check concurrency cap and a
+  1,024-key memory bound. Fresh sessions do not reset limits; successful login resets its key.
+- Kept generic 401 responses and added neutral retry guidance to the login form.
+- Added unit concurrency/capacity/expiry tests, real credential/persistence integration,
+  API session-isolation checks and a browser throttle scenario at five viewport widths.
+- Distributed controls and safe audit, ownership, account lifecycle/revocation and reset
+  gates remain pending. Validation commands, coverage and source SHAs are recorded in PR22.
+
+### November 8 — Credential cleanup and session recovery (PR22, unmerged)
+- Clear the transient password after failed CSRF retrieval or login transport, as well as
+  after HTTP rejection. Users explicitly re-enter credentials when connectivity returns.
+- Add frontend unit/integration and real-backend browser connection-loss/recovery coverage.
+- Add real-container inactivity expiry coverage: verify the 30-minute default, shorten only
+  one synthetic test session, reject expired authentication/CSRF and permit fresh login.
+- Add a two-tab browser logout/re-authentication scenario at all five viewport widths.
+  Stale content disappears on the next API request; immediate cross-tab notification is not implemented.
+- No backend production configuration or permission changes. Audit, scoped ownership,
+  account lifecycle/revocation and reset remain required before merging authentication.
+  Actual validation results and source SHAs are recorded in PR22.
+
+### November 9 — Cross-tab sign-out (PR22, unmerged)
+- Successful server logout now sends an opaque same-origin notification so other tabs
+  remove their workspace without waiting for a business API request.
+- Late session-check responses/errors cannot restore identity or replace sign-out feedback.
+- Disabled storage does not turn a successful server logout into a UI failure; API 401
+  recovery remains the fallback. Failed server logout does not publish a notification.
+- Added unit, frontend integration and real-backend browser coverage, including storage
+  failure. No backend permission/session configuration changes or dependency upgrades.
+- Full validation and exact source/base SHAs are recorded in PR22. Audit, ownership,
+  account lifecycle/revocation and reset remain authentication merge blockers.
+
+### November 10 — Administrative account creation screen (PR22, unmerged)
+- ADMIN now has a responsive account-creation screen using the existing protected API,
+  with EMPLOYEE as the default role and explicit role selection.
+- Show server validation/conflict feedback, retain non-secret inputs after failure,
+  clear passwords after every submission and prevent duplicate pending submissions.
+- Add unit/frontend integration, assigned-role backend API and real-backend browser tests
+  for creation, short-password rejection, duplicates, new-account login and denied escalation.
+- No public registration, employee-data bypass, invitations or external messages.
+  Account editing/deactivation, password changes, reset, auditing and scoped ownership
+  remain unfinished; exact validation and source SHAs are recorded in PR22.
+
+### November 11 — Complete provisioning role acceptance (PR22, unmerged)
+- Added browser provisioning/login cases for ADMIN, HR and MANAGER, complementing the
+  existing EMPLOYEE scenario. Assert the single assigned authority, permitted workspace,
+  employee-route boundaries and denied administrative escalation with valid CSRF.
+- Added explicit least-privilege role-selection unit cases and expired-session provisioning
+  integration coverage that removes administration and credentials.
+- No production behavior or dependencies changed. This completes additional acceptance
+  coverage for the creation screen; account lifecycle, audit, ownership and reset remain pending.
+- November 10 validation and fresh committed-source results are recorded in PR22.
+
+### November 12 — Administrative account directory (PR22, unmerged)
+- Add ADMIN-only, ten-row paginated account review (ID/login/role), stable ID ordering
+  and invalid-offset rejection. No credential fields are serialized.
+- Add an on-demand responsive directory, Previous/Next and refresh, with stale-result
+  removal on failure and session-expiry cleanup through the shared client.
+- Add feature-owned unit/API/persistence/frontend integration and real-backend E2E
+  tests for pagination, permission boundaries, invalid pages and connectivity recovery.
+- Validation commands, exact committed source and coverage results are recorded in PR22.
+  Auditing, scoped ownership, account mutation/revocation and password/reset lifecycle
+  remain required; this increment does not complete authentication or enable deployment.
+
+### November 13 — Credential verification audit foundation (PR22, unmerged)
+Credential verification now emits timestamped application-log records with fixed event codes:
+AUTH_CREDENTIALS_ACCEPTED (persisted numeric account ID only), AUTH_CREDENTIALS_REJECTED
+(including limiter rejection), and AUTH_VERIFICATION_UNAVAILABLE (unexpected verification
+failure). No submitted login, password, token, header or exception message/stack is supplied
+to this audit logger. Unknown and known-account rejection keep identical generic HTTP errors.
+Accepted credentials do not prove that a session was subsequently established. CSRF rejection
+occurs before the provider and is outside this increment; logout, authorization and account
+mutation auditing remain pending.
+These are application logs, not durable/tamper-evident audit storage. Configure access,
+retention, collection, volume controls and failure monitoring before production; rejected
+records deliberately cannot correlate a submitted identity. No audit retrieval endpoint or
+browser disclosure is introduced. Full identity readiness remains blocked by scoped ownership,
+account lifecycle/revocation/reset and the remaining audit/operational requirements.
+Unit/API/persistence collaboration tests verify outcomes and secret-free records; frontend
+unit/integration and real-backend browser tests verify generic errors and successful recovery.
+Executed validation and exact head/base SHAs are recorded in PR22.
+
+Audit API validation exposed duplicate failed verification through local/parent authentication
+managers. The security chain now uses a dedicated ProviderManager with no parent fallback,
+so each HTTP login attempts credentials once. Regression tests assert one audit record per
+request and successful correct credentials after four failures (the fifth admitted attempt).
+
+### November 14 — Read-only authenticated account profile (PR22, unmerged)
+All four authenticated roles can select View my account to read their stored account ID,
+login and assigned role. GET /api/v1/auth/profile resolves only the authenticated principal;
+query parameters cannot select another account. Passwords/hashes are never returned.
+Anonymous or no-longer-stored identities receive401. The UI clears stale data on failed
+refresh, ignores late unmounted responses and removes the profile on session expiry/logout.
+This account identity view does not expose employee records or enable scoped employee/team
+access. Account mutation, password changes, revocation, reset and complete audit infrastructure
+remain unfinished. Exact validation results and source/base SHAs are recorded in PR22.
