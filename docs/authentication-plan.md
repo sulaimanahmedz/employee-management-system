@@ -215,3 +215,13 @@ Audit API validation exposed duplicate failed verification through local/parent 
 managers. The security chain now uses a dedicated ProviderManager with no parent fallback,
 so each HTTP login attempts credentials once. Regression tests assert one audit record per
 request and successful correct credentials after four failures (the fifth admitted attempt).
+
+### November 14 — Read-only authenticated account profile (PR22, unmerged)
+All four authenticated roles can select View my account to read their stored account ID,
+login and assigned role. GET /api/v1/auth/profile resolves only the authenticated principal;
+query parameters cannot select another account. Passwords/hashes are never returned.
+Anonymous or no-longer-stored identities receive401. The UI clears stale data on failed
+refresh, ignores late unmounted responses and removes the profile on session expiry/logout.
+This account identity view does not expose employee records or enable scoped employee/team
+access. Account mutation, password changes, revocation, reset and complete audit infrastructure
+remain unfinished. Exact validation results and source/base SHAs are recorded in PR22.

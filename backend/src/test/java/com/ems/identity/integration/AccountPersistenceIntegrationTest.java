@@ -65,4 +65,11 @@ class AccountPersistenceIntegrationTest {
         assertTrue(service.list(Integer.MAX_VALUE / 10).items().isEmpty());
         assertFalse(first.toString().contains("not-a-real-hash"));
     }
+    @Test void profileReflectsStoredIdentityAndRemoval() {
+        var identity = service.provision("synthetic-profile", "Synthetic profile password!", AccountRole.MANAGER);
+        entityManager.clear();
+        assertEquals(identity, service.findIdentity("synthetic-profile").orElseThrow());
+        accounts.deleteById(identity.id()); accounts.flush(); entityManager.clear();
+        assertTrue(service.findIdentity("synthetic-profile").isEmpty());
+    }
 }

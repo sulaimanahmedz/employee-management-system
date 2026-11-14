@@ -14,7 +14,7 @@ public class IdentitySecurityConfiguration {
         http.authenticationManager(new ProviderManager(provider))
             .authorizeHttpRequests(access -> access
                 .requestMatchers("/actuator/health", "/error", "/api/v1/auth/csrf", "/api/v1/auth/login").permitAll()
-                .requestMatchers("/api/v1/auth/session", "/api/v1/auth/logout").authenticated()
+                .requestMatchers("/api/v1/auth/session", "/api/v1/auth/logout", "/api/v1/auth/profile").authenticated()
                 .requestMatchers("/api/v1/admin/accounts").hasRole("ADMIN")
                 .requestMatchers("/api/v1/employees", "/api/v1/employees/**").hasRole("HR")
                 .anyRequest().denyAll())

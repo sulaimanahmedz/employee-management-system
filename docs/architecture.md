@@ -98,3 +98,8 @@ Audit API validation exposed duplicate failed verification through local/parent 
 managers. The security chain now uses a dedicated ProviderManager with no parent fallback,
 so each HTTP login attempts credentials once. Regression tests assert one audit record per
 request and successful correct credentials after four failures (the fifth admitted attempt).
+
+AccountProfileController obtains the account key from Authentication and delegates to the
+read-only AccountService identity lookup. It maps a missing account to401; entities remain
+behind AccountIdentity DTOs. AccountProfile is a focused, on-demand React identity component
+using the shared client. Existing role scopes, transactions and locking are unchanged.

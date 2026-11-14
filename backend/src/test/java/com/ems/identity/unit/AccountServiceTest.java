@@ -78,4 +78,13 @@ class AccountServiceTest {
         verify(accounts).findAll(page);
         verifyNoMoreInteractions(accounts);
     }
+    @Test void resolvesOnlyTheNamedIdentityWithoutCredentialChecks() {
+        when(accounts.findByLogin("synthetic-profile")).thenReturn(Optional.of(new Account("synthetic-profile", "private-hash", AccountRole.EMPLOYEE)));
+        var profile = service.findIdentity(" SYNTHETIC-PROFILE ").orElseThrow();
+        assertEquals("synthetic-profile", profile.login());
+        assertEquals(AccountRole.EMPLOYEE, profile.role());
+        assertFalse(profile.toString().contains("private-hash"));
+        assertTrue(service.findIdentity("missing").isEmpty());
+        verifyNoInteractions(passwords);
+    }
 }

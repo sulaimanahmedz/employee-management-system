@@ -1,0 +1,31 @@
+import {afterEach,expect,it,vi} from 'vitest';
+import {act,cleanup,render,screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import AccountProfile from '../../../src/features/identity/AccountProfile';
+import {api} from '../../../src/lib/api';
+vi.mock('../../../src/lib/api',()=>({api:vi.fn()}));
+afterEach(()=>{cleanup();vi.resetAllMocks();});
+it('loads only on request, disables loading and refreshes without retaining stale details',async()=>{
+  let resolve!:(value:unknown)=>void;
+  vi.mocked(api).mockReturnValueOnce(new Promise(yes=>{resolve=yes;})).mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({id:2,login:'synthetic-two',role:'HR'});
+  render(<AccountProfile/>);const user=userEvent.setup();expect(api).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button',{name:'View my account'}));
+  expect(screen.getByRole('status').textContent).toBe('Loading your account…');
+  expect((screen.getByRole('button') as HTMLButtonElement).disabled).toBe(true);
+  await act(async()=>resolve({id:1,login:'synthetic-one',role:'EMPLOYEE'}));
+  expect(screen.getByText('synthetic-one')).toBeTruthy();expect(screen.getByText('EMPLOYEE')).toBeTruthy();
+  await user.click(screen.getByRole('button'));
+  await screen.findByRole('alert');expect(screen.queryByText('synthetic-one')).toBeNull();
+  await user.click(screen.getByRole('button'));
+  await screen.findByText('synthetic-two');expect(screen.queryByRole('alert')).toBeNull();
+  expect(vi.mocked(api).mock.calls.every(call=>call[0]==='/api/v1/auth/profile')).toBe(true);
+});
+it.each([true,false])('aborts unmounted requests and ignores late results: %s',async success=>{
+  let resolve!:(value:unknown)=>void;let reject!:(reason:Error)=>void;
+  vi.mocked(api).mockReturnValue(new Promise((yes,no)=>{resolve=yes;reject=no;}));
+  const view=render(<AccountProfile/>);await userEvent.click(screen.getByRole('button'));
+  const signal=vi.mocked(api).mock.calls[0][1]!.signal!;
+  view.unmount();expect(signal.aborted).toBe(true);
+  await act(async()=>{if(success)resolve({id:1,login:'late',role:'HR'});else reject(new Error('late'));});
+  expect(screen.queryByText('late')).toBeNull();expect(screen.queryByRole('alert')).toBeNull();
+});

@@ -134,4 +134,23 @@ class SessionApiTest {
             }
         }
     }
+    @Test void profileUsesSessionIdentityForEveryRoleAndRejectsAnonymousOrMissingAccounts() throws Exception {
+        mvc.perform(get("/api/v1/auth/profile")).andExpect(status().isUnauthorized());
+        for (AccountRole role : AccountRole.values()) {
+            String name = "test-" + role.name().toLowerCase();
+            var session = login(name);
+            var result = mvc.perform(get("/api/v1/auth/profile?login=test-admin&id=1").session(session))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.login").value(name))
+                .andExpect(jsonPath("$.role").value(role.name())).andReturn();
+            var body = json.readTree(result.getResponse().getContentAsString());
+            var fields = new java.util.HashSet<String>(); body.fieldNames().forEachRemaining(fields::add);
+            assertEquals(java.util.Set.of("id", "login", "role"), fields);
+            assertEquals(repository.findByLogin(name).orElseThrow().getId().longValue(), body.get("id").asLong());
+            mvc.perform(get("/api/v1/auth/profile/1").session(session)).andExpect(status().isForbidden());
+            mvc.perform(post("/api/v1/auth/profile").session(session).with(csrf())).andExpect(status().isMethodNotAllowed());
+        }
+        var stale = login("test-employee");
+        repository.delete(repository.findByLogin("test-employee").orElseThrow());
+        mvc.perform(get("/api/v1/auth/profile").session(stale)).andExpect(status().isUnauthorized());
+    }
 }

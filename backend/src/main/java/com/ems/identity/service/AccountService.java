@@ -40,6 +40,11 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<AccountIdentity> findIdentity(String login) {
+        return accounts.findByLogin(normalize(login)).map(AccountService::identity);
+    }
+
+    @Transactional(readOnly = true)
     public AccountPage list(int page) {
         if (page < 0 || page > Integer.MAX_VALUE / 10) {
             throw new IllegalArgumentException("Account page must be nonnegative and its offset fit a signed integer");
