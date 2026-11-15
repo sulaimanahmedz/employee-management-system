@@ -103,3 +103,8 @@ AccountProfileController obtains the account key from Authentication and delegat
 read-only AccountService identity lookup. It maps a missing account to401; entities remain
 behind AccountIdentity DTOs. AccountProfile is a focused, on-demand React identity component
 using the shared client. Existing role scopes, transactions and locking are unchanged.
+
+IdentitySecurityConfiguration injects AuthenticationAuditService into the security-chain
+factory. Login/logout success callbacks emit fixed lifecycle events after the framework's
+normal processing and retain existing204 responses. No HTTP context enters the audit service,
+and no controller, entity, repository, transaction or role permission changes are introduced.

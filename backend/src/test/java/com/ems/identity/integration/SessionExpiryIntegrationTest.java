@@ -2,6 +2,11 @@ package com.ems.identity.integration;
 
 import com.ems.identity.entity.AccountRole;
 import com.ems.identity.service.AccountService;
+import com.ems.identity.service.AuthenticationAuditService;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.CookieManager;
@@ -59,6 +64,25 @@ class SessionExpiryIntegrationTest {
         assertEquals(200, send(client, base, "/api/v1/employees").statusCode());
         assertNotEquals(sessionId, cookies.getCookieStore().getCookies().stream()
             .filter(cookie -> cookie.getName().equals("JSESSIONID")).findFirst().orElseThrow().getValue());
+        Logger logger = (Logger) LoggerFactory.getLogger(AuthenticationAuditService.class);
+        var appender = new ListAppender<ILoggingEvent>(); appender.start(); logger.addAppender(appender);
+        try {
+            var rejected = client.send(HttpRequest.newBuilder(URI.create(base + "/api/v1/auth/logout"))
+                .POST(HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(403, rejected.statusCode());
+            assertEquals(200, send(client, base, "/api/v1/auth/profile").statusCode());
+            assertTrue(appender.list.isEmpty());
+            var logoutCsrf = json.readTree(send(client, base, "/api/v1/auth/csrf").body());
+            var loggedOut = client.send(HttpRequest.newBuilder(URI.create(base + "/api/v1/auth/logout"))
+                .header(logoutCsrf.get("headerName").asText(), logoutCsrf.get("token").asText())
+                .POST(HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(204, loggedOut.statusCode());
+            assertEquals(401, send(client, base, "/api/v1/auth/profile").statusCode());
+            assertEquals(1, appender.list.size());
+            assertEquals("event=AUTH_LOGOUT_PROCESSED", appender.list.get(0).getFormattedMessage());
+            assertNull(appender.list.get(0).getArgumentArray());
+            assertNull(appender.list.get(0).getThrowableProxy());
+        } finally { logger.detachAppender(appender); appender.stop(); }
     }
     private HttpResponse<String> send(HttpClient client, String base, String path) throws Exception {
         return client.send(HttpRequest.newBuilder(URI.create(base + path)).timeout(Duration.ofSeconds(10)).GET().build(), HttpResponse.BodyHandlers.ofString());

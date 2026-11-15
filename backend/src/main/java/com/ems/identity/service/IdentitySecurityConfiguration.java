@@ -9,7 +9,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class IdentitySecurityConfiguration {
     @Bean
-    SecurityFilterChain identitySecurity(HttpSecurity http, AccountAuthenticationProvider provider) throws Exception {
+    SecurityFilterChain identitySecurity(HttpSecurity http, AccountAuthenticationProvider provider, AuthenticationAuditService audit) throws Exception {
         // A dedicated manager prevents retrying this same provider through an auto-configured parent.
         http.authenticationManager(new ProviderManager(provider))
             .authorizeHttpRequests(access -> access
@@ -22,11 +22,11 @@ public class IdentitySecurityConfiguration {
                 .authenticationEntryPoint((request, response, exception) -> response.setStatus(401))
                 .accessDeniedHandler((request, response, exception) -> response.setStatus(403)))
             .formLogin(login -> login.loginProcessingUrl("/api/v1/auth/login")
-                .successHandler((request, response, authentication) -> response.setStatus(204))
+                .successHandler((request, response, authentication) -> { audit.sessionEstablished(); response.setStatus(204); })
                 .failureHandler((request, response, exception) -> response.setStatus(401)))
             .logout(logout -> logout.logoutUrl("/api/v1/auth/logout")
                 .deleteCookies("JSESSIONID")
-                .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204)));
+                .logoutSuccessHandler((request, response, authentication) -> { audit.logoutProcessed(); response.setStatus(204); }));
         // CSRF remains enabled with a server-session token. Default session fixation protection applies.
         return http.build();
     }

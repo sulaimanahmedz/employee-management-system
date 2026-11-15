@@ -50,11 +50,12 @@ class AuthenticationAuditTest {
         var appender = new ListAppender<ILoggingEvent>(); appender.start(); logger.addAppender(appender);
         try {
             var audit = new AuthenticationAuditService();
-            audit.accepted(42L); audit.rejected(); audit.unavailable();
+            audit.accepted(42L); audit.rejected(); audit.unavailable(); audit.sessionEstablished(); audit.logoutProcessed();
             assertEquals(java.util.List.of("event=AUTH_CREDENTIALS_ACCEPTED account_id=42",
-                "event=AUTH_CREDENTIALS_REJECTED", "event=AUTH_VERIFICATION_UNAVAILABLE"),
+                "event=AUTH_CREDENTIALS_REJECTED", "event=AUTH_VERIFICATION_UNAVAILABLE",
+                "event=AUTH_SESSION_ESTABLISHED", "event=AUTH_LOGOUT_PROCESSED"),
                 appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList());
-            assertEquals(java.util.List.of(Level.INFO, Level.INFO, Level.ERROR), appender.list.stream().map(ILoggingEvent::getLevel).toList());
+            assertEquals(java.util.List.of(Level.INFO, Level.INFO, Level.ERROR, Level.INFO, Level.INFO), appender.list.stream().map(ILoggingEvent::getLevel).toList());
             appender.list.forEach(event -> { assertNull(event.getThrowableProxy()); assertTrue(event.getTimeStamp() > 0); });
         } finally { logger.detachAppender(appender); appender.stop(); }
     }

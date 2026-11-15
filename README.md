@@ -319,3 +319,16 @@ refresh, ignores late unmounted responses and removes the profile on session exp
 This account identity view does not expose employee records or enable scoped employee/team
 access. Account mutation, password changes, revocation, reset and complete audit infrastructure
 remain unfinished. Exact validation results and source/base SHAs are recorded in PR22.
+
+### November 15 — Session lifecycle audit boundaries (PR22, unmerged)
+Successful form-login handling now records AUTH_SESSION_ESTABLISHED after Spring Security
+saves authentication and applies its session strategy. Completed logout handling records
+AUTH_LOGOUT_PROCESSED after the default logout handlers run. Both events are fixed codes
+with no identity, cookie, token, header or exception arguments. A CSRF-rejected logout
+produces no completion event and leaves the session usable. A valid anonymous logout can
+still complete idempotently, so LOGOUT_PROCESSED does not assert an authenticated actor.
+These application-log records have no per-session correlation and do not cover inactivity
+expiry, denied authorization or account mutations. Durable collection, retention/access
+controls and volume/failure monitoring remain prerequisites. Unit/API and real-container
+integration checks verify event boundaries; frontend tests and real-backend browser flows
+verify rejected logout followed by successful cleanup. Full validation is recorded in PR22.

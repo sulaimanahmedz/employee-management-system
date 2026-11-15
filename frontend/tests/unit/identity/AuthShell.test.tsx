@@ -49,9 +49,9 @@ it('recovers from session HTTP errors and network errors', async () => {
   await userEvent.click(screen.getByRole('button',{name:'Retry session'}));
   await screen.findByRole('heading', {name:'Employee workspace'});
 });
-it('retains the signed-in screen when logout fails and permits retry', async () => {
+it.each([403,500])('retains the signed-in screen when logout returns %s and permits retry', async status => {
   const published = vi.spyOn(Storage.prototype, 'setItem');
-  const {state} = server(); state.role='ROLE_HR'; state.logoutStatus=500; render(<AuthShell />);
+  const {state} = server(); state.role='ROLE_HR'; state.logoutStatus=status; render(<AuthShell />);
   await screen.findByRole('heading', {name:'Employee workspace'});
   await userEvent.click(screen.getByRole('button',{name:'Sign out'}));
   expect((await screen.findByRole('alert')).textContent).toContain('Sign out failed');
