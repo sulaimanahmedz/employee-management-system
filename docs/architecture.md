@@ -108,3 +108,7 @@ IdentitySecurityConfiguration injects AuthenticationAuditService into the securi
 factory. Login/logout success callbacks emit fixed lifecycle events after the framework's
 normal processing and retain existing204 responses. No HTTP context enters the audit service,
 and no controller, entity, repository, transaction or role permission changes are introduced.
+
+AccessAuditService owns fixed rejection-event formatting; security-filter callbacks call
+it without passing HTTP data. AuthenticationAuditService retains credential/lifecycle
+events. No entity, DTO, repository, transaction, locking or role scope changes are made.

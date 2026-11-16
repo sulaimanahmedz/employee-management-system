@@ -9,7 +9,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class IdentitySecurityConfiguration {
     @Bean
-    SecurityFilterChain identitySecurity(HttpSecurity http, AccountAuthenticationProvider provider, AuthenticationAuditService audit) throws Exception {
+    SecurityFilterChain identitySecurity(HttpSecurity http, AccountAuthenticationProvider provider, AuthenticationAuditService audit, AccessAuditService accessAudit) throws Exception {
         // A dedicated manager prevents retrying this same provider through an auto-configured parent.
         http.authenticationManager(new ProviderManager(provider))
             .authorizeHttpRequests(access -> access
@@ -19,8 +19,8 @@ public class IdentitySecurityConfiguration {
                 .requestMatchers("/api/v1/employees", "/api/v1/employees/**").hasRole("HR")
                 .anyRequest().denyAll())
             .exceptionHandling(errors -> errors
-                .authenticationEntryPoint((request, response, exception) -> response.setStatus(401))
-                .accessDeniedHandler((request, response, exception) -> response.setStatus(403)))
+                .authenticationEntryPoint((request, response, exception) -> { accessAudit.authenticationRequired(); response.setStatus(401); })
+                .accessDeniedHandler((request, response, exception) -> { accessAudit.denied(); response.setStatus(403); }))
             .formLogin(login -> login.loginProcessingUrl("/api/v1/auth/login")
                 .successHandler((request, response, authentication) -> { audit.sessionEstablished(); response.setStatus(204); })
                 .failureHandler((request, response, exception) -> response.setStatus(401)))

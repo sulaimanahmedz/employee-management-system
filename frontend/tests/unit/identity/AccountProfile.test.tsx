@@ -29,3 +29,12 @@ it.each([true,false])('aborts unmounted requests and ignores late results: %s',a
   await act(async()=>{if(success)resolve({id:1,login:'late',role:'HR'});else reject(new Error('late'));});
   expect(screen.queryByText('late')).toBeNull();expect(screen.queryByRole('alert')).toBeNull();
 });
+it('keeps access error details private and permits an explicit retry',async()=>{
+  vi.mocked(api).mockRejectedValueOnce(new Error('ACCESS_DENIED internal detail')).mockResolvedValueOnce({id:3,login:'synthetic-retry',role:'HR'});
+  render(<AccountProfile/>);const user=userEvent.setup();
+  await user.click(screen.getByRole('button'));
+  expect((await screen.findByRole('alert')).textContent).toBe('Unable to load your account. Please retry.');
+  expect(screen.queryByText(/ACCESS_DENIED/)).toBeNull();
+  await user.click(screen.getByRole('button'));
+  await screen.findByText('synthetic-retry');expect(screen.queryByRole('alert')).toBeNull();
+});

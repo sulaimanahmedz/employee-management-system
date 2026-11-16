@@ -3,6 +3,7 @@ package com.ems.identity.integration;
 import com.ems.identity.entity.AccountRole;
 import com.ems.identity.service.AccountService;
 import com.ems.identity.service.AuthenticationAuditService;
+import com.ems.identity.service.AccessAuditService;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -45,6 +46,18 @@ class SessionExpiryIntegrationTest {
         assertEquals(204, login(client, base, csrf, password).statusCode());
         csrf = json.readTree(send(client, base, "/api/v1/auth/csrf").body());
         assertEquals(200, send(client, base, "/api/v1/employees").statusCode());
+        Logger accessLogger = (Logger) LoggerFactory.getLogger(AccessAuditService.class);
+        var accessEvents = new ListAppender<ILoggingEvent>(); accessEvents.start(); accessLogger.addAppender(accessEvents);
+        try {
+            var denied = send(client, base, "/api/v1/admin/accounts?secret=synthetic-value");
+            assertEquals(403, denied.statusCode()); assertEquals("", denied.body());
+            assertEquals(200, send(client, base, "/api/v1/auth/profile").statusCode());
+            assertEquals(1, accessEvents.list.size());
+            assertEquals("event=ACCESS_DENIED", accessEvents.list.get(0).getFormattedMessage());
+            assertNull(accessEvents.list.get(0).getArgumentArray());
+            assertNull(accessEvents.list.get(0).getThrowableProxy());
+        } finally { accessLogger.detachAppender(accessEvents); accessEvents.stop(); }
+
         String sessionId = cookies.getCookieStore().getCookies().stream()
             .filter(cookie -> cookie.getName().equals("JSESSIONID")).findFirst().orElseThrow().getValue();
         var tomcat = ((TomcatWebServer) context.getWebServer()).getTomcat();

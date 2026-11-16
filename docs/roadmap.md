@@ -367,3 +367,16 @@ expiry, denied authorization or account mutations. Durable collection, retention
 controls and volume/failure monitoring remain prerequisites. Unit/API and real-container
 integration checks verify event boundaries; frontend tests and real-backend browser flows
 verify rejected logout followed by successful cleanup. Full validation is recorded in PR22.
+
+### November 16 — Access rejection audit boundary (PR22, unmerged)
+Security-filter authentication entry points and access-denied handlers now emit fixed
+ACCESS_AUTHENTICATION_REQUIRED and ACCESS_DENIED records through AccessAuditService.
+The latter includes CSRF rejection, not only role denial. No URI, query, principal,
+request header, cookie, password, token or exception enters this service. HTTP401/403
+responses remain empty; successful requests emit neither event. Rejection does not
+invalidate a valid session or expand role permissions. Unit/API, real-container and
+frontend recovery tests plus a real-backend browser scenario verify these boundaries.
+These records are application logs, without actor correlation, durable storage or
+retention/access/volume controls. They do not cover controller-generated401 responses,
+all application errors or account mutations. Full identity lifecycle, ownership,
+revocation/reset and enterprise readiness remain unfinished. Validation is recorded in PR22.
