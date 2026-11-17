@@ -380,3 +380,14 @@ These records are application logs, without actor correlation, durable storage o
 retention/access/volume controls. They do not cover controller-generated401 responses,
 all application errors or account mutations. Full identity lifecycle, ownership,
 revocation/reset and enterprise readiness remain unfinished. Validation is recorded in PR22.
+
+### November 17 — Disable saved-request caching (PR22, unmerged)
+The API-driven login uses204 responses and explicit React session loading, not redirects.
+The security chain now explicitly uses NullRequestCache so rejected URLs/query strings
+are not saved for later replay and anonymous rejected GETs do not create sessions merely
+for request caching. CSRF and authenticated server sessions remain enabled. This does not
+prevent URLs appearing in browser history or infrastructure access logs; do not put secrets
+in URLs. Unit/API, embedded-server, frontend unit/integration and real-backend browser tests
+cover absent request-cache sessions, preserved CSRF/login, no redirect/replay and logout.
+All authentication lifecycle/ownership/reset and operational gates remain required before
+merge; exact validation results are recorded in PR22.

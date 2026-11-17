@@ -112,3 +112,7 @@ and no controller, entity, repository, transaction or role permission changes ar
 AccessAuditService owns fixed rejection-event formatting; security-filter callbacks call
 it without passing HTTP data. AuthenticationAuditService retains credential/lifecycle
 events. No entity, DTO, repository, transaction, locking or role scope changes are made.
+
+RequestCacheConfiguration supplies a NullRequestCache bean in identity/service, explicitly
+injected into the security chain. This API has no saved-request redirect/replay workflow.
+CSRF sessions, session fixation protection and business transaction boundaries are unchanged.

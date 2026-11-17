@@ -5,13 +5,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.savedrequest.RequestCache;
 
 @Configuration
 public class IdentitySecurityConfiguration {
     @Bean
-    SecurityFilterChain identitySecurity(HttpSecurity http, AccountAuthenticationProvider provider, AuthenticationAuditService audit, AccessAuditService accessAudit) throws Exception {
+    SecurityFilterChain identitySecurity(HttpSecurity http, AccountAuthenticationProvider provider, AuthenticationAuditService audit, AccessAuditService accessAudit, RequestCache requestCache) throws Exception {
         // A dedicated manager prevents retrying this same provider through an auto-configured parent.
         http.authenticationManager(new ProviderManager(provider))
+            .requestCache(cache -> cache.requestCache(requestCache))
             .authorizeHttpRequests(access -> access
                 .requestMatchers("/actuator/health", "/error", "/api/v1/auth/csrf", "/api/v1/auth/login").permitAll()
                 .requestMatchers("/api/v1/auth/session", "/api/v1/auth/logout", "/api/v1/auth/profile").authenticated()

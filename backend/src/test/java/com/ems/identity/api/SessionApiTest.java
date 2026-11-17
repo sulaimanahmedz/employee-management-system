@@ -153,4 +153,22 @@ class SessionApiTest {
         repository.delete(repository.findByLogin("test-employee").orElseThrow());
         mvc.perform(get("/api/v1/auth/profile").session(stale)).andExpect(status().isUnauthorized());
     }
+    @Test void rejectedGetDoesNotCreateOrPopulateSavedRequestSession() throws Exception {
+        var rejected = mvc.perform(get("/api/v1/employees?search=synthetic-private-value"))
+            .andExpect(status().isUnauthorized()).andExpect(content().string(""))
+            .andExpect(header().doesNotExist("Location")).andReturn();
+        assertNull(rejected.getRequest().getSession(false));
+        var csrfResult = mvc.perform(get("/api/v1/auth/csrf")).andExpect(status().isOk()).andReturn();
+        var session = (MockHttpSession) csrfResult.getRequest().getSession(false);
+        var before = java.util.Collections.list(session.getAttributeNames());
+        mvc.perform(get("/api/v1/employees?search=another-private-value").session(session))
+            .andExpect(status().isUnauthorized()).andExpect(header().doesNotExist("Location"));
+        assertEquals(before, java.util.Collections.list(session.getAttributeNames()));
+        assertNull(session.getAttribute("SPRING_SECURITY_SAVED_REQUEST"));
+        mvc.perform(post("/api/v1/auth/login").session(session).with(csrf())
+            .param("username", "test-hr").param("password", PASSWORD))
+            .andExpect(status().isNoContent()).andExpect(header().doesNotExist("Location"));
+        mvc.perform(get("/api/v1/auth/profile").session(session)).andExpect(status().isOk());
+    }
+
 }

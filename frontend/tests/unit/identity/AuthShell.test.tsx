@@ -110,3 +110,18 @@ it('never renders server verification diagnostics from a failed login', async ()
   expect(document.body.textContent).not.toContain('AUTH_VERIFICATION_UNAVAILABLE');
   expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
 });
+it('uses the role workspace after login without replaying a return URL',async()=>{
+  const {fetcher}=server();
+  window.history.replaceState({},'', '/?continue=%2Fapi%2Fv1%2Fadmin%2Faccounts');
+  try {
+    render(<AuthShell/>);const user=userEvent.setup();
+    await screen.findByRole('heading',{name:'Sign in'});
+    await user.type(screen.getByLabelText('Login'),'synthetic');
+    await user.type(screen.getByLabelText('Password'),'synthetic-password');
+    await user.click(screen.getByRole('button',{name:'Sign in'}));
+    await screen.findByRole('heading',{name:'Employee workspace'});
+    expect(fetcher.mock.calls.every(([url])=>['/api/v1/auth/csrf','/api/v1/auth/session','/api/v1/auth/login'].includes(url))).toBe(true);
+    const login=fetcher.mock.calls.find(([url])=>url.endsWith('/login'))!;
+    expect(Array.from((login[1]!.body as URLSearchParams).keys())).toEqual(['username','password']);
+  } finally { window.history.replaceState({},'', '/'); }
+});

@@ -40,6 +40,11 @@ class SessionExpiryIntegrationTest {
         String base = "http://127.0.0.1:" + context.getWebServer().getPort();
         var cookies = new CookieManager();
         var client = HttpClient.newBuilder().cookieHandler(cookies).connectTimeout(Duration.ofSeconds(5)).build();
+        var anonymous = send(client, base, "/api/v1/employees?search=synthetic-private-value");
+        assertEquals(401, anonymous.statusCode());
+        assertTrue(anonymous.headers().allValues("Set-Cookie").isEmpty());
+        assertTrue(cookies.getCookieStore().getCookies().isEmpty());
+        assertTrue(anonymous.headers().allValues("Location").isEmpty());
         String password = UUID.randomUUID().toString();
         accounts.provision("synthetic-expiry", password, AccountRole.HR);
         JsonNode csrf = json.readTree(send(client, base, "/api/v1/auth/csrf").body());
