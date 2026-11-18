@@ -35,6 +35,10 @@ test.describe('Account lifecycle and session revocation',()=>{
    const createdEmployee=await hr.request.post('/api/v1/employees',{headers:{[hcsrf.headerName]:hcsrf.token},data:{firstName:'Synthetic',lastName:'Scoped',email:`${login}@example.com`,department:'QA',jobTitle:'Analyst',status:'ACTIVE'}});expect(createdEmployee.status()).toBe(201);const employee=await createdEmployee.json();
    await signIn(page,'synthetic-admin',password);const csrf=await(await page.context().request.get('/api/v1/auth/csrf')).json();
    const created=await page.context().request.post('/api/v1/admin/accounts',{headers:{[csrf.headerName]:csrf.token},data:{login,password,role:'MANAGER'}});expect(created.status()).toBe(201);const account=await created.json();
+   for(const invalid of [{employeeId:employee.id+0.5,teamEmployeeIds:[]},{employeeId:null,teamEmployeeIds:[employee.id+0.5]}]) {
+    const rejected=await page.context().request.put(`/api/v1/admin/accounts/${account.id}/scope`,{headers:{[csrf.headerName]:csrf.token},data:invalid});expect(rejected.status()).toBe(400);
+   }
+   expect(await(await page.context().request.get(`/api/v1/admin/accounts/${account.id}/scope`)).json()).toEqual({employeeId:null,teamEmployeeIds:[]});
    const user=await member.newPage();await signIn(user,login,password);await user.getByRole('button',{name:'View assigned employees'}).click();await expect(user.getByRole('heading',{name:'Access denied'})).toBeVisible();
    expect((await member.request.get(`/api/v1/self/employees/${employee.id}`)).status()).toBe(403);
    await page.getByLabel('Account to manage').fill(String(account.id));await page.getByRole('button',{name:'Load account'}).click();await expect(page.getByText(`Managing ${login}`)).toBeVisible();
