@@ -20,14 +20,14 @@ Request validation uses Jakarta Validation. Errors follow Spring problem details
 
 ## Extension points
 
-- Identity and access: implement authentication and role-based authorization across all employee endpoints.
+- Identity and access: extend the enforced role/scoped model with MFA/SSO and operational identity controls.
 - Organization: replace department text with department and reporting-line relationships.
 - Employee lifecycle: add onboarding, employment history and audited status transitions.
 - Attendance and leave: create separate feature modules with their own business rules.
 - Scale: the UI uses bounded database pagination; add indexes and specialized text search as data grows.
 - Operations: add schema migrations, structured observability and deployment configuration.
 
-There is no authentication, payroll, leave approval, attendance tracking, audit history, or production hosting in this base. The UI exposes list/create and a dedicated view/edit profile screen using the existing GET/PUT endpoints; deletion is currently API-only. Profile data is fetched when opened. A successful update invalidates the directory; returning fetches the applied search page and organization totals again. Failed saves retain the draft. Requests abandoned while loading a profile are cancelled and ignored. Concurrent edits from different users still follow last-write-wins; optimistic locking is a future improvement.
+Payroll, leave approval, attendance tracking, immutable audit history and production hosting remain unimplemented. The unmerged authentication branch adds the session boundary described below. The UI exposes list/create and a dedicated view/edit profile screen using the existing GET/PUT endpoints; deletion is currently API-only. Profile data is fetched when opened. A successful update invalidates the directory; returning fetches the applied search page and organization totals again. Failed saves retain the draft. Requests abandoned while loading a profile are cancelled and ignored. Concurrent edits from different users still follow last-write-wins; optimistic locking is a future improvement.
 
 ## Directory queries
 
@@ -42,3 +42,80 @@ EmployeeService delegates employment snapshots to EmploymentHistoryService in th
 ## Leave mutation consistency
 
 LeaveRequestService owns create/edit/cancel transactions. Every mutation takes a pessimistic write lock on the employee before loading or modifying a request and checking inclusive pending overlaps. Edits exclude the current request ID and reject cancelled records. The entity accepts type/date values without depending on transport DTOs; the controller validates the existing standalone LeaveRequestInput. Concurrent edits remain last-write-wins, but create/edit/cancel share the same lock ordering. No schema or dependency change is required.
+
+## Identity and sessions (authentication branch, not yet merged)
+
+Identity owns controller/service/repository/entity/dto layers. SessionController maps the
+framework authentication/CSRF context; AccountController delegates provisioning to
+AccountService. IdentitySecurityConfiguration is infrastructure wiring in the identity
+service package and enforces the route matrix in docs/authentication-plan.md. The account
+provider delegates credential verification to the transactional account service. No
+cross-feature persistence or locking semantics were changed.
+
+Spring Security protects every employee route for HR only. ADMIN provisions accounts but
+has no employee-data bypass. Manager/employee access is denied until explicit ownership
+relationships exist. Sessions are server-side, CSRF remains enabled, and cookies default
+to Secure/HttpOnly/SameSite Strict. Existing HTTP tests use authenticated HR fixtures with
+CSRF through the real filter chain; dedicated identity API/E2E tests use actual login.
+No architecture or coverage guardrails are relaxed. See the authentication plan for the
+remaining abuse-control, revocation, reset and scoped-authorization gates before merge.
+
+LoginAttemptService is an identity service owning synchronized, bounded in-memory login
+admission. AccountAuthenticationProvider reserves before credential verification and releases
+in finally; successful credentials reset only their normalized login counter. No controller,
+repository or entity responsibilities are moved. This single-instance limiter is not a
+replacement for distributed controls or security auditing; see the authentication plan.
+
+Cross-tab sign-out is a frontend identity concern: sessionEvents publishes only a random
+notification marker in localStorage, never credentials, identity or session/CSRF tokens.
+The subscriber clears identity/password/CSRF state; a session generation guard rejects
+late session-check responses after sign-out. Server logout remains authoritative and
+storage failure cannot undo it. This is best-effort same-origin browser notification,
+not server-side password/role-change revocation or a distributed session store.
+
+AccountProvisioning is a focused React identity component using the shared CSRF-aware HTTP
+client. AuthShell selects it for ADMIN, while HR retains the employee workspace and other
+roles remain denied business access. Backend authorization is unchanged and authoritative;
+the existing AccountController delegates to AccountService. Creation defaults to EMPLOYEE,
+passwords clear on both success/failure, and a ref guards duplicate pending submissions.
+
+The identity account directory delegates HTTP pagination to AccountService, which validates
+a bounded ten-row offset and requests repository pages ordered by unique ID. AccountPage
+contains only AccountIdentity DTOs; persistence entities/hashes never leave the service.
+The existing ADMIN route rule protects reads as well as provisioning. AccountDirectory
+loads on demand, aborts on unmount and ignores late responses. No permission bypass,
+new schema, dependency, or transaction/locking changes are introduced.
+
+AuthenticationAuditService is a focused identity service. AccountAuthenticationProvider
+records credential outcomes through constructor injection, including admission rejection,
+while preserving release-in-finally and rethrowing the original failure. Only fixed event
+codes and the persisted numeric success identity reach its logger; no HTTP strings or
+exceptions cross that interface. It changes no repository, transaction or role boundaries.
+Application-log records are an initial audit sink; durability and broader event coverage
+remain requirements described in the authentication plan.
+
+Audit API validation exposed duplicate failed verification through local/parent authentication
+managers. The security chain now uses a dedicated ProviderManager with no parent fallback,
+so each HTTP login attempts credentials once. Regression tests assert one audit record per
+request and successful correct credentials after four failures (the fifth admitted attempt).
+
+AccountProfileController obtains the account key from Authentication and delegates to the
+read-only AccountService identity lookup. It maps a missing account to401; entities remain
+behind AccountIdentity DTOs. AccountProfile is a focused, on-demand React identity component
+using the shared client. Existing role scopes, transactions and locking are unchanged.
+
+IdentitySecurityConfiguration injects AuthenticationAuditService into the security-chain
+factory. Login/logout success callbacks emit fixed lifecycle events after the framework's
+normal processing and retain existing204 responses. No HTTP context enters the audit service,
+and no controller, entity, repository, transaction or role permission changes are introduced.
+
+AccessAuditService owns fixed rejection-event formatting; security-filter callbacks call
+it without passing HTTP data. AuthenticationAuditService retains credential/lifecycle
+events. No entity, DTO, repository, transaction, locking or role scope changes are made.
+
+RequestCacheConfiguration supplies a NullRequestCache bean in identity/service, explicitly
+injected into the security chain. This API has no saved-request redirect/replay workflow.
+CSRF sessions, session fixation protection and business transaction boundaries are unchanged.
+
+## Identity lifecycle and scope
+AccountLifecycleService serializes administrative state changes with ordered account locks and owns password/reset transactions. AccountScopeService validates employee IDs through EmployeeService and stores explicit manager grants; no controller uses another feature repository. SessionPrincipal carries an immutable persisted-version stamp; SessionRevocationFilter checks it before CSRF/authorization on each authenticated request. AuditTrailService persists fixed security events, joining lifecycle transactions. Controllers expose standalone validated DTOs only. Scoped profile routes grant no access to nested employee resources.

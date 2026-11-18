@@ -1,6 +1,9 @@
 package com.ems.application.integration;
 
 import com.ems.EmployeeManagementApplication;
+import com.ems.identity.service.AccountService;
+import com.ems.identity.entity.AccountRole;
+import java.net.CookieManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -36,6 +39,7 @@ class ApplicationStartupIntegrationTest {
         try {
             EmployeeManagementApplication.main(new String[] {
                 "--server.port=0",
+                "--server.servlet.session.cookie.secure=false",
                 "--server.address=127.0.0.1",
                 "--spring.datasource.url=jdbc:h2:mem:startup-" + UUID.randomUUID(),
                 "--spring.jpa.hibernate.ddl-auto=create-drop",
@@ -44,7 +48,7 @@ class ApplicationStartupIntegrationTest {
             var context = (ServletWebServerApplicationContext) STARTED.get();
             assertNotNull(context);
             String base = "http://127.0.0.1:" + context.getWebServer().getPort();
-            var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+            var client = HttpClient.newBuilder().cookieHandler(new CookieManager()).connectTimeout(Duration.ofSeconds(5)).build();
             var mapper = context.getBean(ObjectMapper.class);
 
             var health = client.send(HttpRequest.newBuilder(URI.create(base + "/actuator/health"))
@@ -52,8 +56,19 @@ class ApplicationStartupIntegrationTest {
             assertEquals(200, health.statusCode());
             assertEquals("UP", mapper.readTree(health.body()).path("status").asText());
 
+            String password = UUID.randomUUID().toString();
+            context.getBean(AccountService.class).provision("synthetic-startup", password, AccountRole.HR);
+            var token = mapper.readTree(client.send(HttpRequest.newBuilder(URI.create(base + "/api/v1/auth/csrf")).GET().build(), HttpResponse.BodyHandlers.ofString()).body());
+            var signedIn = client.send(HttpRequest.newBuilder(URI.create(base + "/api/v1/auth/login"))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header(token.path("headerName").asText(), token.path("token").asText())
+                .POST(HttpRequest.BodyPublishers.ofString("username=synthetic-startup&password=" + password)).build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(204, signedIn.statusCode());
+            token = mapper.readTree(client.send(HttpRequest.newBuilder(URI.create(base + "/api/v1/auth/csrf")).GET().build(), HttpResponse.BodyHandlers.ofString()).body());
+
             var created = client.send(HttpRequest.newBuilder(URI.create(base + "/api/v1/employees"))
                 .timeout(Duration.ofSeconds(10)).header("Content-Type", "application/json")
+                .header(token.path("headerName").asText(), token.path("token").asText())
                 .POST(HttpRequest.BodyPublishers.ofString("""
                     {"firstName":"Synthetic","lastName":"Startup","email":"startup@example.com",
                      "department":"IT","jobTitle":"Engineer","status":"ACTIVE"}

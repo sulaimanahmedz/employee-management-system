@@ -9,10 +9,20 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: update
+  jackson:
+    deserialization:
+      accept-float-as-int: false
   mvc:
     problemdetails:
       enabled: true
 server:
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: strict
   port: ${PORT:8080}
 management:
   endpoints:
@@ -22,3 +32,5 @@ management:
   endpoint:
     health:
       show-details: never
+      probes:
+        enabled: true

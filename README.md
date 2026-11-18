@@ -28,7 +28,7 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:5173. Vite forwards `/api` requests to http://localhost:8080. Add employees using the form; the directory starts empty and retains records across backend restarts in `backend/data/`.
+Before starting the backend, supply explicit bootstrap credentials and loopback HTTP settings as described in **Authentication: local setup and limitations** below. Open http://localhost:5173 and sign in. Vite forwards `/api` requests to http://localhost:8080. An ADMIN provisions an HR account; HR can add employees. The directory starts empty and retains records across backend restarts in `backend/data/`.
 
 ## Project structure
 
@@ -110,7 +110,7 @@ Backend test source covers the employee lifecycle, full profile updates, invalid
 
 ## Next development
 
-See [architecture](docs/architecture.md) and [roadmap](docs/roadmap.md). This initial codebase is for local development: authentication and authorization are not implemented yet. Add access controls, migrations and a production database before hosting employee data publicly.
+See [architecture](docs/architecture.md) and [roadmap](docs/roadmap.md). This initial codebase is for local development: authentication and role authorization are implemented, but production migrations, MFA/SSO decisions and operational readiness remain required before deployment.
 
 ## Profile feature validation
 
@@ -253,3 +253,113 @@ The mobile-layout feature branch places each document record's Edit/Remove contr
 Playwright has **4 distinct E2E scenarios in 4 named suites**, executed at 5 Chromium viewport profiles (320, 390, 412, 768 and 1440 pixels): **20 executions**. These cover directory form/filter fit, document action placement/edit/removal, profile-save section uniqueness, and onboarding lifecycle/validation. Browser emulation is not proof of compatibility with every physical device or browser.
 
 See [test organization](docs/test-organization.md) for separate unit, API, integration, architecture and E2E locations. The profile duplicate-section bug is fixed with distinct feature component keys. Coverage gates remain unchanged; feature PRs stay unmerged until all required gates pass.
+
+### Authentication: local setup and limitations
+
+The `feature/auth-accounts` implementation includes login/logout, CSRF-protected server
+sessions, HR employee administration, explicit manager/employee read scopes and ADMIN account
+management. Validation and merge status are recorded in PR22. This is not an enterprise
+deployment release; MFA/SSO, migrations and operational readiness remain roadmap work.
+
+Supply explicit `EMS_BOOTSTRAP_LOGIN` and `EMS_BOOTSTRAP_PASSWORD` through your local
+secret environment to initialize an ADMIN in an empty account store. There are no default
+credentials. For local HTTP only, bind `SERVER_ADDRESS=127.0.0.1` and set
+`SESSION_COOKIE_SECURE=false`; keep the default Secure cookies for HTTPS. Remove bootstrap
+secrets after initial setup. Sign in through the UI; ADMIN cannot access the HR directory.
+Use Create account to provision an HR account. View accounts provides IDs for Manage existing
+account, where ADMIN can change role/active state, assign employee/team IDs or issue a reset
+token after independently verifying the recipient. The last active ADMIN cannot be disabled
+or demoted. See [the permission matrix and readiness requirements](docs/authentication-plan.md).
+
+Presentation runs require explicit `PRESENTATION_LOGIN` and `PRESENTATION_PASSWORD`; the
+launcher uses a disposable database and seeds through authenticated requests before the UI.
+
+The authentication branch now limits login attempts per normalized login for one minute,
+with bounded memory and concurrent password-check admission. Failed and limited attempts
+use the same message. This initial limiter is process-local; distributed controls, security
+monitoring and distributed enforcement remain operational readiness requirements.
+
+### Authentication recovery validation (unmerged PR22)
+
+A failed login transport clears the password; re-enter it after restoring connectivity.
+Session expiry removes the workspace when the next API request returns 401. Successful logout now notifies other same-origin tabs using an opaque storage marker.
+Those tabs immediately clear the workspace when the browser delivers the event. If storage
+is disabled, server logout still succeeds and other tabs recover on the next API 401.
+Identity integration tests exercise actual container inactivity expiry and stale CSRF rejection;
+`e2e/identity/recovery.spec.ts` covers connection recovery and two-tab logout against the real API.
+
+### Create an account (authentication branch, unmerged)
+
+An ADMIN now sees **Create account** after sign-in. Enter the login, initial password and
+explicit role; EMPLOYEE is selected by default. Validation/conflict errors preserve login
+and role while clearing the password. The server enforces authorization and password rules.
+No invitation or password is sent. Manage existing account provides role/deactivation and
+explicit scope controls. Every authenticated user can change their own password using the
+current password. Password, access and scope changes revoke previous sessions at the next
+request. ADMIN has no HR-data bypass.
+
+For recovery, ADMIN issues a token with a15-minute expiry and hands it to the verified
+recipient outside the application. The recipient uses Reset password on the sign-in page.
+Tokens work once, are invalidated by reissuance/password/access/scope changes, and are stored
+only as hashes. Do not paste tokens into URLs, issue reports or logs. No email is sent.
+
+### Review provisioned accounts (authentication branch, unmerged)
+ADMIN can select **View accounts** to load a directory of account IDs, logins and roles.
+Results use ten-row pages in ascending ID order. Previous/Next navigate; View accounts
+refreshes page zero, including accounts created since the last read. Failed reads remove
+stale results and permit retry. No passwords or password hashes are returned.
+`GET /api/v1/admin/accounts?page=0` is ADMIN-only; page must be nonnegative with a
+signed-integer ten-row offset. Other roles receive 403 and anonymous clients receive 401.
+The directory is read-only; use Manage existing account for access changes, deactivation, employee/team scope and recovery.
+
+### Credential verification audit records (authentication branch, unmerged)
+The identity audit logger emits fixed credential accepted/rejected/unavailable event codes.
+Only successful verification includes the stored numeric account ID; submitted logins,
+passwords, tokens and exception details are omitted. HTTP login errors remain generic.
+These application logs do not establish durable compliance auditing or session creation;
+see docs/authentication-plan.md for event scope and production collection/retention gaps.
+
+### November 14 — Read-only authenticated account profile (PR22, unmerged)
+All four authenticated roles can select View my account to read their stored account ID,
+login and assigned role. GET /api/v1/auth/profile resolves only the authenticated principal;
+query parameters cannot select another account. Passwords/hashes are never returned.
+Anonymous or no-longer-stored identities receive401. The UI clears stale data on failed
+refresh, ignores late unmounted responses and removes the profile on session expiry/logout.
+This account identity view does not expose employee records or enable scoped employee/team
+access. The subsequent combined lifecycle implementation adds account mutation, password changes, revocation, reset and persisted security events; production audit operations remain roadmap work. Exact validation results and source/base SHAs are recorded in PR22.
+
+### November 15 — Session lifecycle audit boundaries (PR22, unmerged)
+Successful form-login handling now records AUTH_SESSION_ESTABLISHED after Spring Security
+saves authentication and applies its session strategy. Completed logout handling records
+AUTH_LOGOUT_PROCESSED after the default logout handlers run. Both events are fixed codes
+with no identity, cookie, token, header or exception arguments. A CSRF-rejected logout
+produces no completion event and leaves the session usable. A valid anonymous logout can
+still complete idempotently, so LOGOUT_PROCESSED does not assert an authenticated actor.
+These application-log records have no per-session correlation and do not cover inactivity
+expiry, denied authorization or account mutations. Durable collection, retention/access
+controls and volume/failure monitoring remain prerequisites. Unit/API and real-container
+integration checks verify event boundaries; frontend tests and real-backend browser flows
+verify rejected logout followed by successful cleanup. Full validation is recorded in PR22.
+
+### November 16 — Access rejection audit boundary (PR22, unmerged)
+Security-filter authentication entry points and access-denied handlers now emit fixed
+ACCESS_AUTHENTICATION_REQUIRED and ACCESS_DENIED records through AccessAuditService.
+The latter includes CSRF rejection, not only role denial. No URI, query, principal,
+request header, cookie, password, token or exception enters this service. HTTP401/403
+responses remain empty; successful requests emit neither event. Rejection does not
+invalidate a valid session or expand role permissions. Unit/API, real-container and
+frontend recovery tests plus a real-backend browser scenario verify these boundaries.
+These records are application logs, without actor correlation, durable storage or
+retention/access/volume controls. They do not cover controller-generated401 responses,
+all application errors or account mutations. The subsequent combined lifecycle implementation adds identity lifecycle, explicit ownership and revocation/reset. Enterprise readiness remains separate. Validation is recorded in PR22.
+
+### November 17 — Disable saved-request caching (PR22, unmerged)
+The API-driven login uses204 responses and explicit React session loading, not redirects.
+The security chain now explicitly uses NullRequestCache so rejected URLs/query strings
+are not saved for later replay and anonymous rejected GETs do not create sessions merely
+for request caching. CSRF and authenticated server sessions remain enabled. This does not
+prevent URLs appearing in browser history or infrastructure access logs; do not put secrets
+in URLs. Unit/API, embedded-server, frontend unit/integration and real-backend browser tests
+cover absent request-cache sessions, preserved CSRF/login, no redirect/replay and logout.
+All authentication lifecycle/ownership/reset and operational gates remain required before
+merge; exact validation results are recorded in PR22.

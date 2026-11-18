@@ -15,3 +15,5 @@ frontend/test-results/
 frontend/playwright-report/
 frontend/node_modules
 frontend/narrated-walkthrough.mjs
+
+__pycache__/

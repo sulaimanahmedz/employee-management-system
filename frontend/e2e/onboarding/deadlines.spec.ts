@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/auth-fixture';
 import { createProfileEmployee } from '../support/profile-fixtures';
 test.describe('Onboarding deadline review and removal', () => {
     test(`filters, reopens and removes tasks`, async ({ page, request }) => {

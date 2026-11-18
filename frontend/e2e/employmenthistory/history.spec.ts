@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/auth-fixture';
 
 test.describe('Employment history', () => {
     test(`shows persisted changes and filters events`, async ({ page, request }) => {

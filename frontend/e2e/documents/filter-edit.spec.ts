@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/auth-fixture';
 import { createProfileEmployee } from '../support/profile-fixtures';
 test.describe('Document renewal filtering and metadata edits', () => {
     test(`updates filter membership and removes metadata`, async ({ page, request }) => {

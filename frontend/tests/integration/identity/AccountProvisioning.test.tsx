@@ -1,0 +1,47 @@
+import { afterEach, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import AuthShell from '../../../src/features/identity/AuthShell';
+import { setCsrfToken } from '../../../src/lib/api';
+afterEach(() => { cleanup(); setCsrfToken(undefined); vi.unstubAllGlobals(); });
+it('sends authenticated provisioning through the shared client, preserves conflict input and clears secrets', async () => {
+  let conflict=true;
+  const fetcher=vi.fn(async (url:string, options?:RequestInit) => {
+    if(url.endsWith('/csrf')) return Response.json({headerName:'X-CSRF-TOKEN',token:'synthetic-csrf'});
+    if(url.endsWith('/session')) return Response.json({login:'synthetic-admin',authorities:['ROLE_ADMIN']});
+    expect(url).toBe('/api/v1/admin/accounts');
+    expect(options?.headers).toEqual(expect.objectContaining({'X-CSRF-TOKEN':'synthetic-csrf'}));
+    const input=JSON.parse(options!.body as string);
+    return conflict ? Response.json({detail:'Account login is unavailable'},{status:409}) : Response.json({id:3,login:input.login,role:input.role},{status:201});
+  });
+  vi.stubGlobal('fetch',fetcher); render(<AuthShell />); const user=userEvent.setup();
+  await screen.findByRole('heading',{name:'Create account'});
+  await user.type(screen.getByLabelText('Account login'),'synthetic-user');
+  await user.type(screen.getByLabelText('Initial password'),'Synthetic secure password!');
+  await user.selectOptions(screen.getByLabelText('Account role'),'MANAGER');
+  await user.click(screen.getByRole('button',{name:'Create account'}));
+  expect((await screen.findByRole('alert')).textContent).toContain('unavailable');
+  expect((screen.getByLabelText('Initial password') as HTMLInputElement).value).toBe('');
+  conflict=false;
+  await user.type(screen.getByLabelText('Initial password'),'Synthetic secure password!');
+  await user.click(screen.getByRole('button',{name:'Create account'}));
+  expect((await screen.findByRole('status')).textContent).toContain('synthetic-user with role MANAGER');
+  expect(screen.queryByText('Synthetic secure password!')).toBeNull();
+});
+
+it('removes administration and credentials when provisioning discovers an expired session', async () => {
+  vi.stubGlobal('fetch',vi.fn(async (url:string) => {
+    if(url.endsWith('/csrf')) return Response.json({headerName:'X-CSRF-TOKEN',token:'synthetic-csrf'});
+    if(url.endsWith('/session')) return Response.json({login:'synthetic-admin',authorities:['ROLE_ADMIN']});
+    return new Response(null,{status:401});
+  }));
+  render(<AuthShell />); const user=userEvent.setup();
+  await screen.findByRole('heading',{name:'Create account'});
+  await user.type(screen.getByLabelText('Account login'),'synthetic-expired');
+  await user.type(screen.getByLabelText('Initial password'),'Synthetic secure password!');
+  await user.click(screen.getByRole('button',{name:'Create account'}));
+  await screen.findByRole('heading',{name:'Sign in'});
+  expect(screen.queryByLabelText('Initial password')).toBeNull();
+  expect(screen.queryByRole('heading',{name:'Create account'})).toBeNull();
+  expect((screen.getByLabelText('Password') as HTMLInputElement).value).toBe('');
+});

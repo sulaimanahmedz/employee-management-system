@@ -31,3 +31,8 @@
 - Frontend: tests/unit/<feature> and tests/integration/<feature>, separate from production sources.
 - Playwright: e2e/<feature> with named business suites and shared synthetic-data helpers in e2e/support. Keep per-test setup/cleanup isolated.
 - Report distinct E2E scenarios separately from browser/viewport executions. Responsive checks include 320px phones through desktop; never claim universal device compatibility from emulation alone.
+
+## Completion-first delivery (November 17, 2026)
+- Resolve unfinished in-scope work before selecting another feature. Daily implementation increments are not completed product features.
+- Call a feature complete only after its usable flow, permission/error cases, documentation, tests, coverage and real-backend E2E pass together and its PR is merged.
+- Fix failures in the same task where possible. Never conceal remaining failures or bypass a gate to claim there are no blockers.
