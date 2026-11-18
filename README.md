@@ -256,18 +256,20 @@ See [test organization](docs/test-organization.md) for separate unit, API, integ
 
 ### Authentication branch: local setup and limitations
 
-The unmerged `feature/auth-accounts` branch now has login/logout, CSRF-protected server
-sessions, an HR-only employee workspace and ADMIN-only account provisioning API. Main
-remains unchanged. Full role scopes, account lifecycle, reset, abuse controls and audit
-requirements are unfinished; do not deploy this branch.
+The `feature/auth-accounts` implementation includes login/logout, CSRF-protected server
+sessions, HR employee administration, explicit manager/employee read scopes and ADMIN account
+management. Validation and merge status are recorded in PR22. This is not an enterprise
+deployment release; MFA/SSO, migrations and operational readiness remain roadmap work.
 
 Supply explicit `EMS_BOOTSTRAP_LOGIN` and `EMS_BOOTSTRAP_PASSWORD` through your local
 secret environment to initialize an ADMIN in an empty account store. There are no default
 credentials. For local HTTP only, bind `SERVER_ADDRESS=127.0.0.1` and set
 `SESSION_COOKIE_SECURE=false`; keep the default Secure cookies for HTTPS. Remove bootstrap
 secrets after initial setup. Sign in through the UI; ADMIN cannot access the HR directory.
-Use the authenticated, CSRF-protected `POST /api/v1/admin/accounts` endpoint to provision an
-HR account. See [the permission matrix and remaining gates](docs/authentication-plan.md).
+Use Create account to provision an HR account. View accounts provides IDs for Manage existing
+account, where ADMIN can change role/active state, assign employee/team IDs or issue a reset
+token after independently verifying the recipient. The last active ADMIN cannot be disabled
+or demoted. See [the permission matrix and readiness requirements](docs/authentication-plan.md).
 
 Presentation runs require explicit `PRESENTATION_LOGIN` and `PRESENTATION_PASSWORD`; the
 launcher uses a disposable database and seeds through authenticated requests before the UI.
@@ -275,7 +277,7 @@ launcher uses a disposable database and seeds through authenticated requests bef
 The authentication branch now limits login attempts per normalized login for one minute,
 with bounded memory and concurrent password-check admission. Failed and limited attempts
 use the same message. This initial limiter is process-local; distributed controls, security
-auditing and the remaining account lifecycle/ownership work are still required before merge.
+monitoring and distributed enforcement remain operational readiness requirements.
 
 ### Authentication recovery validation (unmerged PR22)
 
@@ -291,8 +293,15 @@ Identity integration tests exercise actual container inactivity expiry and stale
 An ADMIN now sees **Create account** after sign-in. Enter the login, initial password and
 explicit role; EMPLOYEE is selected by default. Validation/conflict errors preserve login
 and role while clearing the password. The server enforces authorization and password rules.
-No invitation or password is sent. This screen creates accounts only; account editing,
-deactivation, password changes and recovery remain unfinished. ADMIN has no HR-data bypass.
+No invitation or password is sent. Manage existing account provides role/deactivation and
+explicit scope controls. Every authenticated user can change their own password using the
+current password. Password, access and scope changes revoke previous sessions at the next
+request. ADMIN has no HR-data bypass.
+
+For recovery, ADMIN issues a token with a15-minute expiry and hands it to the verified
+recipient outside the application. The recipient uses Reset password on the sign-in page.
+Tokens work once, are invalidated by reissuance/password/access/scope changes, and are stored
+only as hashes. Do not paste tokens into URLs, issue reports or logs. No email is sent.
 
 ### Review provisioned accounts (authentication branch, unmerged)
 ADMIN can select **View accounts** to load a directory of account IDs, logins and roles.

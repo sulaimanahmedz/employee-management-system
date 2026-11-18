@@ -1,5 +1,6 @@
 package com.ems.identity.service;
 
+import com.ems.identity.dto.SessionPrincipal;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,7 +26,7 @@ public class AccountAuthenticationProvider implements AuthenticationProvider {
                     .orElseThrow(() -> new BadCredentialsException("Invalid login or password"));
                 attempts.succeeded(login);
                 audit.accepted(identity.id());
-                return UsernamePasswordAuthenticationToken.authenticated(identity.login(), null,
+                return UsernamePasswordAuthenticationToken.authenticated(new SessionPrincipal(identity.id(), identity.login(), identity.securityVersion()), null,
                     List.of(new SimpleGrantedAuthority("ROLE_" + identity.role().name())));
             } finally {
                 attempts.release();

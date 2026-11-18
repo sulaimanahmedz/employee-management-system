@@ -59,7 +59,7 @@ public class AccountService {
         var account = accounts.findByLogin(normalize(login));
         boolean matches = passwords.matches(password, account.map(Account::getPasswordHash).orElse(missingAccountHash));
         if (!matches) return Optional.empty();
-        return account.map(AccountService::identity);
+        return account.filter(Account::isEnabled).map(AccountService::identity);
     }
 
     private static String normalize(String login) {
@@ -67,6 +67,6 @@ public class AccountService {
     }
 
     private static AccountIdentity identity(Account account) {
-        return new AccountIdentity(account.getId(), account.getLogin(), account.getRole());
+        return new AccountIdentity(account.getId(), account.getLogin(), account.getRole(), account.getSecurityVersion());
     }
 }

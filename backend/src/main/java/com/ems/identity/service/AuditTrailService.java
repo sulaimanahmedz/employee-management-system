@@ -1,0 +1,24 @@
+package com.ems.identity.service;
+import com.ems.identity.entity.SecurityEvent;
+import com.ems.identity.dto.SecurityEventView;
+import com.ems.identity.repository.SecurityEventRepository;
+import java.time.Instant;
+import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class AuditTrailService {
+    private final SecurityEventRepository events;
+    public AuditTrailService(SecurityEventRepository events) { this.events = events; }
+    @Transactional public void record(SecurityEvent.Action action, Long actor, Long subject) {
+        events.saveAndFlush(new SecurityEvent(Instant.now(), action, actor, subject));
+    }
+    @Transactional(readOnly = true) public List<SecurityEventView> list(int page) {
+        if (page < 0 || page > Integer.MAX_VALUE / 20) throw new IllegalArgumentException("Invalid audit page");
+        return events.findAll(PageRequest.of(page, 20, Sort.by("id").descending())).stream()
+            .map(e -> new SecurityEventView(e.getId(), e.getOccurredAt(), e.getAction(), e.getActorId(), e.getSubjectId())).toList();
+    }
+}

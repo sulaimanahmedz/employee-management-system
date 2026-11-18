@@ -15,7 +15,7 @@ class AccessAuditTest {
         Logger logger = (Logger) LoggerFactory.getLogger(AccessAuditService.class);
         var appender = new ListAppender<ILoggingEvent>(); appender.start(); logger.addAppender(appender);
         try {
-            var audit = new AccessAuditService();
+            var audit = new AccessAuditService(org.mockito.Mockito.mock(com.ems.identity.service.AuditTrailService.class));
             audit.authenticationRequired(); audit.denied();
             assertEquals(List.of("event=ACCESS_AUTHENTICATION_REQUIRED", "event=ACCESS_DENIED"),
                 appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList());

@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 class SessionServicesTest {
     @Test void providerReturnsNoCredentialsAndRejectsInvalidCredentials() {
         var accounts = mock(AccountService.class);
-        var provider = new AccountAuthenticationProvider(accounts, new LoginAttemptService(), new AuthenticationAuditService());
+        var provider = new AccountAuthenticationProvider(accounts, new LoginAttemptService(), new AuthenticationAuditService(org.mockito.Mockito.mock(com.ems.identity.service.AuditTrailService.class)));
         assertTrue(provider.supports(UsernamePasswordAuthenticationToken.class));
         assertFalse(provider.supports(TestingAuthenticationToken.class));
         when(accounts.verifyCredentials("synthetic", "password")).thenReturn(Optional.of(new AccountIdentity(1L, "synthetic", AccountRole.HR)));

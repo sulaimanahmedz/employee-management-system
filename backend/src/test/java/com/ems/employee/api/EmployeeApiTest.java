@@ -27,7 +27,7 @@ class EmployeeApiTest {
     @Autowired WebApplicationContext webContext;
     @BeforeEach void authenticateHrFixture() {
         mvc = MockMvcBuilders.webAppContextSetup(webContext).apply(springSecurity())
-            .defaultRequest(get("/").with(user("synthetic-hr").roles("HR")).with(csrf())).build();
+            .defaultRequest(get("/").with(com.ems.identity.api.IdentityFixture.role(webContext,"HR")).with(csrf())).build();
     }
 
     @Autowired ObjectMapper json;

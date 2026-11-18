@@ -23,6 +23,29 @@ public class Account {
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20)
     private AccountRole role;
 
+    @Column(nullable = false)
+    private boolean enabled = true;
+    @Column(nullable = false)
+    private long securityVersion;
+
+    @Column(length = 64, unique = true)
+    private String resetDigest;
+    private java.time.Instant resetExpiresAt;
+    public String getResetDigest() { return resetDigest; }
+    public java.time.Instant getResetExpiresAt() { return resetExpiresAt; }
+    public void issueReset(String digest, java.time.Instant expiry) { resetDigest = digest; resetExpiresAt = expiry; }
+    public void clearReset() { resetDigest = null; resetExpiresAt = null; }
+    @Column(unique = true)
+    private Long employeeId;
+    public Long getEmployeeId() { return employeeId; }
+    public void linkEmployee(Long id) { employeeId = id; securityVersion++; clearReset(); }
+    public boolean isEnabled() { return enabled; }
+    public long getSecurityVersion() { return securityVersion; }
+    public void changePassword(String hash) { passwordHash = hash; securityVersion++; clearReset(); }
+    public void changeAccess(AccountRole nextRole, boolean active) {
+        role = nextRole; enabled = active; securityVersion++; clearReset();
+    }
+
     protected Account() {}
 
     public Account(String login, String passwordHash, AccountRole role) {

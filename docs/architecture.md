@@ -116,3 +116,6 @@ events. No entity, DTO, repository, transaction, locking or role scope changes a
 RequestCacheConfiguration supplies a NullRequestCache bean in identity/service, explicitly
 injected into the security chain. This API has no saved-request redirect/replay workflow.
 CSRF sessions, session fixation protection and business transaction boundaries are unchanged.
+
+## Identity lifecycle and scope
+AccountLifecycleService serializes administrative state changes with ordered account locks and owns password/reset transactions. AccountScopeService validates employee IDs through EmployeeService and stores explicit manager grants; no controller uses another feature repository. SessionPrincipal carries an immutable persisted-version stamp; SessionRevocationFilter checks it before CSRF/authorization on each authenticated request. AuditTrailService persists fixed security events, joining lifecycle transactions. Controllers expose standalone validated DTOs only. Scoped profile routes grant no access to nested employee resources.

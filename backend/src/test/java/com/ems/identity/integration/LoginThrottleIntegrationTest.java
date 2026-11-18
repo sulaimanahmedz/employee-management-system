@@ -23,7 +23,7 @@ class LoginThrottleIntegrationTest {
     @Test void persistedAccountRecoversAfterWindowExpiryWithoutChangingItsPassword() {
         var identity = accounts.provision("synthetic-throttle", "Synthetic integration password!", AccountRole.HR);
         Clock clock = mock(Clock.class); when(clock.millis()).thenReturn(1000L);
-        var audit = spy(new AuthenticationAuditService());
+        var audit = spy(new AuthenticationAuditService(org.mockito.Mockito.mock(com.ems.identity.service.AuditTrailService.class)));
         var provider = new AccountAuthenticationProvider(accounts, new LoginAttemptService(clock), audit);
         for (int i = 0; i < 5; i++) assertThrows(BadCredentialsException.class,
             () -> provider.authenticate(UsernamePasswordAuthenticationToken.unauthenticated("synthetic-throttle", "wrong")));

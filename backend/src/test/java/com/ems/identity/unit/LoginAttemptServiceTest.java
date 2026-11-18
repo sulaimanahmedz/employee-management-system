@@ -67,7 +67,7 @@ class LoginAttemptServiceTest {
     @Test void providerSkipsHashWorkWhenLimitedAndReleasesOnUnexpectedFailure() {
         var accounts = mock(AccountService.class);
         var guard = new LoginAttemptService();
-        var provider = new AccountAuthenticationProvider(accounts, guard, new AuthenticationAuditService());
+        var provider = new AccountAuthenticationProvider(accounts, guard, new AuthenticationAuditService(org.mockito.Mockito.mock(com.ems.identity.service.AuditTrailService.class)));
         when(accounts.verifyCredentials("missing", "wrong")).thenReturn(Optional.empty());
         for (int i = 0; i < 6; i++) assertThrows(BadCredentialsException.class,
             () -> provider.authenticate(UsernamePasswordAuthenticationToken.unauthenticated("missing", "wrong")));

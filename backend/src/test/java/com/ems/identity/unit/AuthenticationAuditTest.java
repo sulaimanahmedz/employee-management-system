@@ -49,7 +49,7 @@ class AuthenticationAuditTest {
         Logger logger = (Logger) LoggerFactory.getLogger(AuthenticationAuditService.class);
         var appender = new ListAppender<ILoggingEvent>(); appender.start(); logger.addAppender(appender);
         try {
-            var audit = new AuthenticationAuditService();
+            var audit = new AuthenticationAuditService(org.mockito.Mockito.mock(com.ems.identity.service.AuditTrailService.class));
             audit.accepted(42L); audit.rejected(); audit.unavailable(); audit.sessionEstablished(); audit.logoutProcessed();
             assertEquals(java.util.List.of("event=AUTH_CREDENTIALS_ACCEPTED account_id=42",
                 "event=AUTH_CREDENTIALS_REJECTED", "event=AUTH_VERIFICATION_UNAVAILABLE",

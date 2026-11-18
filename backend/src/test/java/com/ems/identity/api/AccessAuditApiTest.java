@@ -22,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class AccessAuditApiTest {
     @Autowired MockMvc mvc;
+    @Autowired org.springframework.context.ApplicationContext context;
 
     @Test void anonymousAndCsrfRejectionsKeepEmptyErrorsAndNoRequestData() throws Exception {
         Logger logger = (Logger) LoggerFactory.getLogger(AccessAuditService.class);
@@ -43,10 +44,10 @@ class AccessAuditApiTest {
         Logger logger = (Logger) LoggerFactory.getLogger(AccessAuditService.class);
         var appender = new ListAppender<ILoggingEvent>(); appender.start(); logger.addAppender(appender);
         try {
-            mvc.perform(get("/api/v1/unassigned").with(user("untrusted\nprincipal").roles(role)))
+            mvc.perform(get("/api/v1/unassigned").with(IdentityFixture.role(context,role)))
                 .andExpect(status().isForbidden()).andExpect(content().string(""));
-            mvc.perform(get("/api/v1/auth/session").with(user("synthetic-user").roles(role)))
-                .andExpect(status().isOk()).andExpect(jsonPath("login").value("synthetic-user"));
+            mvc.perform(get("/api/v1/auth/session").with(IdentityFixture.role(context,role)))
+                .andExpect(status().isOk()).andExpect(jsonPath("login").value("fixture-"+role.toLowerCase()));
             assertEquals(1, appender.list.size());
             assertEquals("event=ACCESS_DENIED", appender.list.get(0).getFormattedMessage());
             assertNull(appender.list.get(0).getArgumentArray()); assertNull(appender.list.get(0).getThrowableProxy());

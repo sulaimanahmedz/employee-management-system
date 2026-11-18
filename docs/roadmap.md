@@ -391,3 +391,6 @@ in URLs. Unit/API, embedded-server, frontend unit/integration and real-backend b
 cover absent request-cache sessions, preserved CSRF/login, no redirect/replay and logout.
 All authentication lifecycle/ownership/reset and operational gates remain required before
 merge; exact validation results are recorded in PR22.
+
+## November 17 — Combined authentication completion work
+The auth branch adds password changes, account deactivation/role management, session revocation, manual single-use recovery, explicit account/employee/team scope and durable security records. See the current matrix in authentication-plan.md. Completion requires the combined gates and merge recorded in PR22; prior passing micro-increments are not completed authentication. MFA/SSO and operational readiness remain explicitly tracked separately.

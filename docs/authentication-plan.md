@@ -1,8 +1,36 @@
 # Next feature: authentication and roles
 
-Requested October 25, 2026. This is an implementation plan with partial session functionality on the unmerged authentication branch. Main remains unauthenticated; neither branch is ready for enterprise deployment.
+Requested October 25, 2026. This records the authentication implementation and its validation requirements on the feature branch. Main remains unauthenticated; neither branch is ready for enterprise deployment.
 
 Deliver coherent `feature/auth-*` increments after the pending testing foundations. Use Spring Security, separate identity feature/layer packages and the existing React architecture. All merge, coverage, architecture and real-backend E2E gates remain mandatory.
+
+## Current combined lifecycle implementation — November 17, 2026
+
+The authentication branch now contains the combined lifecycle implementation below. Earlier dated sections are historical increment records, not current completion claims. Final validation and merge status are recorded in PR22; source changes alone do not establish completion. Enterprise deployment is not authorized or ready.
+
+| Endpoint group | ADMIN | HR | MANAGER | EMPLOYEE | Anonymous |
+| --- | --- | --- | --- | --- | --- |
+| Health, CSRF, login, token redemption | Available | Available | Available | Available | Available |
+| Own session/profile/password/logout | Own account | Own account | Own account | Own account | Denied |
+| Account directory/provision/access/scope/reset issuance/audit | Allowed | Denied | Denied | Denied | Denied |
+| Employee collection/directory/profile and nested document/leave/onboarding/history | Denied | Allowed | Denied | Denied | Denied |
+| GET self/employees and self/employees/{id} | Denied | Denied | Linked employee plus explicit team IDs | Linked employee only | Denied |
+| Other paths or self-service mutations | Denied | Denied | Denied | Denied | Denied |
+
+Unsafe requests always require CSRF, including anonymous reset redemption. Permission is enforced by the backend on every request. ADMIN has no implicit HR privilege. No team/employee relationship means no scoped access; department labels never grant access. Scoped access exposes only the existing employee profile fields, not documents or other nested resources. Employee links are unique per account relationship. Scope changes revoke sessions; role changes away from MANAGER remove team assignments so later promotion cannot restore stale grants. Deleted employee IDs return404 and are not reassigned by this API.
+
+Account passwords use the established BCrypt policy. Password changes require the current password. Every authenticated request verifies a persisted account ID/login/security-version stamp; password, role, enabled-state and scope changes increment the stamp. Disabled or stale sessions receive401 and are invalidated. Requests already admitted before a concurrent change can finish; revocation applies at the next authentication check. Admin mutations lock accounts in ID order and cannot disable/demote the final active administrator.
+
+Recovery is an administrator-assisted, identity-verified manual handoff. The application sends no messages. An active account receives a cryptographically random256-bit token, displayed once in the admin UI response, stored only as SHA-256, expiring in15minutes. Reissuance invalidates the previous token. Redemption locks the account, enforces the password policy, consumes the token and revokes old sessions atomically. Expired/invalid/reused tokens receive a generic error. A bounded shared reset-attempt bucket limits online attempts; operational tuning and rate-limit monitoring remain required before production. Tokens/passwords never enter URLs, browser storage or audit payloads.
+
+Security events are persisted with fixed action codes, timestamp and optional numeric actor/subject IDs. Lifecycle writes and audit events share a transaction. Only ADMIN can read paginated audit records; there is no update/delete audit API. Credential/session/access-rejection events also persist, with unknown identities left unattributed. Failed persistence of session creation invalidates that new session. This is application append-only storage, not tamper-proof external archival.
+
+### Explicit operational readiness work
+- MFA: not implemented; assess phishing-resistant WebAuthn and recovery enrollment before privileged production use.
+- Enterprise SSO: not implemented; assess OIDC/SAML provider trust, provisioning/deprovisioning, role mapping and local recovery policy.
+- PostgreSQL/versioned migrations, tested backup/restore, multi-instance session storage/revocation, TLS/reverse-proxy configuration, audit retention/export/tamper controls, monitoring and load/failure exercises remain operational roadmap items.
+- Current H2 schema update is for local development/testing; do not treat it as a production migration strategy. Secure cookies default on; only isolated loopback HTTP tests opt out.
+- The presentation helper remains on its separate preview branch. No presentation seeding or default credentials have been enabled here.
 
 ## Proposed least-privilege roles
 

@@ -1,0 +1,64 @@
+import {render,screen,fireEvent,waitFor,cleanup} from '@testing-library/react';
+import {afterEach,beforeEach,describe,it,expect,vi} from 'vitest';
+import AccountSecurity from '../../../src/features/identity/AccountSecurity';
+import PasswordReset from '../../../src/features/identity/PasswordReset';
+import AccountManagement from '../../../src/features/identity/AccountManagement';
+import ScopedEmployees from '../../../src/features/identity/ScopedEmployees';
+import {api,setCsrfToken} from '../../../src/lib/api';
+import {announceSignOut} from '../../../src/features/identity/sessionEvents';
+vi.mock('../../../src/lib/api',()=>({api:vi.fn(),setCsrfToken:vi.fn()}));
+vi.mock('../../../src/features/identity/sessionEvents',()=>({announceSignOut:vi.fn()}));
+const request=vi.mocked(api);
+const fill=(label:string,value:string)=>fireEvent.change(screen.getByLabelText(label),{target:{value}});
+beforeEach(()=>vi.resetAllMocks());afterEach(cleanup);
+describe('Account lifecycle forms',()=>{
+ it('changes password, clears secrets and broadcasts sign-out; failure is retryable',async()=>{
+  render(<AccountSecurity/>);request.mockRejectedValueOnce(new Error('rejected'));
+  fill('Current password','wrong');fill('New password','Synthetic replacement!');
+  fireEvent.click(screen.getByRole('button',{name:'Change password'}));
+  expect((await screen.findByRole('alert')).textContent).toContain('Password change failed');
+  expect((screen.getByLabelText('Current password') as HTMLInputElement).value).toBe(String(''));expect((screen.getByLabelText('New password') as HTMLInputElement).value).toBe(String(''));
+  request.mockResolvedValueOnce(undefined);fill('Current password','Synthetic current!');fill('New password','Synthetic replacement!');
+  fireEvent.click(screen.getByRole('button',{name:'Change password'}));
+  await waitFor(()=>expect(announceSignOut).toHaveBeenCalledOnce());
+  expect(request).toHaveBeenLastCalledWith('/api/v1/auth/password',{method:'POST',body:JSON.stringify({currentPassword:'Synthetic current!',newPassword:'Synthetic replacement!'})});
+ });
+ it('obtains CSRF before reset and clears token on success or failure',async()=>{
+  render(<PasswordReset/>);request.mockRejectedValueOnce(new Error('network'));
+  fill('Reset token','invalid');fill('Replacement password','Synthetic replacement!');fireEvent.click(screen.getByRole('button',{name:'Reset password'}));
+  expect((await screen.findByRole('status')).textContent).toContain('Unable to reset');expect((screen.getByLabelText('Reset token') as HTMLInputElement).value).toBe(String(''));
+  request.mockResolvedValueOnce({headerName:'X-CSRF-TOKEN',token:'csrf'}).mockResolvedValueOnce(undefined);
+  fill('Reset token','single-use');fill('Replacement password','Synthetic replacement!');fireEvent.click(screen.getByRole('button',{name:'Reset password'}));
+  await waitFor(()=>expect(screen.getByRole('status').textContent).toContain('Password reset.'));
+  expect(setCsrfToken).toHaveBeenCalledWith({headerName:'X-CSRF-TOKEN',token:'csrf'});
+  expect(request).toHaveBeenLastCalledWith('/api/v1/auth/reset',{method:'POST',body:JSON.stringify({token:'single-use',newPassword:'Synthetic replacement!'})});
+ });
+ it('manages role, active state, explicit scope, reset handoff and audit records',async()=>{
+  render(<AccountManagement/>);expect((screen.getByRole('button',{name:'Load account'}) as HTMLButtonElement).disabled).toBe(true);
+  fill('Account to manage','5');request.mockResolvedValueOnce({id:5,login:'synthetic',role:'MANAGER',enabled:true}).mockResolvedValueOnce({employeeId:null,teamEmployeeIds:[]});
+  fireEvent.click(screen.getByRole('button',{name:'Load account'}));await screen.findByText('Managing synthetic');
+  fill('Assigned role','EMPLOYEE');fireEvent.click(screen.getByLabelText('Account active'));request.mockResolvedValueOnce(undefined);
+  fireEvent.click(screen.getByRole('button',{name:'Save account access'}));await screen.findByText('Account access saved. Existing sessions are revoked.');
+  expect(request).toHaveBeenLastCalledWith('/api/v1/admin/accounts/5',{method:'PUT',body:JSON.stringify({role:'EMPLOYEE',enabled:false})});
+  fill('Linked employee ID','12');fill('Team employee IDs','13,14');request.mockResolvedValueOnce(undefined);
+  fireEvent.click(screen.getByRole('button',{name:'Save employee scope'}));await screen.findByText('Employee scope saved. Existing sessions are revoked.');
+  expect(request).toHaveBeenLastCalledWith('/api/v1/admin/accounts/5/scope',{method:'PUT',body:JSON.stringify({employeeId:12,teamEmployeeIds:[13,14]})});
+  request.mockResolvedValueOnce({token:'temporary',expiresAt:'2026-11-17T12:00:00Z'});fireEvent.click(screen.getByRole('button',{name:'Issue reset token'}));
+  expect(((await screen.findByLabelText('Issued reset token')) as HTMLInputElement).value).toBe('temporary');fireEvent.click(screen.getByRole('button',{name:'Dismiss reset token'}));expect(screen.queryByLabelText('Issued reset token')).toBeNull();
+  request.mockResolvedValueOnce([{id:1,occurredAt:'today',action:'PASSWORD_RESET',actorId:null,subjectId:null},{id:2,occurredAt:'today',action:'LINK_CHANGED',actorId:1,subjectId:5}]);
+  fireEvent.click(screen.getByRole('button',{name:'View recent security events'}));await screen.findByText(/PASSWORD_RESET — actor unattributed — subject unattributed/);expect(screen.getByText(/LINK_CHANGED — actor 1 — subject 5/)).toBeTruthy();
+  fill('Account to manage','6');request.mockResolvedValueOnce({id:6,login:'linked',role:'EMPLOYEE',enabled:true}).mockResolvedValueOnce({employeeId:17,teamEmployeeIds:[]});
+  fireEvent.click(screen.getByRole('button',{name:'Load account'}));await screen.findByText('Managing linked');expect((screen.getByLabelText('Linked employee ID') as HTMLInputElement).value).toBe(String(17));
+  fill('Linked employee ID','');request.mockResolvedValueOnce(undefined);fireEvent.click(screen.getByRole('button',{name:'Save employee scope'}));await screen.findByText('Employee scope saved. Existing sessions are revoked.');
+  expect(request).toHaveBeenLastCalledWith('/api/v1/admin/accounts/6/scope',{method:'PUT',body:JSON.stringify({employeeId:null,teamEmployeeIds:[]})});
+  request.mockRejectedValueOnce(new Error('denied'));fireEvent.click(screen.getByRole('button',{name:'Load account'}));await screen.findByText(/Account operation failed/);expect(screen.queryByText('Managing linked')).toBeNull();
+ });
+ it('only presents explicitly assigned profiles and clears stale detail on errors',async()=>{
+  render(<ScopedEmployees/>);expect(screen.getByRole('heading',{name:'Access denied'})).toBeTruthy();
+  request.mockResolvedValueOnce([8]);fireEvent.click(screen.getByRole('button',{name:'View assigned employees'}));await screen.findByRole('heading',{name:'My employee access'});
+  request.mockResolvedValueOnce({id:8,firstName:'Synthetic',lastName:'Person',email:'person@example.com',department:'QA',jobTitle:'Analyst',status:'ACTIVE'});
+  fireEvent.click(screen.getByRole('button',{name:'View employee 8'}));await screen.findByRole('heading',{name:'Synthetic Person'});
+  request.mockRejectedValueOnce(new Error('denied'));fireEvent.click(screen.getByRole('button',{name:'View employee 8'}));await screen.findByRole('alert');expect(screen.queryByText('person@example.com')).toBeNull();
+  request.mockResolvedValueOnce([]);fireEvent.click(screen.getByRole('button',{name:'View assigned employees'}));await screen.findByRole('heading',{name:'Access denied'});
+ });
+});
