@@ -182,7 +182,7 @@ The goal is an employee management application spanning the employee lifecycle.
 - [ ] Production database migrations and database integration tests.
 - [ ] Actor-attributed auditability and secure data handling.
 - [ ] Concurrency, observability, backup/restore and operational recovery tests.
-The current unauthenticated development application is not enterprise-ready.
+The development application is not enterprise-ready. The current authentication scope is described in authentication-plan.md; dated increments below retain their original validation history.
 
 ### October 25, 2026 — Responsive document actions and organized tests (feature branch)
 - Moved document action buttons below names and metadata, with wrapping long names and touch-sized controls.

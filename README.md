@@ -28,7 +28,7 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:5173. Vite forwards `/api` requests to http://localhost:8080. Add employees using the form; the directory starts empty and retains records across backend restarts in `backend/data/`.
+Before starting the backend, supply explicit bootstrap credentials and loopback HTTP settings as described in **Authentication: local setup and limitations** below. Open http://localhost:5173 and sign in. Vite forwards `/api` requests to http://localhost:8080. An ADMIN provisions an HR account; HR can add employees. The directory starts empty and retains records across backend restarts in `backend/data/`.
 
 ## Project structure
 
@@ -110,7 +110,7 @@ Backend test source covers the employee lifecycle, full profile updates, invalid
 
 ## Next development
 
-See [architecture](docs/architecture.md) and [roadmap](docs/roadmap.md). This initial codebase is for local development: authentication and authorization are not implemented yet. Add access controls, migrations and a production database before hosting employee data publicly.
+See [architecture](docs/architecture.md) and [roadmap](docs/roadmap.md). This initial codebase is for local development: authentication and role authorization are implemented, but production migrations, MFA/SSO decisions and operational readiness remain required before deployment.
 
 ## Profile feature validation
 
@@ -254,7 +254,7 @@ Playwright has **4 distinct E2E scenarios in 4 named suites**, executed at 5 Chr
 
 See [test organization](docs/test-organization.md) for separate unit, API, integration, architecture and E2E locations. The profile duplicate-section bug is fixed with distinct feature component keys. Coverage gates remain unchanged; feature PRs stay unmerged until all required gates pass.
 
-### Authentication branch: local setup and limitations
+### Authentication: local setup and limitations
 
 The `feature/auth-accounts` implementation includes login/logout, CSRF-protected server
 sessions, HR employee administration, explicit manager/employee read scopes and ADMIN account
@@ -310,7 +310,7 @@ refreshes page zero, including accounts created since the last read. Failed read
 stale results and permit retry. No passwords or password hashes are returned.
 `GET /api/v1/admin/accounts?page=0` is ADMIN-only; page must be nonnegative with a
 signed-integer ten-row offset. Other roles receive 403 and anonymous clients receive 401.
-This is read-only review; editing, deactivation and recovery remain unfinished.
+The directory is read-only; use Manage existing account for access changes, deactivation, employee/team scope and recovery.
 
 ### Credential verification audit records (authentication branch, unmerged)
 The identity audit logger emits fixed credential accepted/rejected/unavailable event codes.
@@ -326,8 +326,7 @@ query parameters cannot select another account. Passwords/hashes are never retur
 Anonymous or no-longer-stored identities receive401. The UI clears stale data on failed
 refresh, ignores late unmounted responses and removes the profile on session expiry/logout.
 This account identity view does not expose employee records or enable scoped employee/team
-access. Account mutation, password changes, revocation, reset and complete audit infrastructure
-remain unfinished. Exact validation results and source/base SHAs are recorded in PR22.
+access. The subsequent combined lifecycle implementation adds account mutation, password changes, revocation, reset and persisted security events; production audit operations remain roadmap work. Exact validation results and source/base SHAs are recorded in PR22.
 
 ### November 15 — Session lifecycle audit boundaries (PR22, unmerged)
 Successful form-login handling now records AUTH_SESSION_ESTABLISHED after Spring Security
@@ -352,8 +351,7 @@ invalidate a valid session or expand role permissions. Unit/API, real-container 
 frontend recovery tests plus a real-backend browser scenario verify these boundaries.
 These records are application logs, without actor correlation, durable storage or
 retention/access/volume controls. They do not cover controller-generated401 responses,
-all application errors or account mutations. Full identity lifecycle, ownership,
-revocation/reset and enterprise readiness remain unfinished. Validation is recorded in PR22.
+all application errors or account mutations. The subsequent combined lifecycle implementation adds identity lifecycle, explicit ownership and revocation/reset. Enterprise readiness remains separate. Validation is recorded in PR22.
 
 ### November 17 — Disable saved-request caching (PR22, unmerged)
 The API-driven login uses204 responses and explicit React session loading, not redirects.

@@ -30,7 +30,7 @@ Security events are persisted with fixed action codes, timestamp and optional nu
 - Enterprise SSO: not implemented; assess OIDC/SAML provider trust, provisioning/deprovisioning, role mapping and local recovery policy.
 - PostgreSQL/versioned migrations, tested backup/restore, multi-instance session storage/revocation, TLS/reverse-proxy configuration, audit retention/export/tamper controls, monitoring and load/failure exercises remain operational roadmap items.
 - Current H2 schema update is for local development/testing; do not treat it as a production migration strategy. Secure cookies default on; only isolated loopback HTTP tests opt out.
-- The presentation helper remains on its separate preview branch. No presentation seeding or default credentials have been enabled here.
+- The presentation helper uses Java Faker with an explicitly opted-in disposable database, random bootstrap credentials and an authenticated HR session. Normal startup never seeds employees and has no default credentials.
 
 ## Proposed least-privilege roles
 

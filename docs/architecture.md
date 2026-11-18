@@ -20,7 +20,7 @@ Request validation uses Jakarta Validation. Errors follow Spring problem details
 
 ## Extension points
 
-- Identity and access: implement authentication and role-based authorization across all employee endpoints.
+- Identity and access: extend the enforced role/scoped model with MFA/SSO and operational identity controls.
 - Organization: replace department text with department and reporting-line relationships.
 - Employee lifecycle: add onboarding, employment history and audited status transitions.
 - Attendance and leave: create separate feature modules with their own business rules.
