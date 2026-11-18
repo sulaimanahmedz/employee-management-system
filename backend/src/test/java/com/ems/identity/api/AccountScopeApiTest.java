@@ -24,6 +24,10 @@ class AccountScopeApiTest {
   var admin=IdentityFixture.role(context,"ADMIN");
   mvc.perform(put(scope).with(admin).with(csrf()).contentType("application/json").content("{\"employeeId\":"+employee.id()+",\"teamEmployeeIds\":[]}")).andExpect(status().isOk()).andExpect(jsonPath("$.employeeId").value(employee.id()));
   mvc.perform(get(scope).with(admin)).andExpect(status().isOk());
+  for (String invalid : new String[]{"{\"employeeId\":1.5,\"teamEmployeeIds\":[]}","{\"employeeId\":null,\"teamEmployeeIds\":[1.5]}"}) {
+   mvc.perform(put(scope).with(admin).with(csrf()).contentType("application/json").content(invalid)).andExpect(status().isBadRequest());
+   mvc.perform(get(scope).with(admin)).andExpect(status().isOk()).andExpect(jsonPath("$.employeeId").value(employee.id()));
+  }
   mvc.perform(get("/api/v1/admin/accounts/"+owner.id()).with(admin)).andExpect(status().isOk()).andExpect(jsonPath("$.enabled").value(true));
   mvc.perform(post("/api/v1/auth/reset").with(csrf()).contentType("application/json").content("{\"token\":\"invalid\",\"newPassword\":\"short\"}")).andExpect(status().isBadRequest());
   mvc.perform(put(scope).with(admin).with(csrf()).contentType("application/json").content("{\"employeeId\":-1,\"teamEmployeeIds\":[null]}")).andExpect(status().isBadRequest());

@@ -9,6 +9,9 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: update
+  jackson:
+    deserialization:
+      accept-float-as-int: false
   mvc:
     problemdetails:
       enabled: true
