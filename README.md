@@ -1,5 +1,8 @@
 # Employee Management System
 
+> Current status (November 19, 2026): authentication lifecycle and scoped authorization merged in PR #22 on November 18 (`38c83dc7d4487bdd6e8c9c1b6cf257d533047674`). Dated entries below describe historical development states, not current merge blockers. MFA/SSO and production operational readiness remain roadmap work.
+
+
 A foundation for a full employee management application: employee profiles, organization structure, onboarding, attendance, leave, and administrative workflows.
 
 ## Technology
@@ -363,3 +366,8 @@ in URLs. Unit/API, embedded-server, frontend unit/integration and real-backend b
 cover absent request-cache sessions, preserved CSRF/login, no redirect/replay and logout.
 All authentication lifecycle/ownership/reset and operational gates remain required before
 merge; exact validation results are recorded in PR22.
+
+## Administrative security event review
+ADMIN can select **View recent security events**, then **Older security events** or **Newer security events** to browse twenty-record pages. Event IDs, UTC timestamps, fixed actions and numeric actor/subject IDs are shown; no credentials or reset tokens are displayed. Refresh returns to the newest page. Failed reads clear stale records; Retry repeats the failed page. Session expiry removes the protected workspace.
+
+Pages use the existing descending-ID offset API. Concurrent events can shift page boundaries; this is an operational review, not a frozen export or tamper-evident compliance archive. A full twenty-record page may be followed by an empty page. Use Newer or refresh to return. Other roles cannot read these events.

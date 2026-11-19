@@ -1,5 +1,8 @@
 # Product roadmap
 
+> Current status (November 19, 2026): authentication lifecycle and scoped authorization merged in PR #22 on November 18 (`38c83dc7d4487bdd6e8c9c1b6cf257d533047674`). Dated entries below describe historical development states, not current merge blockers. MFA/SSO and production operational readiness remain roadmap work.
+
+
 The goal is an employee management application spanning the employee lifecycle.
 
 ## Foundation (this initial codebase)
@@ -394,3 +397,9 @@ merge; exact validation results are recorded in PR22.
 
 ## November 17 — Combined authentication completion work
 The auth branch adds password changes, account deactivation/role management, session revocation, manual single-use recovery, explicit account/employee/team scope and durable security records. See the current matrix in authentication-plan.md. Completion requires the combined gates and merge recorded in PR22; prior passing micro-increments are not completed authentication. MFA/SSO and operational readiness remain explicitly tracked separately.
+
+## November 19 — Security event review
+- Add administrator navigation through existing twenty-record security-event pages, with explicit IDs, empty states, retry and refresh.
+- Clear stale records on failed requests and abort/ignore reads after unmount or session expiry.
+- Validate persistence ordering/page bounds, role restrictions, real-client expiry and real-backend browser navigation/recovery at five widths.
+- No schema, backend production permissions or dependency changes. Validation and merge status are recorded in this feature PR. Immutable retention, actor enrichment, exports and production audit operations remain separate readiness work.

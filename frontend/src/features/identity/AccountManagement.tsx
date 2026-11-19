@@ -1,14 +1,13 @@
 import {useState} from 'react';
 import {api} from '../../lib/api';
+import SecurityEventReview from './SecurityEventReview';
 type Access={id:number;login:string;role:string;enabled:boolean};
 type Scope={employeeId:number|null;teamEmployeeIds:number[]};
-type Event={id:number;occurredAt:string;action:string;actorId:number|null;subjectId:number|null};
 export default function AccountManagement() {
   const [id,setId]=useState('');const [account,setAccount]=useState<Access|null>(null);
   const [role,setRole]=useState('EMPLOYEE');const [enabled,setEnabled]=useState(true);
   const [employee,setEmployee]=useState('');const [team,setTeam]=useState('');
   const [ticket,setTicket]=useState('');const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
-  const [events,setEvents]=useState<Event[]>([]);
   async function run(action:()=>Promise<void>) {
     setBusy(true);setMessage('');setTicket('');
     try {await action();} catch {setMessage('Account operation failed. Check the account, permissions and submitted values.');}
@@ -34,8 +33,7 @@ export default function AccountManagement() {
       <button disabled={busy} onClick={()=>void run(async()=>{const result=await api<{token:string;expiresAt:string}>(`/api/v1/admin/accounts/${account.id}/reset`,{method:'POST'});setTicket(result.token);setMessage(`Single-use reset token expires at ${result.expiresAt}. Verify the recipient before manual handoff.`);})}>Issue reset token</button>
     </>}
     {ticket&&<div><label>Issued reset token<input readOnly value={ticket}/></label><button onClick={()=>setTicket('')}>Dismiss reset token</button></div>}
-    <button disabled={busy} onClick={()=>void run(async()=>{setEvents([]);setEvents(await api<Event[]>('/api/v1/admin/audit'));})}>View recent security events</button>
-    <ul>{events.map(e=><li key={e.id}>{e.occurredAt} — {e.action} — actor {e.actorId??'unattributed'} — subject {e.subjectId??'unattributed'}</li>)}</ul>
+    <SecurityEventReview/>
     {message&&<p role="status">{message}</p>}
   </section>;
 }

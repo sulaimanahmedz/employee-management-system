@@ -1,5 +1,8 @@
 # Architecture
 
+> Current status (November 19, 2026): authentication lifecycle and scoped authorization merged in PR #22 on November 18 (`38c83dc7d4487bdd6e8c9c1b6cf257d533047674`). Dated entries below describe historical development states, not current merge blockers. MFA/SSO and production operational readiness remain roadmap work.
+
+
 The repository is a monorepo with separately built frontend and backend applications. The backend is a modular monolith: business features own their controllers, services, DTOs, entities and repositories. Features are `employee`, `document`, `leave`, `onboarding` and `employmenthistory`. Each owns `controller`, `service`, `repository`, `entity` and `dto` subpackages. Add future modules alongside these; create layers only when needed. Shared exception translation lives in `com.ems.common.exception`.
 
 Controllers handle HTTP concerns and delegate to services. Services own business rules and transactions; repositories provide Spring Data persistence without a redundant DAO layer. Entities accept domain values, never API DTOs. Response DTO factories may map entities, but entities cannot depend back on DTOs. Use constructor injection and explicit project imports. Integration tests live under their owning feature; `PackageArchitectureTest` checks package placement and project dependency directions without adding a dependency.
@@ -119,3 +122,6 @@ CSRF sessions, session fixation protection and business transaction boundaries a
 
 ## Identity lifecycle and scope
 AccountLifecycleService serializes administrative state changes with ordered account locks and owns password/reset transactions. AccountScopeService validates employee IDs through EmployeeService and stores explicit manager grants; no controller uses another feature repository. SessionPrincipal carries an immutable persisted-version stamp; SessionRevocationFilter checks it before CSRF/authorization on each authenticated request. AuditTrailService persists fixed security events, joining lifecycle transactions. Controllers expose standalone validated DTOs only. Scoped profile routes grant no access to nested employee resources.
+
+## Security event review
+SecurityEventReview owns read-only pagination/loading/error state separately from account mutations. It calls the existing ADMIN-only AuditTrailService list endpoint through the shared client, aborts on unmount and ignores late completions. Twenty-row descending-ID offset pages are live, not snapshot-isolated. Backend layers, permissions, transactions and persistence remain unchanged.
