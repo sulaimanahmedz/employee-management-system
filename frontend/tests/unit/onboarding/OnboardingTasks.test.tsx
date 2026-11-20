@@ -75,3 +75,14 @@ it('navigates pages and recovers when the last page disappears', async () => {
   const user = userEvent.setup(); render(<OnboardingTasks employeeId={7} />); await screen.findByText('Prepare laptop'); await user.click(button('Next tasks')); await screen.findByText('Page 2 of 2'); await user.click(button('Previous tasks')); await screen.findByText('Page 1 of 2'); shrinking = true;
   await user.click(button('Next tasks')); await waitFor(() => expect(call).toHaveBeenLastCalledWith('/api/v1/employees/7/onboarding-tasks?page=0', expect.any(Object))); await screen.findByText('Prepare laptop'); expect(screen.queryByRole('navigation')).toBeNull();
 });
+it('applies trimmed literal search at page zero, preserves other filters and clears only search', async () => {
+  call.mockResolvedValue({...populated,totalPages:2});const user=userEvent.setup();render(<OnboardingTasks employeeId={7}/>);await screen.findByText('Prepare laptop');
+  await user.click(button('Next tasks'));await waitFor(()=>expect(call).toHaveBeenLastCalledWith(expect.stringContaining('page=1'),expect.any(Object)));
+  change('Search task title or owner','  IT %_  ');expect(call.mock.calls.at(-1)![0]).not.toContain('&q=');
+  await user.click(button('Search tasks'));await waitFor(()=>expect(call).toHaveBeenLastCalledWith('/api/v1/employees/7/onboarding-tasks?page=0&q=IT%20%25_',expect.any(Object)));
+  await user.selectOptions(screen.getByLabelText('Show onboarding tasks'),'false');change('Tasks due on or before','2026-12-01');
+  await waitFor(()=>expect(call).toHaveBeenLastCalledWith('/api/v1/employees/7/onboarding-tasks?page=0&completed=false&dueBy=2026-12-01&q=IT%20%25_',expect.any(Object)));
+  await user.click(button('Clear task search'));await waitFor(()=>expect(call).toHaveBeenLastCalledWith('/api/v1/employees/7/onboarding-tasks?page=0&completed=false&dueBy=2026-12-01',expect.any(Object)));expect((screen.getByLabelText('Search task title or owner') as HTMLInputElement).value).toBe('');
+  call.mockResolvedValue(empty);await user.selectOptions(screen.getByLabelText('Show onboarding tasks'),'');await user.click(button('Clear due-date filter'));await screen.findByText('No onboarding tasks yet.');
+  change('Search task title or owner','missing');await user.click(button('Search tasks'));await screen.findByText('No tasks match these filters.');expect(screen.getByText('Task title or owner contains “missing”.')).toBeTruthy();
+});

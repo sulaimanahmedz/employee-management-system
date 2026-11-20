@@ -40,3 +40,14 @@ it('retains the task draft after a backend save error', async () => {
   expect((screen.getByLabelText('Task title') as HTMLInputElement).value).toBe('Laptop');
   expect((screen.getByLabelText('Owner label') as HTMLInputElement).value).toBe('IT');
 });
+it('retries a failed literal search through the HTTP client without losing the applied term',async()=>{
+ let fail=true;
+ vi.stubGlobal('fetch',vi.fn(async(input:string)=>{
+  requests.push(input);
+  if(input.includes('&q=')&&fail)return Response.json({detail:'Synthetic search unavailable'},{status:503});
+  return Response.json({items:[],page:0,totalPages:0,totalElements:0,totalTasks:3,completedTasks:1});
+ }));
+ render(<OnboardingTasks employeeId={7}/>);const user=userEvent.setup();await screen.findByText('No onboarding tasks yet.');
+ await user.type(screen.getByLabelText('Search task title or owner'),'People & IT');await user.click(screen.getByRole('button',{name:'Search tasks'}));await screen.findByRole('alert');
+ expect(requests.at(-1)).toContain('&q=People%20%26%20IT');fail=false;await user.click(screen.getByRole('button',{name:'Refresh checklist'}));await screen.findByText('No tasks match these filters.');expect(screen.getByText('1 of 3 tasks complete · 0 matching tasks')).toBeTruthy();expect(requests.at(-1)).toContain('&q=People%20%26%20IT');
+});
