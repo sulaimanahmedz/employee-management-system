@@ -125,3 +125,6 @@ AccountLifecycleService serializes administrative state changes with ordered acc
 
 ## Security event review
 SecurityEventReview owns read-only pagination/loading/error state separately from account mutations. It calls the existing ADMIN-only AuditTrailService list endpoint through the shared client, aborts on unmount and ignores late completions. Twenty-row descending-ID offset pages are live, not snapshot-isolated. Backend layers, permissions, transactions and persistence remain unchanged.
+
+## Onboarding search
+OnboardingTaskController accepts an optional q parameter and delegates to OnboardingTaskService. The service normalizes and bounds the term and combines literal Criteria locate predicates for title/owner with employee, completion and deadline predicates before paging. Overall completion counts remain employee-wide. No schema, role, transaction or locking changes. The frontend separates draft and applied search, resetting pagination only when applied/cleared.

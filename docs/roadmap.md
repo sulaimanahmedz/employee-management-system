@@ -403,3 +403,6 @@ The auth branch adds password changes, account deactivation/role management, ses
 - Clear stale records on failed requests and abort/ignore reads after unmount or session expiry.
 - Validate persistence ordering/page bounds, role restrictions, real-client expiry and real-backend browser navigation/recovery at five widths.
 - No schema, backend production permissions or dependency changes. Validation and merge status are recorded in this feature PR. Immutable retention, actor enrichment, exports and production audit operations remain separate readiness work.
+
+## November 20 — Onboarding task search
+Adds the previously deferred title/owner-label search, combined with completion/deadline filters before pagination. Includes literal wildcard behavior, length validation, employee isolation, role boundaries, global progress preservation, edit refresh and transport recovery. Validation and exact commit/base SHAs are recorded in its feature PR. No identity-based task assignment or notification is implied.

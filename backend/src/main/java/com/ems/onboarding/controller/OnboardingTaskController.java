@@ -19,8 +19,9 @@ public class OnboardingTaskController {
     @GetMapping
     public OnboardingTaskResponse.Page list(@PathVariable Long employeeId, @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) Boolean completed,
-            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate dueBy) {
-        return service.list(employeeId, page, completed, dueBy);
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate dueBy,
+            @RequestParam(required = false) String q) {
+        return service.list(employeeId, page, completed, dueBy, q);
     }
     @GetMapping("/{taskId}")
     public OnboardingTaskResponse get(@PathVariable Long employeeId, @PathVariable Long taskId) {

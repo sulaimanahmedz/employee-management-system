@@ -6,6 +6,8 @@ interface TaskPage { items: Task[]; page: number; totalPages: number; totalEleme
 
 export default function OnboardingTasks({ employeeId }: { employeeId: number }) {
   const [data, setData] = useState<TaskPage | null>(null);
+  const [searchDraft, setSearchDraft] = useState('');
+  const [search, setSearch] = useState('');
   const [dueBy, setDueBy] = useState('');
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(0);
@@ -22,7 +24,7 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
   const path = `/api/v1/employees/${employeeId}/onboarding-tasks`;
   useEffect(() => {
     const controller = new AbortController(); setLoading(true); setError('');
-    api<TaskPage>(`${path}?page=${page}${filter ? `&completed=${filter}` : ''}${dueBy ? `&dueBy=${encodeURIComponent(dueBy)}` : ''}`, { signal: controller.signal }).then(result => {
+    api<TaskPage>(`${path}?page=${page}${filter ? `&completed=${filter}` : ''}${dueBy ? `&dueBy=${encodeURIComponent(dueBy)}` : ''}${search ? `&q=${encodeURIComponent(search)}` : ''}`, { signal: controller.signal }).then(result => {
       if (controller.signal.aborted) return;
       const last = Math.max(0, result.totalPages - 1);
       if (page > last) { setPage(last); return; }
@@ -31,7 +33,7 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
       if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Unable to load checklist.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [path, page, reload, filter, dueBy]);
+  }, [path, page, reload, filter, dueBy, search]);
   async function mutate(action: () => Promise<unknown>, message: string, added = false) {
     if (pending.current) return;
     pending.current = true; setBusy(true); setError(''); setNotice('');
@@ -62,6 +64,14 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
     <p className="muted">Owner labels identify who should handle a task; they do not grant access or send notifications.</p>
     {error && <p role="alert" className="error">{error} <button type="button" disabled={busy || loading} onClick={() => setReload(value => value + 1)}>Refresh checklist</button></p>}
     {notice && <p role="status">{notice}</p>}
+    <form aria-label="Search onboarding tasks" onSubmit={event => { event.preventDefault(); setSearch(searchDraft.trim()); setPage(0); setReload(value => value + 1); }}>
+      <label>Search task title or owner<input maxLength={150} disabled={busy || editing !== null} value={searchDraft} onChange={event => setSearchDraft(event.target.value)} /></label>
+      <div className="filter-actions">
+        <button type="submit" disabled={busy || editing !== null}>Search tasks</button>
+        <button type="button" disabled={busy || editing !== null} onClick={() => { setSearchDraft(''); setSearch(''); setPage(0); }}>Clear task search</button>
+      </div>
+    </form>
+    {search && <p role="status">Task title or owner contains “{search}”.</p>}
     <label>Show onboarding tasks
       <select value={filter} disabled={busy || editing !== null} onChange={event => { setFilter(event.target.value); setPage(0); }}>
         <option value="">All tasks</option><option value="false">Pending tasks</option><option value="true">Completed tasks</option>
@@ -74,7 +84,7 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
       <button type="button" disabled={busy || editing !== null} onClick={() => { setDueBy(''); setPage(0); }}>Clear due-date filter</button></>}
     {loading ? <p role="status">Loading checklist…</p> : data && <>
       <p>{data.completedTasks} of {data.totalTasks} tasks complete · {data.totalElements} matching tasks</p>
-      {data.totalElements === 0 ? <p>{filter || dueBy ? 'No tasks match these filters.' : 'No onboarding tasks yet.'}</p> : <ul>{data.items.map(task => <li key={task.id}>
+      {data.totalElements === 0 ? <p>{filter || dueBy || search ? 'No tasks match these filters.' : 'No onboarding tasks yet.'}</p> : <ul>{data.items.map(task => <li key={task.id}>
         <strong>{task.title}</strong> — {task.owner} — {task.completed ? 'Complete' : 'Pending'}
         {task.dueOn && <> — Due <time dateTime={task.dueOn}>{task.dueOn}</time></>}{' '}
         <button type="button" disabled={busy} aria-label={`Edit task ${task.title}`} onClick={() => beginEdit(task)}>Edit</button>{' '}

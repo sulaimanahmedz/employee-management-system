@@ -175,4 +175,13 @@ class OnboardingTaskApiTest {
         mvc.perform(get(path(other) + "?dueBy=2026-12-01")).andExpect(jsonPath("$.totalElements").value(0));
         mvc.perform(get(path(id) + "?dueBy=invalid")).andExpect(status().isBadRequest());
     }
+    @Test void searchValidatesLengthAndCombinesOwnerAndTitleWithoutChangingAccess() throws Exception {
+        long id=employee("search-api@example.com");add(id,"Prepare laptop");
+        mvc.perform(get(path(id)).param("q","  LAPTOP  ")).andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get(path(id)).param("q","it team").param("completed","false")).andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1));
+        mvc.perform(get(path(id)).param("q","x".repeat(151))).andExpect(status().isBadRequest());
+        for (String role : new String[]{"ADMIN","MANAGER","EMPLOYEE"})
+            mvc.perform(get(path(id)).param("q","laptop").with(com.ems.identity.api.IdentityFixture.role(webContext,role))).andExpect(status().isForbidden());
+        mvc.perform(get(path(id)).with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.anonymous()).param("q","laptop")).andExpect(status().isUnauthorized());
+    }
 }
