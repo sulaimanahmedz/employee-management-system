@@ -66,7 +66,7 @@ export default function OnboardingTasks({ employeeId }: { employeeId: number }) 
     {notice && <p role="status">{notice}</p>}
     <form aria-label="Search onboarding tasks" onSubmit={event => { event.preventDefault(); setSearch(searchDraft.trim()); setPage(0); setReload(value => value + 1); }}>
       <label>Search task title or owner<input maxLength={150} disabled={busy || editing !== null} value={searchDraft} onChange={event => setSearchDraft(event.target.value)} /></label>
-      <div className="document-filter-actions">
+      <div className="filter-actions">
         <button type="submit" disabled={busy || editing !== null}>Search tasks</button>
         <button type="button" disabled={busy || editing !== null} onClick={() => { setSearchDraft(''); setSearch(''); setPage(0); }}>Clear task search</button>
       </div>

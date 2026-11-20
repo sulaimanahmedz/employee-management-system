@@ -14,10 +14,10 @@ test('adds, edits and completes a task through the real application', async ({ p
     await page.getByRole('button', { name: 'View profile for Synthetic Playwright' }).click();
     const section = page.getByRole('region', { name: 'Onboarding checklist' });
     await expect(section.getByText('No onboarding tasks yet.')).toBeVisible();
-    await section.getByLabel('Task title').fill(' ');
+    await section.getByLabel('Task title', { exact: true }).fill(' ');
     await section.getByLabel('Owner label').fill('IT');
     await expect(section.getByRole('button', { name: 'Add task', exact: true })).toBeDisabled();
-    await section.getByLabel('Task title').fill('Prepare laptop');
+    await section.getByLabel('Task title', { exact: true }).fill('Prepare laptop');
     await section.getByRole('button', { name: 'Add task', exact: true }).click();
     await expect(section.getByText('Prepare laptop', { exact: true })).toBeVisible();
     await section.getByRole('button', { name: 'Edit task Prepare laptop' }).click();
