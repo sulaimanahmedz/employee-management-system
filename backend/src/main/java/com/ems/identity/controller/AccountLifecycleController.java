@@ -7,6 +7,7 @@ import com.ems.identity.dto.ResetInput;
 import com.ems.identity.dto.ResetTicket;
 import com.ems.identity.dto.SessionPrincipal;
 import com.ems.identity.dto.SecurityEventView;
+import com.ems.identity.entity.SecurityEvent;
 import com.ems.identity.service.AccountLifecycleService;
 import com.ems.identity.service.AuditTrailService;
 import jakarta.validation.Valid;
@@ -47,7 +48,8 @@ public class AccountLifecycleController {
     @PostMapping("/api/v1/auth/reset") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reset(@Valid @RequestBody ResetInput input) { accounts.reset(input.token(),input.newPassword()); }
     @GetMapping("/api/v1/admin/audit")
-    public List<SecurityEventView> events(@RequestParam(defaultValue="0") int page) { return audit.list(page); }
+    public List<SecurityEventView> events(@RequestParam(defaultValue="0") int page,
+            @RequestParam(required=false) SecurityEvent.Action action) { return audit.list(page, action); }
     @ExceptionHandler({IllegalArgumentException.class,BadCredentialsException.class})
     public ProblemDetail invalid(RuntimeException error) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,"Unable to complete account operation");

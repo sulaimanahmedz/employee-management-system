@@ -128,3 +128,6 @@ SecurityEventReview owns read-only pagination/loading/error state separately fro
 
 ## Onboarding search
 OnboardingTaskController accepts an optional q parameter and delegates to OnboardingTaskService. The service normalizes and bounds the term and combines literal Criteria locate predicates for title/owner with employee, completion and deadline predicates before paging. Overall completion counts remain employee-wide. No schema, role, transaction or locking changes. The frontend separates draft and applied search, resetting pagination only when applied/cleared.
+
+## Security event action filter
+AccountLifecycleController binds an optional SecurityEvent.Action and delegates to AuditTrailService. The service keeps page validation and chooses the repository action query before descending-ID pagination. DTO projection and read-only transaction boundaries are unchanged. SecurityEventReview retains the selected action through paging/retry and resets page zero on selection. No schema, permission or dependency changes.

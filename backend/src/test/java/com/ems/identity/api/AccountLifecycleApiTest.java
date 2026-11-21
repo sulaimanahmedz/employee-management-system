@@ -75,4 +75,16 @@ class AccountLifecycleApiTest {
         mvc.perform(get("/api/v1/admin/audit")).andExpect(status().isUnauthorized());
         mvc.perform(post("/api/v1/auth/password").with(csrf()).contentType("application/json").content("{}")).andExpect(status().isUnauthorized());
     }
+    @Test void auditActionFilterRejectsUnknownValuesAndKeepsEveryRoleBoundary() throws Exception {
+        accounts.provision("filter-admin",PASSWORD,AccountRole.ADMIN);var admin=login("filter-admin",PASSWORD);
+        mvc.perform(get("/api/v1/admin/audit").session(admin).param("action","CREDENTIALS_ACCEPTED"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$[0].action").value("CREDENTIALS_ACCEPTED"));
+        mvc.perform(get("/api/v1/admin/audit").session(admin).param("action","UNKNOWN")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/admin/audit").session(admin).param("action","PASSWORD_RESET").param("page","-1")).andExpect(status().isBadRequest());
+        for(var role:new AccountRole[]{AccountRole.HR,AccountRole.MANAGER,AccountRole.EMPLOYEE}) {
+            accounts.provision("filter-"+role,PASSWORD,role);
+            mvc.perform(get("/api/v1/admin/audit").session(login("filter-"+role,PASSWORD)).param("action","PASSWORD_RESET")).andExpect(status().isForbidden());
+        }
+        mvc.perform(get("/api/v1/admin/audit").param("action","PASSWORD_RESET")).andExpect(status().isUnauthorized());
+    }
 }
