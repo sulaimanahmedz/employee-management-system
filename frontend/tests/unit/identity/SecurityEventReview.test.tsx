@@ -36,3 +36,14 @@ it.each([true,false])('aborts on unmount and ignores late completion (success=%s
  const signal=vi.mocked(api).mock.calls[0][1]!.signal!;view.unmount();expect(signal.aborted).toBe(true);
  await act(async()=>{if(success)resolve(events);else reject(new Error('aborted'));});expect(screen.queryByRole('listitem')).toBeNull();expect(screen.queryByRole('alert')).toBeNull();
 });
+it('applies an action at page zero, retains it through paging and retry, then clears it',async()=>{
+ const user=userEvent.setup();vi.mocked(api).mockResolvedValue(events);render(<SecurityEventReview/>);
+ await user.click(screen.getByRole('button',{name:'View recent security events'}));await screen.findByText(/Event 40:/);
+ await user.click(screen.getByRole('button',{name:'Older security events'}));await screen.findByText('Security events · Page 2');
+ await user.selectOptions(screen.getByLabelText('Security event action'),'PASSWORD_RESET');await screen.findByText('Security events · Page 1');
+ expect(vi.mocked(api).mock.lastCall![0]).toBe('/api/v1/admin/audit?page=0&action=PASSWORD_RESET');
+ vi.mocked(api).mockRejectedValueOnce(new Error('offline'));await user.click(screen.getByRole('button',{name:'Older security events'}));await screen.findByRole('alert');
+ await user.click(screen.getByRole('button',{name:'Retry security events'}));await screen.findByText('Security events · Page 2');expect(vi.mocked(api).mock.lastCall![0]).toBe('/api/v1/admin/audit?page=1&action=PASSWORD_RESET');
+ await user.click(screen.getByRole('button',{name:'View recent security events'}));await screen.findByText('Security events · Page 1');expect(vi.mocked(api).mock.lastCall![0]).toBe('/api/v1/admin/audit?page=0&action=PASSWORD_RESET');
+ await user.selectOptions(screen.getByLabelText('Security event action'),'');await screen.findByText(/Event 40:/);expect(vi.mocked(api).mock.lastCall![0]).toBe('/api/v1/admin/audit?page=0');
+});

@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 type SecurityEvent = { id: number; occurredAt: string; action: string; actorId: number | null; subjectId: number | null };
 
 export default function SecurityEventReview() {
+  const [action, setAction] = useState('');
   const [request, setRequest] = useState<{ page: number } | null>(null);
   const [events, setEvents] = useState<SecurityEvent[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -13,15 +14,19 @@ export default function SecurityEventReview() {
     let current = true;
     const controller = new AbortController();
     setLoading(true); setEvents(null); setError('');
-    void api<SecurityEvent[]>(`/api/v1/admin/audit?page=${request.page}`, { signal: controller.signal })
+    void api<SecurityEvent[]>(`/api/v1/admin/audit?page=${request.page}${action ? `&action=${action}` : ''}`, { signal: controller.signal })
       .then(value => { if (current) setEvents(value); })
       .catch(() => { if (current) setError('Unable to load security events. Please retry.'); })
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; controller.abort(); };
-  }, [request]);
+  }, [request, action]);
   return <section aria-label="Security event review">
     <h2>Security events</h2>
     <p>Newest first, up to 20 events per page. New activity can shift pages; refresh to see the latest events.</p>
+    <label>Security event action<select disabled={loading} value={action} onChange={event => { setAction(event.target.value); setRequest({ page: 0 }); }}>
+      <option value="">All actions</option>
+      {['PASSWORD_CHANGED','ACCOUNT_ACCESS_CHANGED','RESET_ISSUED','PASSWORD_RESET','LINK_CHANGED','TEAM_CHANGED','CREDENTIALS_ACCEPTED','CREDENTIALS_REJECTED','VERIFICATION_UNAVAILABLE','SESSION_ESTABLISHED','LOGOUT_PROCESSED','AUTHENTICATION_REQUIRED','ACCESS_DENIED'].map(value => <option key={value} value={value}>{value.replaceAll('_',' ')}</option>)}
+    </select></label>
     <button disabled={loading} onClick={() => setRequest({ page: 0 })}>View recent security events</button>
     {loading && <p role="status">Loading security events…</p>}
     {error && <><p role="alert">{error}</p><button onClick={() => setRequest({ page: request!.page })}>Retry security events</button></>}

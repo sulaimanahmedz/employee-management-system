@@ -406,3 +406,6 @@ The auth branch adds password changes, account deactivation/role management, ses
 
 ## November 20 — Onboarding task search
 Adds the previously deferred title/owner-label search, combined with completion/deadline filters before pagination. Includes literal wildcard behavior, length validation, employee isolation, role boundaries, global progress preservation, edit refresh and transport recovery. Validation and exact commit/base SHAs are recorded in its feature PR. No identity-based task assignment or notification is implied.
+
+## November 21 — Security event action review
+Adds administrator action filtering before pagination, retained through refresh/retry, with All actions reset. Unit/API/persistence/frontend integration and real-backend browser suites cover filtered pages, empty results, invalid actions, role boundaries and responsive interaction. Validation/merge evidence is recorded in the feature PR. Retention, exports, tamper evidence and broader operational readiness remain separate requirements.

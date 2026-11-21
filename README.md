@@ -374,3 +374,6 @@ Pages use the existing descending-ID offset API. Concurrent events can shift pag
 
 ## Onboarding task search
 HR can search task titles or owner labels within an employee profile. Enter up to 150 characters and choose Search tasks; Clear task search keeps the completion/deadline filters. Matching is trimmed, case-insensitive literal substring search (percent and underscore are ordinary characters), applied before pagination. Search resets to the first page, survives mutations/retries and leaves global completion totals unchanged. Owner labels do not grant permissions.
+
+## Filter security events by action
+ADMIN can select Security event action to review a specific fixed event category. Selection resets to the newest matching page; paging, refresh and retry retain the category. Select All actions to clear it. The API accepts optional action enum values at GET /api/v1/admin/audit; unknown values return 400, and non-administrators remain denied. Filtering occurs before twenty-record pagination. This is still live offset review, not a frozen or tamper-evident audit export.
