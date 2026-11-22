@@ -409,3 +409,6 @@ Adds the previously deferred title/owner-label search, combined with completion/
 
 ## November 21 — Security event action review
 Adds administrator action filtering before pagination, retained through refresh/retry, with All actions reset. Unit/API/persistence/frontend integration and real-backend browser suites cover filtered pages, empty results, invalid actions, role boundaries and responsive interaction. Validation/merge evidence is recorded in the feature PR. Retention, exports, tamper evidence and broader operational readiness remain separate requirements.
+
+## November 22 — Account role review
+Adds ADMIN-only account directory filtering by assigned role before pagination, with matching counts, page reset and retained refresh/error recovery. Unit, API, persistence and frontend integration tests cover role isolation, bounds, invalid values and permissions; real-backend E2E covers pagination, filter changes and connectivity recovery at five widths. Validation/merge evidence belongs in the feature PR. Deactivated accounts remain included; this does not implement active-session inventory, access certification or enterprise SSO.

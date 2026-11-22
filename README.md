@@ -377,3 +377,8 @@ HR can search task titles or owner labels within an employee profile. Enter up t
 
 ## Filter security events by action
 ADMIN can select Security event action to review a specific fixed event category. Selection resets to the newest matching page; paging, refresh and retry retain the category. Select All actions to clear it. The API accepts optional action enum values at GET /api/v1/admin/audit; unknown values return 400, and non-administrators remain denied. Filtering occurs before twenty-record pagination. This is still live offset review, not a frozen or tamper-evident audit export.
+
+## Review accounts by role
+ADMIN can select **Filter accounts by role** to review ADMIN, HR, MANAGER or EMPLOYEE accounts. Selection loads the first matching page; Previous/Next and View accounts retain the selected role. View accounts also refreshes after an error. All roles resets the filter. Counts describe matching accounts, including deactivated accounts that still hold the selected role; this is not an active-session inventory.
+
+`GET /api/v1/admin/accounts` accepts optional `role=ADMIN|HR|MANAGER|EMPLOYEE`, filtered before ten-row ID-ascending pagination. Unknown roles return 400. Omit the parameter for the existing directory. Authorization remains ADMIN-only; filtering cannot grant access or change roles. Concurrent changes can shift live page boundaries.

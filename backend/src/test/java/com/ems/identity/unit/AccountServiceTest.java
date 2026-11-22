@@ -66,15 +66,15 @@ class AccountServiceTest {
         var page = org.springframework.data.domain.PageRequest.of(1, 10, org.springframework.data.domain.Sort.by("id").ascending());
         when(accounts.findAll(page)).thenReturn(new org.springframework.data.domain.PageImpl<>(
             java.util.List.of(new Account("synthetic-list", "secret-hash", AccountRole.HR)), page, 11));
-        var result = service.list(1);
+        var result = service.list(1, null);
         assertEquals(1, result.page());
         assertEquals(2, result.totalPages());
         assertEquals(11, result.totalElements());
         assertEquals("synthetic-list", result.items().get(0).login());
         assertEquals(AccountRole.HR, result.items().get(0).role());
         assertFalse(result.toString().contains("secret-hash"));
-        assertThrows(IllegalArgumentException.class, () -> service.list(-1));
-        assertThrows(IllegalArgumentException.class, () -> service.list(Integer.MAX_VALUE / 10 + 1));
+        assertThrows(IllegalArgumentException.class, () -> service.list(-1, null));
+        assertThrows(IllegalArgumentException.class, () -> service.list(Integer.MAX_VALUE / 10 + 1, null));
         verify(accounts).findAll(page);
         verifyNoMoreInteractions(accounts);
     }
@@ -87,4 +87,15 @@ class AccountServiceTest {
         assertTrue(service.findIdentity("missing").isEmpty());
         verifyNoInteractions(passwords);
     }
+    @Test void filteredDirectoryUsesBoundedOrderAndPropagatesStorageFailure() {
+        assertThrows(IllegalArgumentException.class, () -> service.list(-1, AccountRole.HR));
+        verifyNoInteractions(accounts);
+        var pageable = org.springframework.data.domain.PageRequest.of(2, 10, org.springframework.data.domain.Sort.by("id").ascending());
+        var failure = new IllegalStateException("storage unavailable");
+        when(accounts.findByRole(AccountRole.HR, pageable)).thenThrow(failure);
+        assertSame(failure, assertThrows(IllegalStateException.class, () -> service.list(2, AccountRole.HR)));
+        verify(accounts).findByRole(AccountRole.HR, pageable);
+        verifyNoMoreInteractions(accounts);
+    }
+
 }

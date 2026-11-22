@@ -171,4 +171,22 @@ class SessionApiTest {
         mvc.perform(get("/api/v1/auth/profile").session(session)).andExpect(status().isOk());
     }
 
+    @Test void filteredDirectoryRejectsUnknownRolesAndPreservesAuthorization() throws Exception {
+        mvc.perform(get("/api/v1/admin/accounts?role=HR")).andExpect(status().isUnauthorized());
+        for (AccountRole role : AccountRole.values()) {
+            var session = login("test-" + role.name().toLowerCase());
+            mvc.perform(get("/api/v1/admin/accounts?role=HR").session(session))
+                .andExpect(status().is(role == AccountRole.ADMIN ? 200 : 403));
+            if (role == AccountRole.ADMIN) {
+                for (AccountRole filter : AccountRole.values()) {
+                    mvc.perform(get("/api/v1/admin/accounts").param("role", filter.name()).session(session))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(1))
+                        .andExpect(jsonPath("$.items[0].role").value(filter.name()));
+                }
+                mvc.perform(get("/api/v1/admin/accounts?role=OWNER").session(session)).andExpect(status().isBadRequest());
+                mvc.perform(get("/api/v1/admin/accounts?role=HR&page=-1").session(session)).andExpect(status().isBadRequest());
+            }
+        }
+    }
+
 }
