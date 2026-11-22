@@ -1,6 +1,7 @@
 package com.ems.identity.controller;
 
 import com.ems.identity.dto.AccountIdentity;
+import com.ems.identity.entity.AccountRole;
 import com.ems.identity.dto.AccountInput;
 import com.ems.identity.dto.AccountPage;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,8 +32,8 @@ public class AccountController {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Account login is unavailable");
     }
     @GetMapping
-    public AccountPage list(@RequestParam(defaultValue = "0") int page) {
-        return accounts.list(page);
+    public AccountPage list(@RequestParam(defaultValue = "0") int page, @RequestParam(required = false) AccountRole role) {
+        return accounts.list(page, role);
     }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public AccountIdentity create(@Valid @RequestBody AccountInput input) {

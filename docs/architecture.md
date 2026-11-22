@@ -131,3 +131,6 @@ OnboardingTaskController accepts an optional q parameter and delegates to Onboar
 
 ## Security event action filter
 AccountLifecycleController binds an optional SecurityEvent.Action and delegates to AuditTrailService. The service keeps page validation and chooses the repository action query before descending-ID pagination. DTO projection and read-only transaction boundaries are unchanged. SecurityEventReview retains the selected action through paging/retry and resets page zero on selection. No schema, permission or dependency changes.
+
+## Account role review
+AccountController binds the optional AccountRole enum and delegates to AccountService. The service validates page bounds and chooses an ordered repository role query before DTO projection. Read-only transactions, role-change locking and server authorization remain unchanged. AccountDirectory resets page zero on selection and retains the role during navigation and refresh/error recovery. No schema or dependency changes.

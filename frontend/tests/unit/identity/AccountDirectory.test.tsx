@@ -44,3 +44,23 @@ it.each([true,false])('aborts on unmount and ignores late completion (success=%s
   await act(async()=>{if(success)resolve(first);else reject(new Error('aborted'));});
   expect(screen.queryByText('synthetic-first')).toBeNull(); expect(screen.queryByRole('alert')).toBeNull();
 });
+
+it('resets page on role selection and retains it while paging and refreshing', async () => {
+  vi.mocked(api).mockResolvedValue(first);
+  render(<AccountDirectory />); const user=userEvent.setup();
+  await user.selectOptions(screen.getByLabelText('Filter accounts by role'), 'HR');
+  await screen.findByText('synthetic-first');
+  expect(vi.mocked(api).mock.calls.at(-1)![0]).toBe('/api/v1/admin/accounts?page=0&role=HR');
+  vi.mocked(api).mockResolvedValue({...first,page:1});
+  await user.click(screen.getByRole('button',{name:'Next accounts'}));
+  await screen.findByText('11 accounts · Page 2 of 2');
+  expect(vi.mocked(api).mock.calls.at(-1)![0]).toBe('/api/v1/admin/accounts?page=1&role=HR');
+  vi.mocked(api).mockResolvedValue(first);
+  await user.click(screen.getByRole('button',{name:'Previous accounts'}));
+  await screen.findByText('11 accounts · Page 1 of 2');
+  expect(vi.mocked(api).mock.calls.at(-1)![0]).toBe('/api/v1/admin/accounts?page=0&role=HR');
+  await user.click(screen.getByRole('button',{name:'View accounts'}));
+  expect(vi.mocked(api).mock.calls.at(-1)![0]).toBe('/api/v1/admin/accounts?page=0&role=HR');
+  await user.selectOptions(screen.getByLabelText('Filter accounts by role'), '');
+  expect(vi.mocked(api).mock.calls.at(-1)![0]).toBe('/api/v1/admin/accounts?page=0');
+});

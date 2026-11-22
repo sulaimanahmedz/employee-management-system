@@ -55,14 +55,14 @@ class AccountPersistenceIntegrationTest {
             ids.add(accounts.saveAndFlush(new Account("synthetic-page-" + i, "not-a-real-hash", AccountRole.EMPLOYEE)).getId());
         }
         entityManager.clear();
-        var first = service.list(0);
-        var second = service.list(1);
+        var first = service.list(0, null);
+        var second = service.list(1, null);
         assertEquals(ids.subList(0, 10), first.items().stream().map(com.ems.identity.dto.AccountIdentity::id).toList());
         assertEquals(ids.subList(10, 12), second.items().stream().map(com.ems.identity.dto.AccountIdentity::id).toList());
         assertEquals(12, first.totalElements());
         assertEquals(2, second.totalPages());
-        assertTrue(service.list(2).items().isEmpty());
-        assertTrue(service.list(Integer.MAX_VALUE / 10).items().isEmpty());
+        assertTrue(service.list(2, null).items().isEmpty());
+        assertTrue(service.list(Integer.MAX_VALUE / 10, null).items().isEmpty());
         assertFalse(first.toString().contains("not-a-real-hash"));
     }
     @Test void profileReflectsStoredIdentityAndRemoval() {
@@ -72,4 +72,22 @@ class AccountPersistenceIntegrationTest {
         accounts.deleteById(identity.id()); accounts.flush(); entityManager.clear();
         assertTrue(service.findIdentity("synthetic-profile").isEmpty());
     }
+    @Test void roleFilteringPrecedesPaginationAndCountsOnlyMatchingAccounts() {
+        var ids = new java.util.ArrayList<Long>();
+        for (int i = 0; i < 12; i++) {
+            accounts.saveAndFlush(new Account("other-" + i, "synthetic-hash", AccountRole.EMPLOYEE));
+            ids.add(accounts.saveAndFlush(new Account("hr-" + i, "synthetic-hash", AccountRole.HR)).getId());
+        }
+        entityManager.clear();
+        var first = service.list(0, AccountRole.HR);
+        var second = service.list(1, AccountRole.HR);
+        assertEquals(ids.subList(0, 10), first.items().stream().map(com.ems.identity.dto.AccountIdentity::id).toList());
+        assertEquals(ids.subList(10, 12), second.items().stream().map(com.ems.identity.dto.AccountIdentity::id).toList());
+        assertEquals(12, first.totalElements()); assertEquals(2, first.totalPages());
+        assertTrue(first.items().stream().allMatch(a -> a.role() == AccountRole.HR));
+        assertTrue(service.list(2, AccountRole.HR).items().isEmpty());
+        assertEquals(0, service.list(0, AccountRole.MANAGER).totalElements());
+        assertEquals(24, service.list(0, null).totalElements());
+    }
+
 }

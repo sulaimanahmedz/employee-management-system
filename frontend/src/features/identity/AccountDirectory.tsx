@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 type AccountPage = { items: { id: number; login: string; role: string }[]; page: number; totalPages: number; totalElements: number };
 
 export default function AccountDirectory() {
+  const [role, setRole] = useState('');
   const [request, setRequest] = useState<{ page: number } | null>(null);
   const [data, setData] = useState<AccountPage | null>(null);
   const [error, setError] = useState('');
@@ -13,15 +14,21 @@ export default function AccountDirectory() {
     let current = true;
     const controller = new AbortController();
     setLoading(true); setError(''); setData(null);
-    void api<AccountPage>(`/api/v1/admin/accounts?page=${request.page}`, { signal: controller.signal })
+    void api<AccountPage>(`/api/v1/admin/accounts?page=${request.page}${role ? `&role=${role}` : ''}`, { signal: controller.signal })
       .then(result => { if (current) setData(result); })
       .catch(() => { if (current) setError('Unable to load accounts. Please retry.'); })
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; controller.abort(); };
-  }, [request]);
+  }, [request, role]);
   return <section aria-label="Account directory">
     <h2>Account directory</h2>
     <p>Review account logins and assigned roles. Passwords are never displayed.</p>
+    <label>Filter accounts by role
+      <select value={role} disabled={loading} onChange={event => { setRole(event.target.value); setRequest({ page: 0 }); }}>
+        <option value="">All roles</option>
+        {['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'].map(value => <option key={value} value={value}>{value}</option>)}
+      </select>
+    </label>
     <button type="button" disabled={loading} onClick={() => setRequest({ page: 0 })}>View accounts</button>
     {loading && <p role="status">Loading accounts…</p>}
     {error && <p role="alert">{error}</p>}

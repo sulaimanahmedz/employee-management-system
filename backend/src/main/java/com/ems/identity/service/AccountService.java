@@ -45,11 +45,12 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public AccountPage list(int page) {
+    public AccountPage list(int page, AccountRole role) {
         if (page < 0 || page > Integer.MAX_VALUE / 10) {
             throw new IllegalArgumentException("Account page must be nonnegative and its offset fit a signed integer");
         }
-        var result = accounts.findAll(PageRequest.of(page, 10, Sort.by("id").ascending()));
+        var pageable = PageRequest.of(page, 10, Sort.by("id").ascending());
+        var result = role == null ? accounts.findAll(pageable) : accounts.findByRole(role, pageable);
         return new AccountPage(result.map(AccountService::identity).getContent(), page,
             result.getTotalPages(), result.getTotalElements());
     }
