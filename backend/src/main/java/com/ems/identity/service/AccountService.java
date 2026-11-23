@@ -1,6 +1,7 @@
 package com.ems.identity.service;
 
 import com.ems.identity.dto.AccountIdentity;
+import com.ems.identity.dto.AccountDirectoryEntry;
 import com.ems.identity.dto.AccountPage;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -51,7 +52,7 @@ public class AccountService {
         }
         var pageable = PageRequest.of(page, 10, Sort.by("id").ascending());
         var result = role == null ? accounts.findAll(pageable) : accounts.findByRole(role, pageable);
-        return new AccountPage(result.map(AccountService::identity).getContent(), page,
+        return new AccountPage(result.map(account -> new AccountDirectoryEntry(account.getId(), account.getLogin(), account.getRole(), account.isEnabled())).getContent(), page,
             result.getTotalPages(), result.getTotalElements());
     }
 

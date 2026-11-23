@@ -38,3 +38,22 @@ it('retains the role query through failed reads and refresh recovery',async()=>{
   expect(queries).toEqual(['/api/v1/admin/accounts?page=0&role=MANAGER','/api/v1/admin/accounts?page=0&role=MANAGER']);
   expect((screen.getByLabelText('Filter accounts by role') as HTMLSelectElement).value).toBe('MANAGER');
 });
+
+it('refreshes access status and clears stale status on a failed read',async()=>{
+  let enabled=true;let failed=false;
+  vi.stubGlobal('fetch',vi.fn(async(url:string)=>{
+    if(url.endsWith('/csrf'))return Response.json({headerName:'X-CSRF-TOKEN',token:'synthetic-csrf'});
+    if(url.endsWith('/session'))return Response.json({login:'synthetic-admin',authorities:['ROLE_ADMIN']});
+    return failed ? new Response(null,{status:503}) : Response.json({items:[{id:9,login:'status-user',role:'HR',enabled}],page:0,totalPages:1,totalElements:1});
+  }));
+  render(<AuthShell/>);const user=userEvent.setup();
+  await user.click(await screen.findByRole('button',{name:'View accounts'}));
+  await screen.findByText(/— Active/);
+  enabled=false;await user.click(screen.getByRole('button',{name:'View accounts'}));
+  await screen.findByText(/— Deactivated/);
+  failed=true;await user.click(screen.getByRole('button',{name:'View accounts'}));
+  await screen.findByText('Unable to load accounts. Please retry.');
+  expect(screen.queryByText(/— Deactivated/)).toBeNull();
+  failed=false;enabled=true;await user.click(screen.getByRole('button',{name:'View accounts'}));
+  await screen.findByText(/— Active/);
+});

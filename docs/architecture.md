@@ -134,3 +134,6 @@ AccountLifecycleController binds an optional SecurityEvent.Action and delegates 
 
 ## Account role review
 AccountController binds the optional AccountRole enum and delegates to AccountService. The service validates page bounds and chooses an ordered repository role query before DTO projection. Read-only transactions, role-change locking and server authorization remain unchanged. AccountDirectory resets page zero on selection and retains the role during navigation and refresh/error recovery. No schema or dependency changes.
+
+## Account status review
+AccountPage now contains AccountDirectoryEntry DTOs with the stored enabled flag, projected in AccountService's read-only directory transaction. AccountIdentity remains unchanged for authentication, provisioning and self-profile. No entity depends on DTOs; controllers, repositories, permissions, locks and schema are unchanged. AccountDirectory renders the flag as Active/Deactivated and uses existing refresh/error cleanup behavior.
