@@ -13,8 +13,12 @@ test.describe('Administrative account status review',()=>{
   const response=await context.request.post('/api/v1/admin/accounts',{headers:{[csrf.headerName]:csrf.token},data:{login,password:process.env.EMS_E2E_PASSWORD!,role:'HR'}});
   expect(response.status()).toBe(201);const account=await response.json();
   async function findAccount(){
-   await directory.getByRole('button',{name:'View accounts'}).click();
-   await expect(directory.getByText(/Page 1 of/)).toBeVisible();
+   const [refreshed]=await Promise.all([page.waitForResponse(response=>response.url().includes('/api/v1/admin/accounts?page=0')),directory.getByRole('button',{name:'View accounts'}).click()]);
+   expect(refreshed.status()).toBe(200);
+   const first=await refreshed.json();
+   await expect(directory.getByRole('listitem')).toHaveCount(first.items.length);
+   await expect(directory.getByText(first.items[0].login,{exact:true})).toBeVisible();
+   await expect(directory.getByRole('button',{name:'View accounts'})).toBeEnabled();
    while(await directory.getByText(login,{exact:true}).count()===0){
     const next=directory.getByRole('button',{name:'Next accounts'});await expect(next).toBeEnabled();
     const old=await directory.getByText(/accounts · Page/).textContent();await next.click();
