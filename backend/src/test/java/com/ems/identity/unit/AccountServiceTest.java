@@ -98,4 +98,19 @@ class AccountServiceTest {
         verifyNoMoreInteractions(accounts);
     }
 
+    @Test void directoryProjectsEnabledStateWithoutExposingCredentialOrResetFields() {
+        var active = new Account("active-user", "private-hash", AccountRole.HR);
+        var disabled = new Account("disabled-user", "other-hash", AccountRole.HR);
+        disabled.changeAccess(AccountRole.HR, false);
+        disabled.issueReset("private-reset-digest", java.time.Instant.now());
+        when(accounts.findAll(any(org.springframework.data.domain.Pageable.class))).thenReturn(
+            new org.springframework.data.domain.PageImpl<>(java.util.List.of(active, disabled)));
+        var result = service.list(0, null);
+        assertTrue(result.items().get(0).enabled());
+        assertFalse(result.items().get(1).enabled());
+        assertEquals("disabled-user", result.items().get(1).login());
+        assertFalse(result.toString().contains("hash"));
+        assertFalse(result.toString().contains("private-reset-digest"));
+    }
+
 }

@@ -382,3 +382,8 @@ ADMIN can select Security event action to review a specific fixed event category
 ADMIN can select **Filter accounts by role** to review ADMIN, HR, MANAGER or EMPLOYEE accounts. Selection loads the first matching page; Previous/Next and View accounts retain the selected role. View accounts also refreshes after an error. All roles resets the filter. Counts describe matching accounts, including deactivated accounts that still hold the selected role; this is not an active-session inventory.
 
 `GET /api/v1/admin/accounts` accepts optional `role=ADMIN|HR|MANAGER|EMPLOYEE`, filtered before ten-row ID-ascending pagination. Unknown roles return 400. Omit the parameter for the existing directory. Authorization remains ADMIN-only; filtering cannot grant access or change roles. Concurrent changes can shift live page boundaries.
+
+## Review account access status
+The ADMIN account directory displays **Active** or **Deactivated** beside each account. Use View accounts to refresh after saving access changes in Manage existing account. Role filtering and counts include both states. Status reflects the last successful read, not a current login/session or an employee's employment status; failed reads clear stale records.
+
+The directory's item DTO adds boolean `enabled` to `id`, `login` and `role`. It exposes no password/reset fields or security version. Self-profile and provisioning response contracts are unchanged. Authorization and deactivation/session revocation behavior remain enforced by the existing backend.

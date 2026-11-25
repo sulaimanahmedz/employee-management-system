@@ -57,8 +57,8 @@ class AccountPersistenceIntegrationTest {
         entityManager.clear();
         var first = service.list(0, null);
         var second = service.list(1, null);
-        assertEquals(ids.subList(0, 10), first.items().stream().map(com.ems.identity.dto.AccountIdentity::id).toList());
-        assertEquals(ids.subList(10, 12), second.items().stream().map(com.ems.identity.dto.AccountIdentity::id).toList());
+        assertEquals(ids.subList(0, 10), first.items().stream().map(com.ems.identity.dto.AccountDirectoryEntry::id).toList());
+        assertEquals(ids.subList(10, 12), second.items().stream().map(com.ems.identity.dto.AccountDirectoryEntry::id).toList());
         assertEquals(12, first.totalElements());
         assertEquals(2, second.totalPages());
         assertTrue(service.list(2, null).items().isEmpty());
@@ -81,13 +81,26 @@ class AccountPersistenceIntegrationTest {
         entityManager.clear();
         var first = service.list(0, AccountRole.HR);
         var second = service.list(1, AccountRole.HR);
-        assertEquals(ids.subList(0, 10), first.items().stream().map(com.ems.identity.dto.AccountIdentity::id).toList());
-        assertEquals(ids.subList(10, 12), second.items().stream().map(com.ems.identity.dto.AccountIdentity::id).toList());
+        assertEquals(ids.subList(0, 10), first.items().stream().map(com.ems.identity.dto.AccountDirectoryEntry::id).toList());
+        assertEquals(ids.subList(10, 12), second.items().stream().map(com.ems.identity.dto.AccountDirectoryEntry::id).toList());
         assertEquals(12, first.totalElements()); assertEquals(2, first.totalPages());
         assertTrue(first.items().stream().allMatch(a -> a.role() == AccountRole.HR));
         assertTrue(service.list(2, AccountRole.HR).items().isEmpty());
         assertEquals(0, service.list(0, AccountRole.MANAGER).totalElements());
         assertEquals(24, service.list(0, null).totalElements());
+    }
+
+    @Test void directoryRefreshReflectsPersistedDeactivationAndReactivationWithoutRemovingAccounts() {
+        var account = accounts.saveAndFlush(new Account("status-user", "synthetic-hash", AccountRole.MANAGER));
+        var id = account.getId();
+        assertTrue(service.list(0, AccountRole.MANAGER).items().get(0).enabled());
+        account.changeAccess(AccountRole.MANAGER, false); accounts.flush(); entityManager.clear();
+        var disabled = service.list(0, AccountRole.MANAGER);
+        assertEquals(1, disabled.totalElements()); assertEquals(id, disabled.items().get(0).id());
+        assertFalse(disabled.items().get(0).enabled());
+        var stored = accounts.findById(id).orElseThrow(); stored.changeAccess(AccountRole.MANAGER, true);
+        accounts.flush(); entityManager.clear();
+        assertTrue(service.list(0, null).items().get(0).enabled());
     }
 
 }

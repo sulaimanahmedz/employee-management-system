@@ -124,7 +124,7 @@ class SessionApiTest {
                 for (var item : body.get("items")) {
                     var fields = new java.util.HashSet<String>();
                     item.fieldNames().forEachRemaining(fields::add);
-                    assertEquals(java.util.Set.of("id", "login", "role"), fields);
+                    assertEquals(java.util.Set.of("id", "login", "role", "enabled"), fields);
                 }
                 for (String page : new String[]{"-1", "214748365", "2147483648", "invalid"}) {
                     mvc.perform(get("/api/v1/admin/accounts").param("page", page).session(session)).andExpect(status().isBadRequest());
@@ -187,6 +187,22 @@ class SessionApiTest {
                 mvc.perform(get("/api/v1/admin/accounts?role=HR&page=-1").session(session)).andExpect(status().isBadRequest());
             }
         }
+    }
+
+    @Test void directoryStatusIsAdminOnlyAndReadsCurrentStoredAccessState() throws Exception {
+        var stored = repository.findByLogin("test-manager").orElseThrow();
+        stored.changeAccess(AccountRole.MANAGER, false); repository.saveAndFlush(stored);
+        var admin = login("test-admin");
+        mvc.perform(get("/api/v1/admin/accounts?role=MANAGER").session(admin)).andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].enabled").value(false)).andExpect(jsonPath("$.totalElements").value(1));
+        stored.changeAccess(AccountRole.MANAGER, true); repository.saveAndFlush(stored);
+        mvc.perform(get("/api/v1/admin/accounts?role=MANAGER").session(admin)).andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].enabled").value(true));
+        for (AccountRole role : new AccountRole[]{AccountRole.HR, AccountRole.MANAGER, AccountRole.EMPLOYEE}) {
+            mvc.perform(get("/api/v1/admin/accounts?role=MANAGER").session(login("test-" + role.name().toLowerCase())))
+                .andExpect(status().isForbidden());
+        }
+        mvc.perform(get("/api/v1/admin/accounts?role=MANAGER")).andExpect(status().isUnauthorized());
     }
 
 }

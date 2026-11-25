@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 
-type AccountPage = { items: { id: number; login: string; role: string }[]; page: number; totalPages: number; totalElements: number };
+type AccountPage = { items: { id: number; login: string; role: string; enabled: boolean }[]; page: number; totalPages: number; totalElements: number };
 
 export default function AccountDirectory() {
   const [role, setRole] = useState('');
@@ -22,7 +22,7 @@ export default function AccountDirectory() {
   }, [request, role]);
   return <section aria-label="Account directory">
     <h2>Account directory</h2>
-    <p>Review account logins and assigned roles. Passwords are never displayed.</p>
+    <p>Review account logins and assigned roles. Status reflects the last refresh, not an active session. Passwords are never displayed.</p>
     <label>Filter accounts by role
       <select value={role} disabled={loading} onChange={event => { setRole(event.target.value); setRequest({ page: 0 }); }}>
         <option value="">All roles</option>
@@ -35,7 +35,7 @@ export default function AccountDirectory() {
     {data && <>
       <p>{data.totalElements} accounts · Page {data.page + 1} of {Math.max(1, data.totalPages)}</p>
       {data.items.length === 0 ? <p>No accounts on this page. Select View accounts to refresh.</p> : <ul>
-        {data.items.map(account => <li key={account.id}><strong>{account.login}</strong> — {account.role} (ID {account.id})</li>)}
+        {data.items.map(account => <li key={account.id}><strong>{account.login}</strong> — {account.role} (ID {account.id}) — {account.enabled ? 'Active' : 'Deactivated'}</li>)}
       </ul>}
       <nav aria-label="Account pages">
         <button type="button" disabled={data.page === 0} onClick={() => setRequest({ page: data.page - 1 })}>Previous accounts</button>

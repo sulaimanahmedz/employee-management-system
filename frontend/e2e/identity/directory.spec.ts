@@ -16,7 +16,7 @@ test.describe('Administrative account directory',()=>{
     expect((await context.request.get('/api/v1/admin/accounts?page=-1')).status()).toBe(400);
     const first=await(await context.request.get('/api/v1/admin/accounts?page=0')).json();
     expect(first.items).toHaveLength(10);
-    first.items.forEach((item:object)=>expect(Object.keys(item).sort()).toEqual(['id','login','role']));
+    first.items.forEach((item:object)=>expect(Object.keys(item).sort()).toEqual(['enabled','id','login','role']));
     await page.getByRole('button',{name:'View accounts'}).click();
     const directory=page.getByRole('region',{name:'Account directory'});
     await expect(directory.getByRole('listitem')).toHaveCount(10);

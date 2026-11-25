@@ -412,3 +412,6 @@ Adds administrator action filtering before pagination, retained through refresh/
 
 ## November 22 — Account role review
 Adds ADMIN-only account directory filtering by assigned role before pagination, with matching counts, page reset and retained refresh/error recovery. Unit, API, persistence and frontend integration tests cover role isolation, bounds, invalid values and permissions; real-backend E2E covers pagination, filter changes and connectivity recovery at five widths. Validation/merge evidence belongs in the feature PR. Deactivated accounts remain included; this does not implement active-session inventory, access certification or enterprise SSO.
+
+## November 23 — Account status review
+Administrators can review active/deactivated state alongside role and ID in the account directory, refresh after access changes and recover from transport failures without stale status. Separate directory projection avoids exposing credentials or changing self-profile/provisioning contracts. Unit/API/persistence/frontend integration and real-backend browser tests cover both states, refresh, role restrictions and responsive behavior. Exact validation/merge results are recorded in the feature PR. This is a last-read access flag, not live-session inventory or enterprise access certification.
