@@ -137,3 +137,6 @@ AccountController binds the optional AccountRole enum and delegates to AccountSe
 
 ## Account status review
 AccountPage now contains AccountDirectoryEntry DTOs with the stored enabled flag, projected in AccountService's read-only directory transaction. AccountIdentity remains unchanged for authentication, provisioning and self-profile. No entity depends on DTOs; controllers, repositories, permissions, locks and schema are unchanged. AccountDirectory renders the flag as Active/Deactivated and uses existing refresh/error cleanup behavior.
+
+## Account access status filtering
+AccountController binds optional Boolean enabled and delegates to AccountService. The read-only service chooses the repository role/status combination before ID-ordered pagination and DTO mapping. No entity depends on transport types; transaction, locking and authorization rules remain unchanged. AccountDirectory preserves both filters across navigation and failed-read recovery. No schema or dependency changes.

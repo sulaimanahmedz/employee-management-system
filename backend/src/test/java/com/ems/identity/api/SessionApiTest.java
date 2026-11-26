@@ -205,4 +205,26 @@ class SessionApiTest {
         mvc.perform(get("/api/v1/admin/accounts?role=MANAGER")).andExpect(status().isUnauthorized());
     }
 
+    @Test void statusFilterValidatesInputAndRetainsAdminOnlyBoundary() throws Exception {
+        var disabled = new com.ems.identity.entity.Account("disabled-hr", "synthetic-hash", AccountRole.HR);
+        disabled.changeAccess(AccountRole.HR, false); repository.saveAndFlush(disabled);
+        mvc.perform(get("/api/v1/admin/accounts?enabled=false")).andExpect(status().isUnauthorized());
+        for (AccountRole role : AccountRole.values()) {
+            var session = login("test-" + role.name().toLowerCase());
+            for (String state : new String[]{"true", "false"}) {
+                mvc.perform(get("/api/v1/admin/accounts?role=HR&enabled=" + state).session(session))
+                    .andExpect(status().is(role == AccountRole.ADMIN ? 200 : 403));
+            }
+            if (role == AccountRole.ADMIN) {
+                mvc.perform(get("/api/v1/admin/accounts?role=HR&enabled=false").session(session))
+                    .andExpect(jsonPath("$.totalElements").value(1)).andExpect(jsonPath("$.items[0].login").value("disabled-hr"))
+                    .andExpect(jsonPath("$.items[0].enabled").value(false));
+                mvc.perform(get("/api/v1/admin/accounts?enabled=true").session(session))
+                    .andExpect(jsonPath("$.totalElements").value(4));
+                mvc.perform(get("/api/v1/admin/accounts?enabled=unknown").session(session)).andExpect(status().isBadRequest());
+                mvc.perform(get("/api/v1/admin/accounts?enabled=false&page=-1").session(session)).andExpect(status().isBadRequest());
+            }
+        }
+    }
+
 }

@@ -66,3 +66,23 @@ it('resets page on role selection and retains it while paging and refreshing', a
   await user.selectOptions(screen.getByLabelText('Filter accounts by role'), '');
   expect(vi.mocked(api).mock.calls.at(-1)![0]).toBe('/api/v1/admin/accounts?page=0');
 });
+
+it('combines status with role, resets paging and clears status independently',async()=>{
+  vi.mocked(api).mockResolvedValue(first);
+  render(<AccountDirectory/>);const user=userEvent.setup();
+  await user.selectOptions(screen.getByLabelText('Filter accounts by status'),'false');
+  await screen.findByText('synthetic-first');
+  expect(vi.mocked(api).mock.calls.at(-1)![0]).toBe('/api/v1/admin/accounts?page=0&enabled=false');
+  await user.selectOptions(screen.getByLabelText('Filter accounts by role'),'HR');
+  await screen.findByText('synthetic-first');
+  vi.mocked(api).mockResolvedValue({...first,page:1});
+  await user.click(screen.getByRole('button',{name:'Next accounts'}));
+  await screen.findByText('11 accounts · Page 2 of 2');
+  expect(vi.mocked(api).mock.calls.at(-1)![0]).toBe('/api/v1/admin/accounts?page=1&role=HR&enabled=false');
+  vi.mocked(api).mockResolvedValue(first);
+  await user.selectOptions(screen.getByLabelText('Filter accounts by status'),'true');
+  await screen.findByText('11 accounts · Page 1 of 2');
+  expect(vi.mocked(api).mock.calls.at(-1)![0]).toBe('/api/v1/admin/accounts?page=0&role=HR&enabled=true');
+  await user.selectOptions(screen.getByLabelText('Filter accounts by status'),'');
+  expect(vi.mocked(api).mock.calls.at(-1)![0]).toBe('/api/v1/admin/accounts?page=0&role=HR');
+});
