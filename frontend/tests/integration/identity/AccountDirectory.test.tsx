@@ -57,3 +57,25 @@ it('refreshes access status and clears stale status on a failed read',async()=>{
   failed=false;enabled=true;await user.click(screen.getByRole('button',{name:'View accounts'}));
   await screen.findByText(/— Active/);
 });
+
+it('keeps combined status and role filters through failure and recovery',async()=>{
+  let failed=false;const queries:string[]=[];
+  vi.stubGlobal('fetch',vi.fn(async(url:string)=>{
+    if(url.endsWith('/csrf'))return Response.json({headerName:'X-CSRF-TOKEN',token:'synthetic-csrf'});
+    if(url.endsWith('/session'))return Response.json({login:'synthetic-admin',authorities:['ROLE_ADMIN']});
+    queries.push(url);
+    return failed ? new Response(null,{status:503}) : Response.json({items:[{id:9,login:'inactive-user',role:'HR',enabled:false}],page:0,totalPages:1,totalElements:1});
+  }));
+  render(<AuthShell/>);const user=userEvent.setup();
+  await user.selectOptions(await screen.findByLabelText('Filter accounts by role'),'HR');
+  await screen.findByText('inactive-user');
+  await user.selectOptions(screen.getByLabelText('Filter accounts by status'),'false');
+  await screen.findByText('inactive-user');
+  failed=true;await user.click(screen.getByRole('button',{name:'View accounts'}));
+  await screen.findByText('Unable to load accounts. Please retry.');
+  expect(screen.queryByText('inactive-user')).toBeNull();
+  failed=false;await user.click(screen.getByRole('button',{name:'View accounts'}));
+  await screen.findByText('inactive-user');
+  expect(queries.slice(-3)).toEqual(Array(3).fill('/api/v1/admin/accounts?page=0&role=HR&enabled=false'));
+  expect((screen.getByLabelText('Filter accounts by status') as HTMLSelectElement).value).toBe('false');
+});

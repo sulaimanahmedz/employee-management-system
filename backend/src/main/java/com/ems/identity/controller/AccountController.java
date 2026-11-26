@@ -32,8 +32,8 @@ public class AccountController {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Account login is unavailable");
     }
     @GetMapping
-    public AccountPage list(@RequestParam(defaultValue = "0") int page, @RequestParam(required = false) AccountRole role) {
-        return accounts.list(page, role);
+    public AccountPage list(@RequestParam(defaultValue = "0") int page, @RequestParam(required = false) AccountRole role, @RequestParam(required = false) Boolean enabled) {
+        return accounts.list(page, role, enabled);
     }
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     public AccountIdentity create(@Valid @RequestBody AccountInput input) {

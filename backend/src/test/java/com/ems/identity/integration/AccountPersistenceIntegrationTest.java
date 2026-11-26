@@ -55,14 +55,14 @@ class AccountPersistenceIntegrationTest {
             ids.add(accounts.saveAndFlush(new Account("synthetic-page-" + i, "not-a-real-hash", AccountRole.EMPLOYEE)).getId());
         }
         entityManager.clear();
-        var first = service.list(0, null);
-        var second = service.list(1, null);
+        var first = service.list(0, null, null);
+        var second = service.list(1, null, null);
         assertEquals(ids.subList(0, 10), first.items().stream().map(com.ems.identity.dto.AccountDirectoryEntry::id).toList());
         assertEquals(ids.subList(10, 12), second.items().stream().map(com.ems.identity.dto.AccountDirectoryEntry::id).toList());
         assertEquals(12, first.totalElements());
         assertEquals(2, second.totalPages());
-        assertTrue(service.list(2, null).items().isEmpty());
-        assertTrue(service.list(Integer.MAX_VALUE / 10, null).items().isEmpty());
+        assertTrue(service.list(2, null, null).items().isEmpty());
+        assertTrue(service.list(Integer.MAX_VALUE / 10, null, null).items().isEmpty());
         assertFalse(first.toString().contains("not-a-real-hash"));
     }
     @Test void profileReflectsStoredIdentityAndRemoval() {
@@ -79,28 +79,56 @@ class AccountPersistenceIntegrationTest {
             ids.add(accounts.saveAndFlush(new Account("hr-" + i, "synthetic-hash", AccountRole.HR)).getId());
         }
         entityManager.clear();
-        var first = service.list(0, AccountRole.HR);
-        var second = service.list(1, AccountRole.HR);
+        var first = service.list(0, AccountRole.HR, null);
+        var second = service.list(1, AccountRole.HR, null);
         assertEquals(ids.subList(0, 10), first.items().stream().map(com.ems.identity.dto.AccountDirectoryEntry::id).toList());
         assertEquals(ids.subList(10, 12), second.items().stream().map(com.ems.identity.dto.AccountDirectoryEntry::id).toList());
         assertEquals(12, first.totalElements()); assertEquals(2, first.totalPages());
         assertTrue(first.items().stream().allMatch(a -> a.role() == AccountRole.HR));
-        assertTrue(service.list(2, AccountRole.HR).items().isEmpty());
-        assertEquals(0, service.list(0, AccountRole.MANAGER).totalElements());
-        assertEquals(24, service.list(0, null).totalElements());
+        assertTrue(service.list(2, AccountRole.HR, null).items().isEmpty());
+        assertEquals(0, service.list(0, AccountRole.MANAGER, null).totalElements());
+        assertEquals(24, service.list(0, null, null).totalElements());
     }
 
     @Test void directoryRefreshReflectsPersistedDeactivationAndReactivationWithoutRemovingAccounts() {
         var account = accounts.saveAndFlush(new Account("status-user", "synthetic-hash", AccountRole.MANAGER));
         var id = account.getId();
-        assertTrue(service.list(0, AccountRole.MANAGER).items().get(0).enabled());
+        assertTrue(service.list(0, AccountRole.MANAGER, null).items().get(0).enabled());
         account.changeAccess(AccountRole.MANAGER, false); accounts.flush(); entityManager.clear();
-        var disabled = service.list(0, AccountRole.MANAGER);
+        var disabled = service.list(0, AccountRole.MANAGER, null);
         assertEquals(1, disabled.totalElements()); assertEquals(id, disabled.items().get(0).id());
         assertFalse(disabled.items().get(0).enabled());
         var stored = accounts.findById(id).orElseThrow(); stored.changeAccess(AccountRole.MANAGER, true);
         accounts.flush(); entityManager.clear();
-        assertTrue(service.list(0, null).items().get(0).enabled());
+        assertTrue(service.list(0, null, null).items().get(0).enabled());
+    }
+
+    @Test void statusAndRoleFiltersApplyBeforePagingAndRefreshAfterAccessChanges() {
+        var ids = new java.util.ArrayList<Long>();
+        for (int i = 0; i < 12; i++) {
+            accounts.saveAndFlush(new Account("active-" + i, "synthetic-hash", AccountRole.HR));
+            var inactive = new Account("inactive-" + i, "synthetic-hash", AccountRole.HR);
+            inactive.changeAccess(AccountRole.HR, false);
+            ids.add(accounts.saveAndFlush(inactive).getId());
+        }
+        var other = new Account("inactive-manager", "synthetic-hash", AccountRole.MANAGER);
+        other.changeAccess(AccountRole.MANAGER, false); accounts.saveAndFlush(other);
+        entityManager.clear();
+        var first = service.list(0, AccountRole.HR, false);
+        var second = service.list(1, AccountRole.HR, false);
+        assertEquals(ids.subList(0, 10), first.items().stream().map(com.ems.identity.dto.AccountDirectoryEntry::id).toList());
+        assertEquals(ids.subList(10, 12), second.items().stream().map(com.ems.identity.dto.AccountDirectoryEntry::id).toList());
+        assertEquals(12, first.totalElements()); assertEquals(2, second.totalPages());
+        assertTrue(first.items().stream().allMatch(a -> !a.enabled() && a.role() == AccountRole.HR));
+        assertEquals(13, service.list(0, null, false).totalElements());
+        assertEquals(12, service.list(0, null, true).totalElements());
+        assertEquals(0, service.list(0, AccountRole.MANAGER, true).totalElements());
+        assertTrue(service.list(2, AccountRole.HR, false).items().isEmpty());
+        var changed = accounts.findById(ids.get(0)).orElseThrow(); changed.changeAccess(AccountRole.HR, true);
+        accounts.flush(); entityManager.clear();
+        assertEquals(11, service.list(0, AccountRole.HR, false).totalElements());
+        assertEquals(13, service.list(0, AccountRole.HR, true).totalElements());
+        assertEquals(25, service.list(0, null, null).totalElements());
     }
 
 }

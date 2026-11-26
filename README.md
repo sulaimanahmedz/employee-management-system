@@ -387,3 +387,8 @@ ADMIN can select **Filter accounts by role** to review ADMIN, HR, MANAGER or EMP
 The ADMIN account directory displays **Active** or **Deactivated** beside each account. Use View accounts to refresh after saving access changes in Manage existing account. Role filtering and counts include both states. Status reflects the last successful read, not a current login/session or an employee's employment status; failed reads clear stale records.
 
 The directory's item DTO adds boolean `enabled` to `id`, `login` and `role`. It exposes no password/reset fields or security version. Self-profile and provisioning response contracts are unchanged. Authorization and deactivation/session revocation behavior remain enforced by the existing backend.
+
+## Filter accounts by access status
+ADMIN can select **Filter accounts by status**: All statuses, Active or Deactivated. The selection combines with the role filter before pagination; changing either returns to page one. Paging and View accounts preserve both selections, including after failed reads. Clearing status leaves the selected role unchanged. Refresh after access changes to see current matching accounts.
+
+`GET /api/v1/admin/accounts` accepts optional `enabled=true|false`. Omit it for both states; invalid values return 400. Counts describe matching stored access flags, not active sessions or employment status. Existing ADMIN-only authorization, credential-free DTOs and access-change revocation remain unchanged.

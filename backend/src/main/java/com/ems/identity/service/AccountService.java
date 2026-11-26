@@ -46,12 +46,14 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public AccountPage list(int page, AccountRole role) {
+    public AccountPage list(int page, AccountRole role, Boolean enabled) {
         if (page < 0 || page > Integer.MAX_VALUE / 10) {
             throw new IllegalArgumentException("Account page must be nonnegative and its offset fit a signed integer");
         }
         var pageable = PageRequest.of(page, 10, Sort.by("id").ascending());
-        var result = role == null ? accounts.findAll(pageable) : accounts.findByRole(role, pageable);
+        var result = enabled == null
+            ? (role == null ? accounts.findAll(pageable) : accounts.findByRole(role, pageable))
+            : (role == null ? accounts.findByEnabled(enabled, pageable) : accounts.findByRoleAndEnabled(role, enabled, pageable));
         return new AccountPage(result.map(account -> new AccountDirectoryEntry(account.getId(), account.getLogin(), account.getRole(), account.isEnabled())).getContent(), page,
             result.getTotalPages(), result.getTotalElements());
     }

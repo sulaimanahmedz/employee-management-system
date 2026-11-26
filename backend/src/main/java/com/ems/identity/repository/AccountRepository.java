@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AccountRepository extends JpaRepository<Account, Long> {
     Page<Account> findByRole(AccountRole role, Pageable pageable);
+    Page<Account> findByEnabled(boolean enabled, Pageable pageable);
+    Page<Account> findByRoleAndEnabled(AccountRole role, boolean enabled, Pageable pageable);
     Optional<Account> findByLogin(String login);
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("select a from Account a where a.login = :login")
