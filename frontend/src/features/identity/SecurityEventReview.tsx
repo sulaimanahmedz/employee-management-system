@@ -4,6 +4,8 @@ import { api } from '../../lib/api';
 type SecurityEvent = { id: number; occurredAt: string; action: string; actorId: number | null; subjectId: number | null };
 
 export default function SecurityEventReview() {
+  const [subject, setSubject] = useState('');
+  const [subjectId, setSubjectId] = useState('');
   const [action, setAction] = useState('');
   const [request, setRequest] = useState<{ page: number } | null>(null);
   const [events, setEvents] = useState<SecurityEvent[] | null>(null);
@@ -14,12 +16,12 @@ export default function SecurityEventReview() {
     let current = true;
     const controller = new AbortController();
     setLoading(true); setEvents(null); setError('');
-    void api<SecurityEvent[]>(`/api/v1/admin/audit?page=${request.page}${action ? `&action=${action}` : ''}`, { signal: controller.signal })
+    void api<SecurityEvent[]>(`/api/v1/admin/audit?page=${request.page}${action ? `&action=${action}` : ''}${subjectId ? `&subjectId=${subjectId}` : ''}`, { signal: controller.signal })
       .then(value => { if (current) setEvents(value); })
       .catch(() => { if (current) setError('Unable to load security events. Please retry.'); })
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; controller.abort(); };
-  }, [request, action]);
+  }, [request, action, subjectId]);
   return <section aria-label="Security event review">
     <h2>Security events</h2>
     <p>Newest first, up to 20 events per page. New activity can shift pages; refresh to see the latest events.</p>
@@ -27,6 +29,12 @@ export default function SecurityEventReview() {
       <option value="">All actions</option>
       {['PASSWORD_CHANGED','ACCOUNT_ACCESS_CHANGED','RESET_ISSUED','PASSWORD_RESET','LINK_CHANGED','TEAM_CHANGED','CREDENTIALS_ACCEPTED','CREDENTIALS_REJECTED','VERIFICATION_UNAVAILABLE','SESSION_ESTABLISHED','LOGOUT_PROCESSED','AUTHENTICATION_REQUIRED','ACCESS_DENIED'].map(value => <option key={value} value={value}>{value.replaceAll('_',' ')}</option>)}
     </select></label>
+    <form onSubmit={event => { event.preventDefault(); setSubjectId(subject); setRequest({ page: 0 }); }}>
+      <label>Subject account ID<input inputMode="numeric" pattern="[1-9][0-9]*" maxLength={19} value={subject} disabled={loading} onChange={event => setSubject(event.target.value)} /></label>
+      <button disabled={loading}>Apply subject filter</button>
+      <button type="button" disabled={loading} onClick={() => { setSubject(''); setSubjectId(''); setRequest({ page: 0 }); }}>Clear subject filter</button>
+    </form>
+    <p>Subject filter: {subjectId || 'All subjects'}. This identifies the affected account, not the actor.</p>
     <button disabled={loading} onClick={() => setRequest({ page: 0 })}>View recent security events</button>
     {loading && <p role="status">Loading security events…</p>}
     {error && <><p role="alert">{error}</p><button onClick={() => setRequest({ page: request!.page })}>Retry security events</button></>}

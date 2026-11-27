@@ -140,3 +140,6 @@ AccountPage now contains AccountDirectoryEntry DTOs with the stored enabled flag
 
 ## Account access status filtering
 AccountController binds optional Boolean enabled and delegates to AccountService. The read-only service chooses the repository role/status combination before ID-ordered pagination and DTO mapping. No entity depends on transport types; transaction, locking and authorization rules remain unchanged. AccountDirectory preserves both filters across navigation and failed-read recovery. No schema or dependency changes.
+
+## Security event subject review
+AccountLifecycleController binds an optional Long subjectId. AuditTrailService validates positivity and selects the action/subject repository query before bounded descending-ID pagination. Read-only transactions, audit recording and permission boundaries are unchanged. SecurityEventReview keeps draft and applied subjects separate and passes IDs as decimal strings to avoid JavaScript integer rounding. No entity dependencies, schema or dependency changes.

@@ -13,14 +13,14 @@ class SecurityEventReviewIntegrationTest {
     @Test void pagesAreBoundedDescendingAndDisjointWithoutConcurrentWrites() {
         events.deleteAll();
         for(long id=1;id<=21;id++) audit.record(SecurityEvent.Action.ACCOUNT_ACCESS_CHANGED,1L,id);
-        var first=audit.list(0, null);var second=audit.list(1, null);
+        var first=audit.list(0, null, null);var second=audit.list(1, null, null);
         assertEquals(20,first.size());assertEquals(1,second.size());
         for(int i=0;i<20;i++) assertEquals(21L-i,first.get(i).subjectId());
         assertEquals(1L,second.get(0).subjectId());
         assertTrue(first.stream().noneMatch(e->e.id().equals(second.get(0).id())));
-        assertTrue(audit.list(2, null).isEmpty());
-        assertThrows(IllegalArgumentException.class,()->audit.list(-1, null));
-        assertThrows(IllegalArgumentException.class,()->audit.list(Integer.MAX_VALUE, null));
+        assertTrue(audit.list(2, null, null).isEmpty());
+        assertThrows(IllegalArgumentException.class,()->audit.list(-1, null, null));
+        assertThrows(IllegalArgumentException.class,()->audit.list(Integer.MAX_VALUE, null, null));
     }
     @Test void actionFilteringHappensBeforePaginationAndPreservesDescendingOrder() {
         events.deleteAll();
@@ -28,16 +28,35 @@ class SecurityEventReviewIntegrationTest {
             audit.record(SecurityEvent.Action.PASSWORD_CHANGED,1L,i);
             audit.record(SecurityEvent.Action.ACCOUNT_ACCESS_CHANGED,1L,i);
         }
-        var first=audit.list(0,SecurityEvent.Action.PASSWORD_CHANGED);
-        var second=audit.list(1,SecurityEvent.Action.PASSWORD_CHANGED);
+        var first=audit.list(0, SecurityEvent.Action.PASSWORD_CHANGED, null);
+        var second=audit.list(1, SecurityEvent.Action.PASSWORD_CHANGED, null);
         assertEquals(20,first.size());assertEquals(1,second.size());
         for(int i=0;i<20;i++) {
             assertEquals(SecurityEvent.Action.PASSWORD_CHANGED,first.get(i).action());
             assertEquals(21L-i,first.get(i).subjectId());
         }
         assertEquals(1L,second.get(0).subjectId());
-        assertTrue(audit.list(2,SecurityEvent.Action.PASSWORD_CHANGED).isEmpty());
-        assertTrue(audit.list(0,SecurityEvent.Action.RESET_ISSUED).isEmpty());
-        assertEquals(SecurityEvent.Action.ACCOUNT_ACCESS_CHANGED,audit.list(0,null).get(0).action());
+        assertTrue(audit.list(2, SecurityEvent.Action.PASSWORD_CHANGED, null).isEmpty());
+        assertTrue(audit.list(0, SecurityEvent.Action.RESET_ISSUED, null).isEmpty());
+        assertEquals(SecurityEvent.Action.ACCOUNT_ACCESS_CHANGED,audit.list(0, null, null).get(0).action());
     }
+    @Test void subjectFilteringPrecedesPagingAndDoesNotMatchActorOrUnattributedEvents() {
+        events.deleteAll();
+        for(int i=0;i<21;i++) {
+            audit.record(SecurityEvent.Action.PASSWORD_CHANGED,7L,9L);
+            audit.record(SecurityEvent.Action.PASSWORD_CHANGED,9L,7L);
+        }
+        audit.record(SecurityEvent.Action.ACCESS_DENIED,null,null);
+        audit.record(SecurityEvent.Action.ACCOUNT_ACCESS_CHANGED,7L,9L);
+        var first=audit.list(0,SecurityEvent.Action.PASSWORD_CHANGED,9L);
+        var second=audit.list(1,SecurityEvent.Action.PASSWORD_CHANGED,9L);
+        assertEquals(20,first.size());assertEquals(1,second.size());
+        assertTrue(first.stream().allMatch(e->e.subjectId()==9L && e.actorId()==7L));
+        assertTrue(first.get(19).id()>second.get(0).id());
+        assertEquals(SecurityEvent.Action.ACCOUNT_ACCESS_CHANGED,audit.list(0,null,9L).get(0).action());
+        assertTrue(audit.list(2,null,9L).isEmpty());
+        assertTrue(audit.list(0,null,Long.MAX_VALUE).isEmpty());
+        assertEquals(SecurityEvent.Action.ACCOUNT_ACCESS_CHANGED,audit.list(0,null,null).get(0).action());
+    }
+
 }

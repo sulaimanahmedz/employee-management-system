@@ -392,3 +392,8 @@ The directory's item DTO adds boolean `enabled` to `id`, `login` and `role`. It 
 ADMIN can select **Filter accounts by status**: All statuses, Active or Deactivated. The selection combines with the role filter before pagination; changing either returns to page one. Paging and View accounts preserve both selections, including after failed reads. Clearing status leaves the selected role unchanged. Refresh after access changes to see current matching accounts.
 
 `GET /api/v1/admin/accounts` accepts optional `enabled=true|false`. Omit it for both states; invalid values return 400. Counts describe matching stored access flags, not active sessions or employment status. Existing ADMIN-only authorization, credential-free DTOs and access-change revocation remain unchanged.
+
+## Investigate security events by affected account
+ADMIN can enter a **Subject account ID** and choose **Apply subject filter** to review events affecting that account. The subject is distinct from the actor who performed an action. Blank includes all subjects; **Clear subject filter** removes only the subject restriction. Action filtering, paging, refresh and retry preserve the applied subject. Editing the input alone does not change the results; the applied subject is displayed separately.
+
+`GET /api/v1/admin/audit` accepts optional positive signed-64-bit `subjectId`, combined with action before twenty-record descending-ID pagination. Unknown IDs return an empty list, and invalid IDs return 400. Unattributed events do not match a subject filter. Authorization stays ADMIN-only. This live review does not create an immutable audit archive or infer missing attribution.
