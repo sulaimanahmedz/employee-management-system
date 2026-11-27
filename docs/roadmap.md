@@ -418,3 +418,6 @@ Administrators can review active/deactivated state alongside role and ID in the 
 
 ## November 26 — Account access status filtering
 Adds administrator review of active or deactivated accounts, independently or combined with role, before pagination. Selection resets paging; refresh/retry preserves both filters and failed reads clear stale data. Unit/API/persistence/frontend integration and real-backend E2E cover counts, ordering, access-change refresh, invalid input, permissions and responsive interaction. Validation and merge evidence belongs in the feature PR. This is a stored access-state filter, not active-session inventory or enterprise access certification.
+
+## November 27 — Security event subject investigation
+Adds ADMIN-only review by affected account ID, independently or combined with action, with paging, clear, explicit applied-filter state and failed-read recovery. Unit/API/persistence/frontend integration and real-backend E2E cover ordering, bounds, actor/subject distinction, invalid IDs, permissions and responsive interaction. Exact validation and merge results are recorded in the feature PR. Retention, tamper evidence, exports and operational audit controls remain separate readiness work.

@@ -87,4 +87,23 @@ class AccountLifecycleApiTest {
         }
         mvc.perform(get("/api/v1/admin/audit").param("action","PASSWORD_RESET")).andExpect(status().isUnauthorized());
     }
+    @Autowired com.ems.identity.service.AuditTrailService auditTrail;
+    @Test void auditSubjectFilterValidatesIdsAndEnforcesAllRoleBoundaries() throws Exception {
+        auditTrail.record(com.ems.identity.entity.SecurityEvent.Action.PASSWORD_RESET,7L,9L);
+        for(var role:AccountRole.values()) {
+            accounts.provision("subject-"+role,PASSWORD,role);var session=login("subject-"+role,PASSWORD);
+            mvc.perform(get("/api/v1/admin/audit?subjectId=9&action=PASSWORD_RESET").session(session))
+                .andExpect(status().is(role==AccountRole.ADMIN?200:403));
+            if(role==AccountRole.ADMIN) {
+                mvc.perform(get("/api/v1/admin/audit?subjectId=9&action=PASSWORD_RESET").session(session))
+                    .andExpect(jsonPath("$[0].subjectId").value(9)).andExpect(jsonPath("$[0].actorId").value(7));
+                for(String id:new String[]{"0","-1","abc","1.5","9223372036854775808"})
+                    mvc.perform(get("/api/v1/admin/audit").param("subjectId",id).session(session)).andExpect(status().isBadRequest());
+                mvc.perform(get("/api/v1/admin/audit?subjectId=9223372036854775807").session(session))
+                    .andExpect(status().isOk()).andExpect(content().json("[]"));
+            }
+        }
+        mvc.perform(get("/api/v1/admin/audit?subjectId=9")).andExpect(status().isUnauthorized());
+    }
+
 }
