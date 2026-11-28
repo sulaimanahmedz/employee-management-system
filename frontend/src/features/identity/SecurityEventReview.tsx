@@ -4,6 +4,8 @@ import { api } from '../../lib/api';
 type SecurityEvent = { id: number; occurredAt: string; action: string; actorId: number | null; subjectId: number | null };
 
 export default function SecurityEventReview() {
+  const [actor, setActor] = useState('');
+  const [actorId, setActorId] = useState('');
   const [subject, setSubject] = useState('');
   const [subjectId, setSubjectId] = useState('');
   const [action, setAction] = useState('');
@@ -16,12 +18,12 @@ export default function SecurityEventReview() {
     let current = true;
     const controller = new AbortController();
     setLoading(true); setEvents(null); setError('');
-    void api<SecurityEvent[]>(`/api/v1/admin/audit?page=${request.page}${action ? `&action=${action}` : ''}${subjectId ? `&subjectId=${subjectId}` : ''}`, { signal: controller.signal })
+    void api<SecurityEvent[]>(`/api/v1/admin/audit?page=${request.page}${action ? `&action=${action}` : ''}${subjectId ? `&subjectId=${subjectId}` : ''}${actorId ? `&actorId=${actorId}` : ''}`, { signal: controller.signal })
       .then(value => { if (current) setEvents(value); })
       .catch(() => { if (current) setError('Unable to load security events. Please retry.'); })
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; controller.abort(); };
-  }, [request, action, subjectId]);
+  }, [request, action, subjectId, actorId]);
   return <section aria-label="Security event review">
     <h2>Security events</h2>
     <p>Newest first, up to 20 events per page. New activity can shift pages; refresh to see the latest events.</p>
@@ -35,6 +37,12 @@ export default function SecurityEventReview() {
       <button type="button" disabled={loading} onClick={() => { setSubject(''); setSubjectId(''); setRequest({ page: 0 }); }}>Clear subject filter</button>
     </form>
     <p>Subject filter: {subjectId || 'All subjects'}. This identifies the affected account, not the actor.</p>
+    <form onSubmit={event => { event.preventDefault(); setActorId(actor); setRequest({ page: 0 }); }}>
+      <label>Actor account ID<input inputMode="numeric" pattern="[1-9][0-9]*" maxLength={19} value={actor} disabled={loading} onChange={event => setActor(event.target.value)} /></label>
+      <button disabled={loading}>Apply actor filter</button>
+      <button type="button" disabled={loading} onClick={() => { setActor(''); setActorId(''); setRequest({ page: 0 }); }}>Clear actor filter</button>
+    </form>
+    <p>Actor filter: {actorId || 'All actors'}. This identifies who performed the recorded action.</p>
     <button disabled={loading} onClick={() => setRequest({ page: 0 })}>View recent security events</button>
     {loading && <p role="status">Loading security events…</p>}
     {error && <><p role="alert">{error}</p><button onClick={() => setRequest({ page: request!.page })}>Retry security events</button></>}

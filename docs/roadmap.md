@@ -421,3 +421,6 @@ Adds administrator review of active or deactivated accounts, independently or co
 
 ## November 27 — Security event subject investigation
 Adds ADMIN-only review by affected account ID, independently or combined with action, with paging, clear, explicit applied-filter state and failed-read recovery. Unit/API/persistence/frontend integration and real-backend E2E cover ordering, bounds, actor/subject distinction, invalid IDs, permissions and responsive interaction. Exact validation and merge results are recorded in the feature PR. Retention, tamper evidence, exports and operational audit controls remain separate readiness work.
+
+## November 28 — Security event actor investigation
+Adds ADMIN-only review by acting account, combined with subject and action, before pagination. Explicit draft/apply/clear controls retain applied filters through paging and failure recovery. Unit/API/persistence/frontend integration and real-backend E2E cover actor/subject distinction, null attribution, filter combinations, validation, permissions and responsive interaction. Validation and merge evidence belong in the feature PR. This does not supply missing actor attribution or complete immutable audit/operational readiness.
