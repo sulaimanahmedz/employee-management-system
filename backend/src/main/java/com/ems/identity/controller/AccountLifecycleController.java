@@ -49,7 +49,7 @@ public class AccountLifecycleController {
     public void reset(@Valid @RequestBody ResetInput input) { accounts.reset(input.token(),input.newPassword()); }
     @GetMapping("/api/v1/admin/audit")
     public List<SecurityEventView> events(@RequestParam(defaultValue="0") int page,
-            @RequestParam(required=false) SecurityEvent.Action action, @RequestParam(required=false) Long subjectId) { return audit.list(page, action, subjectId); }
+            @RequestParam(required=false) SecurityEvent.Action action, @RequestParam(required=false) Long subjectId, @RequestParam(required=false) Long actorId) { return audit.list(page, action, subjectId, actorId); }
     @ExceptionHandler({IllegalArgumentException.class,BadCredentialsException.class})
     public ProblemDetail invalid(RuntimeException error) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,"Unable to complete account operation");

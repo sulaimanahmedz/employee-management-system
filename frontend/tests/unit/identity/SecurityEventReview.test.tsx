@@ -62,3 +62,15 @@ it('applies subject explicitly, resets paging and clears it without losing actio
  expect((screen.getByLabelText('Subject account ID') as HTMLInputElement).value).toBe('');
  expect(screen.getByText(/Subject filter: All subjects/)).toBeTruthy();
 });
+it('applies actor explicitly, resets paging and clears only actor',async()=>{
+ vi.mocked(api).mockResolvedValue(events);render(<SecurityEventReview/>);const user=userEvent.setup();
+ await user.selectOptions(screen.getByLabelText('Security event action'),'PASSWORD_RESET');await screen.findByText(/Event 40:/);
+ await user.type(screen.getByLabelText('Subject account ID'),'9');await user.click(screen.getByRole('button',{name:'Apply subject filter'}));await screen.findByText(/Event 40:/);
+ await user.click(screen.getByRole('button',{name:'Older security events'}));await screen.findByText('Security events · Page 2');
+ const count=vi.mocked(api).mock.calls.length;await user.type(screen.getByLabelText('Actor account ID'),'9223372036854775807');expect(api).toHaveBeenCalledTimes(count);
+ await user.click(screen.getByRole('button',{name:'Apply actor filter'}));await screen.findByText('Security events · Page 1');
+ expect(vi.mocked(api).mock.lastCall![0]).toBe('/api/v1/admin/audit?page=0&action=PASSWORD_RESET&subjectId=9&actorId=9223372036854775807');
+ await user.click(screen.getByRole('button',{name:'Older security events'}));await screen.findByText('Security events · Page 2');expect(vi.mocked(api).mock.lastCall![0]).toContain('page=1&action=PASSWORD_RESET&subjectId=9&actorId=9223372036854775807');
+ await user.click(screen.getByRole('button',{name:'Clear actor filter'}));await screen.findByText('Security events · Page 1');expect(vi.mocked(api).mock.lastCall![0]).toBe('/api/v1/admin/audit?page=0&action=PASSWORD_RESET&subjectId=9');
+ expect((screen.getByLabelText('Actor account ID') as HTMLInputElement).value).toBe('');expect(screen.getByText(/Actor filter: All actors/)).toBeTruthy();
+});

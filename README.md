@@ -397,3 +397,8 @@ ADMIN can select **Filter accounts by status**: All statuses, Active or Deactiva
 ADMIN can enter a **Subject account ID** and choose **Apply subject filter** to review events affecting that account. The subject is distinct from the actor who performed an action. Blank includes all subjects; **Clear subject filter** removes only the subject restriction. Action filtering, paging, refresh and retry preserve the applied subject. Editing the input alone does not change the results; the applied subject is displayed separately.
 
 `GET /api/v1/admin/audit` accepts optional positive signed-64-bit `subjectId`, combined with action before twenty-record descending-ID pagination. Unknown IDs return an empty list, and invalid IDs return 400. Unattributed events do not match a subject filter. Authorization stays ADMIN-only. This live review does not create an immutable audit archive or infer missing attribution.
+
+## Investigate security events by actor
+ADMIN can enter an **Actor account ID**, then **Apply actor filter**, to review who performed recorded actions. The actor filter combines with subject and action before pagination. Editing the draft alone does not affect results; paging, refresh and retry retain the applied ID. **Clear actor filter** clears only actor and returns to page one.
+
+The audit endpoint accepts optional positive signed-64-bit `actorId`. Invalid/overflow IDs return 400; unknown IDs return an empty list. Events with no attributed actor are excluded when filtering by actor. Actor and subject are different concepts; no missing attribution is inferred. Existing ADMIN-only permissions and live-page limitations remain unchanged.

@@ -143,3 +143,6 @@ AccountController binds optional Boolean enabled and delegates to AccountService
 
 ## Security event subject review
 AccountLifecycleController binds an optional Long subjectId. AuditTrailService validates positivity and selects the action/subject repository query before bounded descending-ID pagination. Read-only transactions, audit recording and permission boundaries are unchanged. SecurityEventReview keeps draft and applied subjects separate and passes IDs as decimal strings to avoid JavaScript integer rounding. No entity dependencies, schema or dependency changes.
+
+## Security event actor review
+AccountLifecycleController binds optional actorId and delegates validation to AuditTrailService. For actor-filtered reads, a parameterized repository query combines optional action/subject before bounded ID-descending pagination; unfiltered routes retain their queries. Read-only transactions, audit recording, locking and authorization are unchanged. React stores draft/applied actor IDs as strings, avoiding request-value rounding. No schema, entity-layer or dependency changes.

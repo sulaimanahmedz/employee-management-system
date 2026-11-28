@@ -16,11 +16,12 @@ public class AuditTrailService {
     @Transactional public void record(SecurityEvent.Action action, Long actor, Long subject) {
         events.saveAndFlush(new SecurityEvent(Instant.now(), action, actor, subject));
     }
-    @Transactional(readOnly = true) public List<SecurityEventView> list(int page, SecurityEvent.Action action, Long subjectId) {
+    @Transactional(readOnly = true) public List<SecurityEventView> list(int page, SecurityEvent.Action action, Long subjectId, Long actorId) {
         if (page < 0 || page > Integer.MAX_VALUE / 20) throw new IllegalArgumentException("Invalid audit page");
         if (subjectId != null && subjectId <= 0) throw new IllegalArgumentException("Invalid audit subject");
+        if (actorId != null && actorId <= 0) throw new IllegalArgumentException("Invalid audit actor");
         var pageable = PageRequest.of(page, 20, Sort.by("id").descending());
-        var result = subjectId == null
+        var result = actorId != null ? events.findActorEvents(actorId, action, subjectId, pageable) : subjectId == null
             ? (action == null ? events.findAll(pageable) : events.findByAction(action, pageable))
             : (action == null ? events.findBySubjectId(subjectId, pageable) : events.findByActionAndSubjectId(action, subjectId, pageable));
         return result.stream()
